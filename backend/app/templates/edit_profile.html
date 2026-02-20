@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto">
+        <a href="{{ url_for('main.home') }}" class="text-slate-400 hover:text-white mb-6 inline-block flex items-center gap-2 transition-colors">
+            <span class="material-icons-round">arrow_back</span> Back to Dashboard
+        </a>
+
+        <div class="glass p-8 rounded-2xl border border-white/10">
+            <h2 class="text-2xl font-bold text-white mb-2">Edit Profile</h2>
+            <p class="text-slate-400 text-sm mb-8">Update your public developer persona.</p>
+
+            <form method="POST" action="" class="space-y-6" enctype="multipart/form-data">
+
+                {{ form.hidden_tag() }}
+
+                <!-- Profile Picture Upload -->
+                <div class="space-y-2">
+                    <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2">Profile Picture</h3>
+                    {% if current_user.image_file %}
+                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="Profile" class="w-24 h-24 rounded-full border-4 border-surface-dark shadow-xl object-cover mb-2">
+                    {% endif %}
+                    {{ form.picture.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
+                    {{ form.picture(class="w-full text-white", accept=".png,.jpg,.jpeg") }}
+                </div>
+
+                <!-- Identity Section -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2">Identity</h3>
+                    
+                    <div>
+                        {{ form.headline.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
+                        {% if form.headline.errors %}
+                            {{ form.headline(class="w-full bg-red-900/20 border border-red-500 rounded-lg text-white px-3 py-2 text-sm focus:outline-none") }}
+                            <div class="text-red-400 text-xs mt-1">
+                                {% for error in form.headline.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.headline(class="w-full bg-black/30 border border-white/10 rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-primary") }}
+                        {% endif %}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            {{ form.location.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
+                            {{ form.location(class="w-full bg-black/30 border border-white/10 rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-primary") }}
+                        </div>
+                        <div>
+                            {{ form.availability.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
+                            {{ form.availability(class="w-full bg-black/30 border border-white/10 rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-primary appearance-none") }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tech Stack Section -->
+                <div class="space-y-4 pt-4">
+                    <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2">Skills</h3>
+                    <div>
+                        {{ form.technologies.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
+                        {{ form.technologies(class="w-full bg-black/30 border border-white/10 rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-primary", placeholder="Python, React, Flask...") }}
+                        <p class="text-slate-500 text-xs mt-1">Comma separated list of your top skills.</p>
+                    </div>
+                </div>
+
+                <!-- Links Section -->
+                <div class="space-y-4 pt-4">
+                    <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2">Social Links</h3>
+                    
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="relative">
+                            <i class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-sm">code</i>
+                            {{ form.github_link(class="w-full bg-black/30 border border-white/10 rounded-lg text-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-primary", placeholder="GitHub URL") }}
+                        </div>
+                        <div class="relative">
+                            <i class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-sm">work</i>
+                            {{ form.linkedin_link(class="w-full bg-black/30 border border-white/10 rounded-lg text-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-primary", placeholder="LinkedIn URL") }}
+                        </div>
+                        <div class="relative">
+                            <i class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-sm">link</i>
+                            {{ form.portfolio_link(class="w-full bg-black/30 border border-white/10 rounded-lg text-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-primary", placeholder="Portfolio URL") }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-white/10 flex justify-end gap-3">
+                    <a href="{{ url_for('main.home') }}" class="px-6 py-2 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</a>
+                    {{ form.submit(class="px-6 py-2 rounded-lg bg-primary hover:bg-primary/90 text-slate-900 font-bold text-sm transition-colors cursor-pointer shadow-lg shadow-primary/20") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

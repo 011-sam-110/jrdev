@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="dashboard-grid">
+    <aside class="sidebar-col">
+        <div class="profile-header" style="text-align: center;">
+            <div class="avatar-large" style="border: 2px solid #30363d; overflow: hidden; border-radius: 50%; width: 96px; height: 96px; margin: 0 auto 12px;">
+                <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="dev" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <h2>{{ current_user.username }}</h2>
+            <p>{{ profile.headline if profile.headline else 'Aspiring Developer' }}</p>
+            <span class="status-pill open-to-work">{{ profile.availability if profile.availability else 'Open to Work' }}</span>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Tech Stack</h3>
+            <div class="badge-group">
+                {% for tech in stack_list %}
+                <span class="badge-tech">{{ tech }}</span>
+                {% endfor %}
+                {% if not stack_list %}
+                <span class="badge-tech">No skills added yet.</span>
+                {% endif %}
+            </div>
+        </div>
+        <a href="{{ url_for('main.edit_profile') }}" class="btn-secondary" style="width: 100%; margin-top: 16px; display: block; text-align: center;">Edit Profile</a>
+    </aside>
+    <section class="main-content">
+        <div class="stat-container">
+            <div class="stat-box"><span>Active Prototypes</span> <i class="material-icons-round" style="color: #8b949e;">bolt</i></div>
+            <div class="stat-box"><span>Completed</span> <i class="material-icons-round" style="color: #8b949e;">check_circle</i></div>
+            <div class="stat-box"><span>Avg. Rating</span> <i class="material-icons-round" style="color: #8b949e;">trending_up</i></div>
+        </div>
+        <div class="card">
+            <div style="display: flex; justify-content: space-between;">
+                <h3>About Me</h3>
+                <a href="#" class="edit-link">Edit Markdown</a>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #30363d; margin: 12px 0;">
+            <div class="markdown-body">
+                <p>{{ profile.custom_markdown if profile.custom_markdown else 'I write code. Hello there.' }}</p>
+            </div>
+        </div>
+        <div class="card" style="margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between;">
+                <h3>Pinned Work</h3>
+                <button class="btn-primary">+ Add Project</button>
+            </div>
+            {% for project in profile.pinned_projects %}
+            <div class="project-item" style="border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-top: 12px;">
+                <strong>{{ project.title }}</strong>
+                <p>{{ project.description }}</p>
+                {% if project.link %}
+                <a href="{{ project.link }}" target="_blank">GitHub Repo</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% if not profile.pinned_projects %}
+            <div class="project-item" style="border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-top: 12px; text-align: center;">
+                <p>Showcase your best work here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock content %}

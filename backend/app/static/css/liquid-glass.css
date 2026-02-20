@@ -1,0 +1,39 @@
+
+:root {
+	/* Inner shadow */
+	--shadow-offset: 0;
+	--shadow-blur: 20px;
+	--shadow-spread: -5px;
+	--shadow-color: rgba(255, 255, 255, 0.7);
+	/* Painted glass */
+	--tint-color: 255, 255, 255;
+	--tint-opacity: 0.4;
+	/* Background frost */
+	--frost-blur: 2px;
+	/* SVG noise/distortion */
+	--noise-frequency: 0.008;
+	--distortion-strength: 77;
+	/* Outer shadow blur */
+	--outer-shadow-blur: 24px;
+}
+
+.liquid-glass {
+	position: relative;
+	border-radius: 28px;
+	box-shadow: var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-spread) var(--shadow-color);
+	background-color: rgba(var(--tint-color), var(--tint-opacity));
+	overflow: hidden;
+	transition: box-shadow 0.3s, background 0.3s;
+}
+.liquid-glass::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: 28px;
+	backdrop-filter: blur(var(--frost-blur));
+	filter: url(#glass-distortion);
+	isolation: isolate;
+	-webkit-backdrop-filter: blur(var(--frost-blur));
+	-webkit-filter: url("#glass-distortion");
+}

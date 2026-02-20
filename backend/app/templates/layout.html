@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>JrDev Platform - {{ title if title else 'Home' }}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#14F195", // Electric Teal
+                        secondary: "#8B5CF6", // Vibrant Violet
+                        "background-light": "#F1F5F9",
+                        "background-dark": "#0F172A",
+                        "surface-dark": "#1E293B",
+                        "surface-light": "#FFFFFF",
+                    },
+                    fontFamily: {
+                        display: ["'Space Grotesk'", "sans-serif"],
+                        body: ["'Inter'", "sans-serif"],
+                    },
+                    backgroundImage: {
+                        'hero-gradient': 'radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%)',
+                        'accent-gradient': 'linear-gradient(to right, #14F195, #8B5CF6)',
+                    }
+                },
+            },
+        };
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}">
+    <style>
+        .text-glow {
+            text-shadow: 0 0 20px rgba(20, 241, 149, 0.3);
+        }
+        .btn-gradient {
+            background: linear-gradient(90deg, #14F195, #8B5CF6, #14F195);
+            background-size: 200% 200%;
+            animation: gradientShift 5s ease infinite;
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(20, 241, 149, 0.4);
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-body transition-colors duration-300 min-h-screen flex flex-col">
+    
+    <!-- Navbar -->
+    <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    <span class="material-icons-round text-primary text-3xl">code</span>
+                    <span class="font-display font-bold text-xl tracking-tight text-slate-900 dark:text-white">Jr<span class="text-primary text-glow">Dev</span></span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#how-it-works">How it works</a>
+                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#students">For Students</a>
+                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#business">For Businesses</a>
+                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#">Pricing</a>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center gap-4">
+                {% if current_user.is_authenticated %}
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('main.account') }}">My Account</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
+                {% else %}
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('main.login') }}">Login</a>
+                    <a class="btn-gradient text-slate-900 hover:text-black px-5 py-2.5 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all duration-300" href="{{ url_for('main.register') }}">Get Started</a>
+                {% endif %}
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-white hover:bg-white/10 focus:outline-none" type="button">
+                        <span class="sr-only">Open main menu</span>
+                        <span class="material-icons-round">menu</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="flex-grow pt-20"> <!-- pt-20 to offset fixed navbar -->
+        <!-- Notification bar removed as requested -->
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Liquid Glass SVG Filter (global, hidden) -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+                <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+                <feDisplacementMap in="SourceGraphic" in2="blurred" scale="77" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </defs>
+    </svg>
+
+</body>
+</html>
