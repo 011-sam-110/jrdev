@@ -15,31 +15,37 @@ import base64
 
 main = Blueprint('main', __name__)
 
+@main.route("/review-gallery")
+@login_required
+def review_gallery():
+    if current_user.role != 'BUSINESS':
+        flash('Access Denied', 'danger')
+        return redirect(url_for('main.home'))
+    return render_template('review_gallery.html', title='Sprint Review Gallery')
+
 @main.route("/")
 @main.route("/home")
 def home():
-    if current_user.is_authenticated:
-        if current_user.role == 'DEVELOPER':
-            profile = current_user.developer_profile
-            # Convert markdown to HTML for display
-            md_html = markdown.markdown(profile.custom_markdown) if profile.custom_markdown else ""
-            # Parse tech stack
-            stack_list = [t.strip() for t in profile.technologies.split(',')] if profile.technologies else []
-            
-            form = AddPinnedProjectForm()
-            
-            return render_template('developer_dashboard.html', 
-                                   title='Dashboard', 
-                                   profile=profile, 
-                                   md_html=md_html,
-                                   stack_list=stack_list,
-                                   form=form)
-        # We can add BUSINESS dashboard later
-        # elif current_user.role == 'BUSINESS':
-        #     return render_template('business_dashboard.html')
-            
     projects = Project.query.all()
     return render_template('home.html', projects=projects, title='Home')
+
+@main.route("/dashboard")
+@login_required
+def dashboard():
+    if current_user.role == 'DEVELOPER':
+        profile = current_user.developer_profile
+        md_html = markdown.markdown(profile.custom_markdown) if profile.custom_markdown else ""
+        stack_list = [t.strip() for t in profile.technologies.split(',')] if profile.technologies else []
+        form = AddPinnedProjectForm()
+        return render_template('developer_dashboard.html', 
+                               title='Dashboard', 
+                               profile=profile, 
+                               md_html=md_html,
+                               stack_list=stack_list,
+                               form=form)
+    elif current_user.role == 'BUSINESS':
+        return render_template('business_dashboard.html', title='Business Dashboard')
+    return redirect(url_for('main.home'))
 
 @main.route("/about")
 def about():
@@ -224,7 +230,7 @@ def verify_2fa():
                 login_user(user)
                 session.pop('2fa_user_id', None)
                 next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('main.home'))
+                return redirect(next_page) if next_page else redirect(url_for('main.dashboard'))
             else:
                 flash('Invalid 2FA Code', 'danger')
         else:
@@ -244,7 +250,7 @@ def login():
             # 2FA is disabled for now; log in directly
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('main.home'))
+            return redirect(next_page) if next_page else redirect(url_for('main.dashboard'))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)

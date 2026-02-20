@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="scroll-smooth h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>JrDev | Sprint Review Gallery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --mint: #14F195;
+            --purple: #8B5CF6;
+            --bg-dark: #0F172A;
+            --surface-dark: #1E293B;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-sidebar {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .video-placeholder {
+            background: linear-gradient(45deg, #1e293b 0%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .video-placeholder::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+        }
+    </style>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#14F195",
+                        secondary: "#8B5CF6",
+                        "background-dark": "#0F172A",
+                    },
+                    fontFamily: {
+                        display: ["'Space Grotesk'", "sans-serif"],
+                        body: ["'Inter'", "sans-serif"],
+                    },
+                },
+            },
+        };
+    </script>
+</head>
+<body class="bg-background-dark text-slate-100 font-body h-full overflow-x-hidden">
+<nav class="fixed top-0 w-full z-50 glass-card border-b border-white/5 bg-background-dark/80 backdrop-blur-md">
+<div class="max-w-[1600px] mx-auto px-6 lg:px-12">
+<div class="flex items-center justify-between h-20">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl">terminal</span>
+<span class="font-display font-bold text-xl tracking-tight">JrDev<span class="text-primary">.</span></span>
+</div>
+<div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-400">
+<a class="hover:text-white transition-colors" href="#">Active Sprints</a>
+<a class="text-white border-b-2 border-primary pb-1" href="#">Review Gallery</a>
+<a class="hover:text-white transition-colors" href="#">Billing</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="text-xs font-bold uppercase tracking-widest text-primary">Sprint Completed</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary p-[1px]">
+<div class="w-full h-full rounded-full bg-background-dark flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">business</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<main class="pt-32 pb-20 px-6 lg:px-12 max-w-[1600px] mx-auto">
+<div class="flex flex-col lg:flex-row gap-12">
+<div class="flex-grow">
+<header class="mb-12">
+<h1 class="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Review Your Solutions</h1>
+<p class="text-slate-400 text-lg max-w-2xl">
+                        A one-week sprint just concluded. Browse the prototypes built by your student developer teams and select candidates for long-term roles.
+                    </p>
+</header>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+<div class="glass-card rounded-3xl overflow-hidden group hover:border-primary/30 transition-all duration-500">
+<div class="video-placeholder aspect-video w-full flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-700">
+<div class="z-10 flex flex-col items-center">
+<button class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-white text-4xl fill-1">play_arrow</span>
+</button>
+<span class="mt-4 text-xs font-bold uppercase tracking-widest text-slate-400">1:45 Demo</span>
+</div>
+<div class="absolute bottom-4 right-4 flex gap-2">
+<span class="bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">4K HD</span>
+</div>
+</div>
+<div class="p-8">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-secondary text-2xl">person</span>
+</div>
+<div>
+<h3 class="font-display text-xl font-bold">Alex Chen</h3>
+<p class="text-slate-500 text-sm">Full-Stack Engineering Student</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-primary font-bold text-sm tracking-tighter">98% Fit</span>
+<div class="flex gap-1 mt-1">
+<span class="w-1 h-1 rounded-full bg-primary"></span>
+<span class="w-1 h-1 rounded-full bg-primary"></span>
+<span class="w-1 h-1 rounded-full bg-primary"></span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-sm text-slate-400">code</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">Tech Specs</span>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="material-symbols-outlined text-slate-300">hub</span>
+<a class="text-sm font-medium text-primary hover:underline underline-offset-4" href="#">Read Documentation</a>
+</div>
+</div>
+<div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-sm text-slate-400">inventory_2</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">Deliverables</span>
+</div>
+<p class="text-sm font-medium mt-2 text-slate-300">API, Dashboard, DB Schema</p>
+</div>
+</div>
+<button class="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-secondary text-background-dark font-bold text-lg hover:opacity-90 transition-all shadow-[0_10px_30px_-10px_rgba(20,241,149,0.3)]">
+                                Hire Developer
+                            </button>
+</div>
+</div>
+<div class="glass-card rounded-3xl overflow-hidden group hover:border-primary/30 transition-all duration-500">
+<div class="video-placeholder aspect-video w-full flex items-center justify-center group-hover:scale-[1.02] transition-transform duration-700">
+<div class="z-10 flex flex-col items-center">
+<button class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-white text-4xl fill-1">play_arrow</span>
+</button>
+<span class="mt-4 text-xs font-bold uppercase tracking-widest text-slate-400">2:10 Demo</span>
+</div>
+</div>
+<div class="p-8">
+<div class="flex justify-between items-start mb-6">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center border border-white/10">
+<span class="material-symbols-outlined text-primary text-2xl">person_4</span>
+</div>
+<div>
+<h3 class="font-display text-xl font-bold">Sarah Jenkins</h3>
+<p class="text-slate-500 text-sm">UI/UX & Frontend Student</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-secondary font-bold text-sm tracking-tighter">94% Fit</span>
+<div class="flex gap-1 mt-1">
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+<span class="w-1 h-1 rounded-full bg-white/20"></span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-sm text-slate-400">code</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">Tech Specs</span>
+</div>
+<div class="flex items-center gap-3 mt-2">
+<span class="material-symbols-outlined text-slate-300">hub</span>
+<a class="text-sm font-medium text-primary hover:underline underline-offset-4" href="#">Read Documentation</a>
+</div>
+</div>
+<div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-sm text-slate-400">draw</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">Design</span>
+</div>
+<p class="text-sm font-medium mt-2 text-slate-300">Figma, React Components</p>
+</div>
+</div>
+<button class="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-secondary text-background-dark font-bold text-lg hover:opacity-90 transition-all shadow-[0_10px_30px_-10px_rgba(20,241,149,0.3)]">
+                                Hire Developer
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<aside class="w-full lg:w-96">
+<div class="glass-card rounded-3xl p-8 sticky top-32">
+<h2 class="font-display text-2xl font-bold mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">gavel</span>
+                        Sprint Info & Legal
+                    </h2>
+<div class="space-y-8">
+<div>
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded-lg bg-mint/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm">shield_with_heart</span>
+</div>
+<h4 class="font-bold text-white">Refund Policy</h4>
+</div>
+<p class="text-slate-400 text-sm leading-relaxed">
+                                Your initial <span class="text-primary font-semibold">£15 sprint fee</span> is fully protected. If the prototype doesn't meet the brief, claim a 100% refund within 48 hours.
+                            </p>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded-lg bg-purple/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-sm">timer</span>
+</div>
+<h4 class="font-bold text-white">Trial Period</h4>
+</div>
+<p class="text-slate-400 text-sm leading-relaxed">
+                                Once hired, developers enter a <span class="text-white">14-day trial period</span>. You only pay for successful milestones during this phase.
+                            </p>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-300 text-sm">handshake</span>
+</div>
+<h4 class="font-bold text-white">Direct Hire Rights</h4>
+</div>
+<p class="text-slate-400 text-sm leading-relaxed">
+                                You hold 100% IP rights for any code produced. Move to private contracting at any time through our 'Hire' bridge.
+                            </p>
+</div>
+</div>
+<div class="mt-10 p-6 bg-secondary/10 rounded-2xl border border-secondary/20">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary text-sm">support_agent</span>
+<span class="text-xs font-bold uppercase tracking-widest text-secondary">Need Help?</span>
+</div>
+<p class="text-xs text-slate-400 mb-4">Our sprint managers are available 24/7 for technical mediation.</p>
+<button class="text-xs font-bold text-white border-b border-white/30 hover:border-white transition-all pb-0.5">Contact Support</button>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<footer class="border-t border-white/5 py-12 bg-background-dark">
+<div class="max-w-[1600px] mx-auto px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">terminal</span>
+<span class="font-display font-bold text-lg tracking-tight">JrDev<span class="text-primary">.</span></span>
+</div>
+<div class="text-slate-500 text-sm">
+                © 2024 JrDev Prototyping Platform. Secure Sprint Review.
+            </div>
+<div class="flex gap-6">
+<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Dashboard</a>
+<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Support</a>
+<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Log Out</a>
+</div>
+</div>
+</footer>
+
+</body></html>
