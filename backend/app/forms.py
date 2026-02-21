@@ -1,13 +1,19 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Regexp
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Regexp
 from app.models import User
+
+# Shared email validation: single source of truth
+EMAIL_VALIDATORS = [
+    DataRequired(),
+    Regexp(r'^.+@.+\..+$', message='Invalid email address.'),
+]
+
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username',
                            validators=[DataRequired(), Length(min=2, max=20)])
-    email = StringField('Email',
-                        validators=[DataRequired(), Regexp(r'^.+@.+\..+$', message='Invalid email address.')])
+    email = StringField('Email', validators=EMAIL_VALIDATORS)
     password = PasswordField('Password', validators=[DataRequired()])
     confirm_password = PasswordField('Confirm Password',
                                      validators=[DataRequired(), EqualTo('password')])
@@ -26,8 +32,7 @@ class RegistrationForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
-    email = StringField('Email',
-                        validators=[DataRequired(), Regexp(r'^.+@.+\..+$', message='Invalid email address.')])
+    email = StringField('Email', validators=EMAIL_VALIDATORS)
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')

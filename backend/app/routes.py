@@ -1,10 +1,12 @@
-from flask import Blueprint, render_template, url_for, flash, redirect, request, session
+from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify
 import os
 from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail
 from app.forms import RegistrationForm, LoginForm
 from app.profile_forms import EditProfileForm, EditMarkdownForm, AddPinnedProjectForm
 from app.models import User, DeveloperProfile, Project, PinnedProject
+from app.decorators import require_role
+from app.utils import redirect_after_action
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 import pyotp
@@ -15,13 +17,39 @@ import base64
 
 main = Blueprint('main', __name__)
 
-@main.route("/review-gallery")
+@main.route("/developers")
 @login_required
+@require_role('BUSINESS')
 def review_gallery():
-    if current_user.role != 'BUSINESS':
-        flash('Access Denied', 'danger')
-        return redirect(url_for('main.home'))
-    return render_template('review_gallery.html', title='Sprint Review Gallery')
+    developers = [
+        {
+            'name': 'Alex Chen',
+            'subtitle': 'Full-Stack Engineering Student',
+            'fit_pct': 98,
+            'fit_color': 'primary',
+            'dots': ['primary', 'primary', 'primary'],
+            'demo_duration': '1:45 Demo',
+            'video_badge': '4K HD',
+            'tech_specs_link': '#',
+            'deliverables_icon': 'inventory_2',
+            'deliverables_text': 'API, Dashboard, DB Schema',
+            'icon': 'person',
+        },
+        {
+            'name': 'Sarah Jenkins',
+            'subtitle': 'UI/UX & Frontend Student',
+            'fit_pct': 94,
+            'fit_color': 'secondary',
+            'dots': ['secondary', 'secondary', 'white'],
+            'demo_duration': '2:10 Demo',
+            'video_badge': None,
+            'tech_specs_link': '#',
+            'deliverables_icon': 'draw',
+            'deliverables_text': 'Figma, React Components',
+            'icon': 'person_4',
+        },
+    ]
+    return render_template('business_dashboard_your-developers.html', title='Sprint Review Gallery', developers=developers, nav_active='developers')
 
 @main.route("/")
 @main.route("/home")
@@ -44,8 +72,8 @@ def dashboard():
                                stack_list=stack_list,
                                form=form)
     elif current_user.role == 'BUSINESS':
-        return render_template('business_dashboard.html', title='Business Dashboard')
-    return redirect(url_for('main.home'))
+        return render_template('business_dashboard.html', title='Business Dashboard', nav_active='sprint')
+    return redirect_after_action()
 
 @main.route("/about")
 def about():
@@ -53,11 +81,8 @@ def about():
 
 @main.route("/edit-profile", methods=['GET', 'POST'])
 @login_required
+@require_role('DEVELOPER')
 def edit_profile():
-    if current_user.role != 'DEVELOPER':
-        flash('Access Denied', 'danger')
-        return redirect(url_for('main.home'))
-        
     form = EditProfileForm()
     profile = current_user.developer_profile
     
@@ -85,7 +110,7 @@ def edit_profile():
             current_user.image_file = filename
         db.session.commit()
         flash('Profile Updated!', 'success')
-        return redirect(url_for('main.home'))
+        return redirect_after_action()
     elif request.method == 'GET':
         form.headline.data = profile.headline
         form.location.data = profile.location
@@ -99,22 +124,18 @@ def edit_profile():
 
 @main.route("/update-markdown", methods=['POST'])
 @login_required
+@require_role('DEVELOPER', json_response=True)
 def update_markdown():
-    if current_user.role != 'DEVELOPER':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
     content = request.form.get('content')
     profile = current_user.developer_profile
     profile.custom_markdown = content
     db.session.commit()
-    return redirect(url_for('main.home')) # Simple redirect for now
+    return redirect_after_action()
 
 @main.route("/add-pinned-project", methods=['POST'])
 @login_required
+@require_role('DEVELOPER')
 def add_pinned_project():
-    if current_user.role != 'DEVELOPER':
-        return redirect(url_for('main.home'))
-    
     title = request.form.get('title')
     desc = request.form.get('description')
     tags = request.form.get('tags')
@@ -131,24 +152,25 @@ def add_pinned_project():
         db.session.add(project)
         db.session.commit()
         flash('Project Pinned!', 'success')
-    return redirect(url_for('main.home'))
+    return redirect_after_action()
 
 @main.route("/pin-delete/<int:id>")
 @login_required
+@require_role('DEVELOPER')
 def delete_pinned(id):
     project = PinnedProject.query.get_or_404(id)
     if project.profile.user_id != current_user.id:
         flash('Access Denied', 'danger')
-        return redirect(url_for('main.home'))
+        return redirect_after_action()
     db.session.delete(project)
     db.session.commit()
     flash('Project Removed', 'success')
-    return redirect(url_for('main.home'))
+    return redirect_after_action()
 
 @main.route("/register", methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('main.home'))
+        return redirect_after_action()
     form = RegistrationForm()
     
     # Pre-select role if provided in query params
@@ -202,7 +224,7 @@ def setup_2fa():
             db.session.commit()
             
             flash('2FA Setup Complete! (Email verification skipped for demo). Your account is secure.', 'success')
-            return redirect(url_for('main.home'))
+            return redirect_after_action()
         else:
             flash('Invalid Code. Please try again.', 'danger')
             
@@ -242,7 +264,7 @@ def verify_2fa():
 @main.route("/login", methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.home'))
+        return redirect_after_action()
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -258,7 +280,7 @@ def login():
 @main.route("/logout")
 def logout():
     logout_user()
-    return redirect(url_for('main.home'))
+    return redirect_after_action()
 
 @main.route("/account")
 @login_required
