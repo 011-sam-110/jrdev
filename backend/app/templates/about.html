@@ -1,5 +1,49 @@
 {% extends "layout.html" %}
 {% block content %}
-    <h1>About Page</h1>
-    <p>Junior Dev helps new developers gain real-world experience.</p>
+<section class="py-24 relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 reveal">
+            <h1 class="font-display text-4xl md:text-5xl font-bold mb-6 dark:text-white text-slate-900">About <span class="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">JrDev</span></h1>
+            <p class="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">We're building the bridge between ambitious student developers and local businesses needing modern digital solutions.</p>
+        </div>
+
+        <div class="space-y-8">
+            <div class="glass p-8 rounded-2xl border border-slate-200 dark:border-white/10 reveal">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                        <span class="material-icons-round text-primary">rocket_launch</span>
+                    </div>
+                    <h2 class="font-display text-xl font-bold dark:text-white text-slate-900">Our Mission</h2>
+                </div>
+                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">JrDev connects student developers with real business projects. Students gain invaluable hands-on experience, build their portfolios, and earn while learning. Businesses get cost-effective, innovative digital solutions built by hungry young talent.</p>
+            </div>
+
+            <div class="glass p-8 rounded-2xl border border-slate-200 dark:border-white/10 reveal reveal-delay-1">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center">
+                        <span class="material-icons-round text-secondary">groups</span>
+                    </div>
+                    <h2 class="font-display text-xl font-bold dark:text-white text-slate-900">How It Works</h2>
+                </div>
+                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Businesses post project ideas as "sprints" — short, focused prototyping challenges. Student developers sign up to build proof-of-concepts. At the end of the sprint, businesses review the prototypes and can choose to hire developers for continued work.</p>
+            </div>
+
+            <div class="glass p-8 rounded-2xl border border-slate-200 dark:border-white/10 reveal reveal-delay-2">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <span class="material-icons-round text-purple-400">shield</span>
+                    </div>
+                    <h2 class="font-display text-xl font-bold dark:text-white text-slate-900">Trust & Safety</h2>
+                </div>
+                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Payments are held in escrow until sprint completion and approval. Both parties are protected with clear contracts, trial periods, and a support team available for mediation.</p>
+            </div>
+        </div>
+
+        <div class="text-center mt-12">
+            <a href="{{ url_for('main.register') }}" class="inline-flex items-center gap-2 px-8 py-3 rounded-full btn-gradient text-slate-900 font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(20,241,149,0.4)]">
+                Get Started <span class="material-icons-round text-lg">arrow_forward</span>
+            </a>
+        </div>
+    </div>
+</section>
 {% endblock content %}

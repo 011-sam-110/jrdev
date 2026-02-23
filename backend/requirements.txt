@@ -1,0 +1,24 @@
+# Core (add versions as needed)
+flask
+flask-sqlalchemy
+flask-login
+flask-wtf
+flask-bcrypt
+flask-mail
+flask-migrate
+reportlab
+pyotp
+qrcode
+markdown
+
+# Security: sanitize user markdown (XSS)
+bleach
+
+# Optional: load .env for local development
+python-dotenv
+
+# Rate limiting (login / 2FA)
+flask-limiter
+
+# Payments
+stripe

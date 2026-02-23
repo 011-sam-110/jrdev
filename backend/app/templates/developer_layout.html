@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html class="scroll-smooth h-full" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}JrDev | Developer Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}"/>
+    <style type="text/tailwindcss">
+        :root {
+            --primary-mint: #14F195;
+            --secondary-purple: #8B5CF6;
+            --bg-navy: #0F172A;
+            --surface-navy: #1E293B;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel, .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .gradient-cta {
+            background: linear-gradient(135deg, var(--primary-mint) 0%, var(--secondary-purple) 100%);
+        }
+        .tech-tag {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(20, 241, 149, 0.3);
+        }
+        .markdown-body { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; }
+        .markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .markdown-body h2 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+        .markdown-body p { margin-bottom: 0.75rem; }
+        .markdown-body ul, .markdown-body ol { margin-left: 1.25rem; margin-bottom: 0.75rem; }
+        .markdown-body code { background: rgba(255,255,255,0.1); padding: 0.125rem 0.375rem; border-radius: 4px; font-size: 0.875em; }
+        .markdown-body a { color: #14F195; text-decoration: underline; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#14F195",
+                        mint: "#14F195",
+                        purple: "#8B5CF6",
+                        secondary: "#8B5CF6",
+                        navy: {
+                            900: "#0F172A",
+                            800: "#1E293B",
+                            700: "#334155",
+                        },
+                        "background-dark": "#0F172A",
+                    },
+                    fontFamily: {
+                        display: ["'Space Grotesk'", "sans-serif"],
+                        body: ["'Inter'", "sans-serif"],
+                        mono: ["'JetBrains Mono'", "monospace"],
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-navy-900 text-slate-100 font-body h-full min-h-screen flex flex-col relative">
+    <div class="liquid-glass-bg" aria-hidden="true"></div>
+    <nav class="fixed top-0 w-full z-50 glass-card border-b border-white/5 bg-background-dark/80 backdrop-blur-md">
+        <div class="max-w-[1600px] mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+            <div class="flex-shrink-0 flex items-center gap-2">
+                <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2">
+                    <span class="font-bold text-2xl" style="color: #14F195;">&lt;&gt;</span>
+                    <span class="font-display font-bold text-xl tracking-tight"><span class="text-slate-900 dark:text-white">Jr</span><span class="text-primary text-glow">Dev</span></span>
+                </a>
+            </div>
+            <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-400">
+                <a class="nav-link-animated {% if nav_active == 'dashboard' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                <a class="nav-link-animated {% if nav_active == 'listings' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_listings') }}">Listings</a>
+                <a class="nav-link-animated {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">Joined Listings</a>
+            </div>  
+            <div class="flex items-center gap-4">
+                <a href="{{ url_for('main.logout') }}" class="w-8 h-8 rounded-full bg-navy-700 border border-white/10 overflow-hidden block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50" title="Log out">
+                    {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
+                    <img alt="Profile" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center bg-navy-700 text-mint"><span class="material-symbols-outlined text-lg">person</span></div>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% block flash %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-messages" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 space-y-2 max-w-md w-full px-4 flash-dismiss">
+        {% for category, message in messages %}
+        <div class="flash-item rounded-xl px-4 py-3 text-sm font-medium border transition-opacity duration-500 {% if category == 'success' %}bg-mint/20 border-mint/40 text-mint{% else %}bg-red-500/20 border-red-500/40 text-red-300{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% endblock %}
+    <div class="pt-24"></div>
+    <main class="flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+    {% block footer %}{% endblock %}
+    <script>
+        (function() {
+            var flash = document.getElementById('flash-messages');
+            if (flash) {
+                setTimeout(function() {
+                    var items = flash.querySelectorAll('.flash-item');
+                    items.forEach(function(el) { el.style.opacity = '0'; });
+                    setTimeout(function() {
+                        flash.remove();
+                    }, 500);
+                }, 4500);
+            }
+
+            var io = new IntersectionObserver(function(entries) {
+                entries.forEach(function(e) {
+                    if (e.isIntersecting) { e.target.classList.add('active'); io.unobserve(e.target); }
+                });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
+        })();
+    </script>
+    {% block scripts %}{% endblock %}
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="glass-refraction" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.012 0.012" numOctaves="2" seed="2" result="noise"/>
+                <feGaussianBlur in="noise" stdDeviation="1.2" result="blurredNoise"/>
+                <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+        </defs>
+    </svg>
+</body>
+</html>

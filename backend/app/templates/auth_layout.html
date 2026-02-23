@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}JrDev Platform{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#14F195",
+                        secondary: "#8B5CF6",
+                        "background-light": "#F1F5F9",
+                        "background-dark": "#0F172A",
+                        "surface-dark": "#1E293B",
+                        "surface-light": "#FFFFFF",
+                    },
+                    fontFamily: {
+                        display: ["'Space Grotesk'", "sans-serif"],
+                        body: ["'Inter'", "sans-serif"],
+                    },
+                    backgroundImage: {
+                        'hero-gradient': 'radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%)',
+                        'accent-gradient': 'linear-gradient(to right, #14F195, #8B5CF6)',
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        .text-glow {
+            text-shadow: 0 0 20px rgba(20, 241, 149, 0.3);
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(20,241,149,0.1) 0%, transparent 70%);
+            filter: blur(80px);
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .btn-gradient {
+            background: linear-gradient(90deg, #14F195, #8B5CF6, #14F195);
+            background-size: 200% 200%;
+            animation: gradientShift 5s ease infinite;
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(20, 241, 149, 0.4);
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* Auth pages: dark input text on light background so typed text is visible */
+        .auth-layout .liquid-glass-input {
+            color: #111827 !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+        }
+        .auth-layout .liquid-glass-input::placeholder {
+            color: #6b7280 !important;
+        }
+    </style>
+</head>
+<body class="auth-layout bg-background-dark text-slate-100 font-body min-h-screen flex flex-col relative overflow-x-hidden">
+    <div class="liquid-glass-bg" aria-hidden="true"></div>
+    <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 border-b border-white/5 bg-background-dark/80 backdrop-blur-md glass-card">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <a href="{{ url_for('main.home') }}" class="flex-shrink-0 flex items-center gap-2">
+                    <span class="material-icons-round text-primary text-3xl">code</span>
+                    <span class="font-display font-bold text-xl tracking-tight text-slate-900 dark:text-white">Jr<span class="text-primary text-glow">Dev</span></span>
+                </a>
+                <div class="hidden md:flex items-center gap-4">
+                    {% block nav_links %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex-grow flex items-center justify-center pt-32 pb-20 px-4 relative z-0">
+        <div class="w-full max-w-md relative z-10">
+            <div class="liquid-glass-panel liquid-glass-in p-8 rounded-2xl">
+                <h2 class="text-3xl font-display font-bold text-center mb-8 text-white">{% block card_title %}{% endblock %}</h2>
+                {% block card_lead %}{% endblock %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    {% block footer %}{% endblock %}
+    {% block scripts %}{% endblock %}
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="glass-refraction" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.012 0.012" numOctaves="2" seed="2" result="noise"/>
+                <feGaussianBlur in="noise" stdDeviation="1.2" result="blurredNoise"/>
+                <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+        </defs>
+    </svg>
+</body>
+</html>

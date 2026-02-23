@@ -8,6 +8,7 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}"/>
 <script>
         tailwind.config = {
             darkMode: "class",
@@ -34,11 +35,12 @@
         };
     </script>
 <style>
-        .glass {
+        /* Glassmorphism Card Enhancement */
+        .glass, .glass-card {
             position: relative;
-            background: rgba(255, 255, 255, 0.05); /* Very light semi-transparent white */
-            border-radius: 1rem;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -47,10 +49,10 @@
         }
 
         /* Hover effect to lift the card */
-        .glass:hover {
+        .glass:hover, .glass-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            background: rgba(255, 255, 255, 0.1); /* Slightly more opaque on hover */
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.13);
+            background: rgba(255, 255, 255, 0.13);
         }
 
         /* Liquid Glass Implementation */
@@ -78,9 +80,6 @@
             pointer-events: none;
         }
 
-        .text-glow {
-            text-shadow: 0 0 20px rgba(20, 241, 149, 0.3);
-        }
 
         /* Hero Glow */
         .hero::before {
@@ -160,10 +159,10 @@
 </div>
 <div class="hidden md:block">
 <div class="ml-10 flex items-baseline space-x-8">
-<a class="hover:text-primary transition-colors text-sm font-medium" href="#how-it-works">How it works</a>
-<a class="hover:text-primary transition-colors text-sm font-medium" href="#students">For Students</a>
-<a class="hover:text-primary transition-colors text-sm font-medium" href="#business">For Businesses</a>
-<a class="hover:text-primary transition-colors text-sm font-medium" href="#">Pricing</a>
+<a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#how-it-works">How it works</a>
+<a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#students">For Students</a>
+<a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#business">For Businesses</a>
+<a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#">Pricing</a>
 </div>
 </div>
 <div class="hidden md:flex items-center gap-4">
@@ -270,8 +269,6 @@
             <p class="text-slate-600 dark:text-slate-400 text-sm">Work on projects as your schedule allows—no long-term or rigid obligations.</p>
         </div>
     </li>
-</div>
-</li>
 </ul>
 <a class="inline-flex items-center gap-2 text-secondary font-bold hover:gap-3 transition-all" href="{{ url_for('main.register') }}">
                         Join the Talent Pool <span class="material-icons-round text-sm">arrow_forward</span>
@@ -375,7 +372,7 @@
 <span class="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white">Jr<span class="text-primary">Dev</span></span>
 </div>
 <div class="text-slate-500 dark:text-slate-400 text-sm">
-                © 2024 JrDev Platform. All rights reserved.
+                © 2026 JrDev Platform. All rights reserved.
             </div>
 <div class="flex gap-4">
 <a class="text-slate-400 hover:text-primary transition-colors" href="#"><i class="material-icons-round text-xl">email</i></a>
@@ -397,7 +394,7 @@
         }
     });
 
-    // Intersection Observer for Fade-in Animations
+    // Intersection Observer for Fade-in Animations and Reveal Animations
     const observerOptions = {
         root: null,
         rootMargin: '0px',
@@ -408,12 +405,13 @@
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
+                entry.target.classList.add('active'); // For .reveal
                 observer.unobserve(entry.target); // Only animate once
             }
         });
     }, observerOptions);
 
-    document.querySelectorAll('.fade-in').forEach(el => {
+    document.querySelectorAll('.fade-in, .reveal').forEach(el => {
         observer.observe(el);
     });
 </script>

@@ -1,0 +1,103 @@
+{% extends 'business_layout.html' %}
+
+{% block title %}JrDev | Developer Profile{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="{{ url_for('main.business_my_listings') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-base font-medium transition-colors">
+        <span class="material-symbols-outlined text-xl">arrow_back</span>
+        Back to My Listings
+    </a>
+</div>
+<div class="liquid-glass-panel rounded-2xl p-10 sm:p-12 max-w-5xl">
+    <div class="flex flex-col lg:flex-row gap-10 lg:gap-12">
+        <div class="flex-shrink-0 text-center lg:text-left">
+            <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden mx-auto lg:mx-0 bg-navy-700 border-2 border-white/10">
+                {% if dev_user.image_file and dev_user.image_file != 'default.jpg' %}
+                <img src="{{ url_for('static', filename='profile_pics/' + dev_user.image_file) }}" alt="Profile" class="w-full h-full object-cover"/>
+                {% else %}
+                <div class="w-full h-full flex items-center justify-center text-mint"><span class="material-symbols-outlined text-5xl sm:text-6xl">person</span></div>
+                {% endif %}
+            </div>
+            <h1 class="font-display text-2xl sm:text-3xl font-bold text-white mt-6">{{ dev_user.username }}</h1>
+            <p class="text-slate-400 text-lg mt-2">{{ profile.headline or 'Aspiring Developer' }}</p>
+            <span class="inline-block mt-4 px-4 py-2 rounded-full text-sm font-semibold bg-mint/20 text-mint border border-mint/40">{{ profile.availability or 'Open to Work' }}</span>
+        </div>
+        <div class="flex-1 space-y-8">
+            {% if profile.technologies %}
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Tech Stack</h2>
+                <div class="flex flex-wrap gap-3">
+                    {% for tech in stack_list %}
+                    <span class="tech-tag px-4 py-2 bg-navy-700/60 border border-white/10 rounded-lg text-sm text-slate-300">{{ tech }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if profile.bio %}
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Bio</h2>
+                <p class="text-slate-300 text-base leading-relaxed">{{ profile.bio }}</p>
+            </div>
+            {% endif %}
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">About</h2>
+                <div class="markdown-body prose prose-invert prose-lg max-w-none text-slate-300">
+                    {% if md_html %}
+                    {{ md_html | safe }}
+                    {% else %}
+                    <p class="text-slate-500 text-base">No additional information provided.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Pinned projects</h2>
+                {% if pinned_projects %}
+                <ul class="space-y-4">
+                    {% for proj in pinned_projects %}
+                    <li class="p-4 rounded-xl bg-white/5 border border-white/10">
+                        <h4 class="font-semibold text-white">{{ proj.title }}</h4>
+                        <p class="text-slate-400 text-sm mt-1">{{ proj.description }}</p>
+                        {% if proj.link %}
+                        <a href="{{ proj.link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-mint text-sm font-medium mt-2 hover:underline">View project <span class="material-symbols-outlined text-sm">open_in_new</span></a>
+                        {% endif %}
+                        {% if proj.tags %}
+                        <p class="text-slate-500 text-xs mt-2">{{ proj.tags }}</p>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-slate-500 text-sm">No pinned projects yet.</p>
+                {% endif %}
+            </div>
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Linked work & socials</h2>
+                <div class="flex flex-wrap gap-4">
+                    {% if profile.github_link %}
+                    <a href="{{ profile.github_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-base font-medium">
+                        <span class="material-symbols-outlined text-xl">code</span>
+                        GitHub
+                    </a>
+                    {% endif %}
+                    {% if profile.linkedin_link %}
+                    <a href="{{ profile.linkedin_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-base font-medium">
+                        <span class="material-symbols-outlined text-xl">work</span>
+                        LinkedIn
+                    </a>
+                    {% endif %}
+                    {% if profile.portfolio_link %}
+                    <a href="{{ profile.portfolio_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-base font-medium">
+                        <span class="material-symbols-outlined text-xl">public</span>
+                        Portfolio
+                    </a>
+                    {% endif %}
+                    {% if not profile.github_link and not profile.linkedin_link and not profile.portfolio_link %}
+                    <p class="text-slate-500 text-sm">No links added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,16 +1,54 @@
-{% extends "layout.html" %}
+{% extends "developer_layout.html" if current_user.role == 'DEVELOPER' else "business_layout.html" %}
+
+{% block title %}JrDev | Account{% endblock %}
+
 {% block content %}
-    <div class="content-section">
-      <div class="media">
-        <img class="rounded-circle account-img" src="{{ image_file }}">
-        <div class="media-body">
-          <h2 class="account-heading">{{ current_user.username }}</h2>
-          <p class="text-secondary">{{ current_user.email }}</p>
-          <p class="text-secondary">Role: {{ current_user.role }}</p>
-          {% if current_user.role == 'DEVELOPER' %}
-             <p>Contracts Won: {{ current_user.developer_profile.contracts_won }}</p>
-          {% endif %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="font-display text-3xl font-bold text-white mb-8 reveal">My Account</h1>
+
+    <div class="glass-panel rounded-2xl p-8 reveal reveal-delay-1">
+        <div class="flex items-center gap-6 mb-8">
+            <div class="w-20 h-20 rounded-full border-2 border-mint/30 overflow-hidden shadow-lg shadow-mint/10">
+                <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="Profile" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h2 class="font-display text-xl font-bold text-white">{{ current_user.username }}</h2>
+                <p class="text-slate-400 text-sm">{{ current_user.email }}</p>
+                <span class="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                    {% if current_user.role == 'DEVELOPER' %}bg-mint/15 text-mint border border-mint/30
+                    {% else %}bg-purple/15 text-purple border border-purple/30{% endif %}">
+                    {{ current_user.role }}
+                </span>
+            </div>
         </div>
-      </div>
+
+        <div class="space-y-4">
+            <div class="flex items-center justify-between py-3 border-b border-white/5">
+                <span class="text-slate-400 text-sm">Email Verified</span>
+                {% if current_user.is_verified %}
+                <span class="flex items-center gap-1 text-mint text-sm font-medium"><span class="material-symbols-outlined text-sm">check_circle</span> Verified</span>
+                {% else %}
+                <span class="flex items-center gap-1 text-amber-400 text-sm font-medium"><span class="material-symbols-outlined text-sm">warning</span> Not Verified</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center justify-between py-3 border-b border-white/5">
+                <span class="text-slate-400 text-sm">Two-Factor Auth</span>
+                <span class="flex items-center gap-1 text-mint text-sm font-medium"><span class="material-symbols-outlined text-sm">shield</span> Enabled</span>
+            </div>
+            {% if current_user.role == 'DEVELOPER' and current_user.developer_profile %}
+            <div class="flex items-center justify-between py-3 border-b border-white/5">
+                <span class="text-slate-400 text-sm">Contracts Won</span>
+                <span class="text-white font-display font-bold">{{ current_user.developer_profile.contracts_won }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-8 flex gap-3">
+            {% if current_user.role == 'DEVELOPER' %}
+            <a href="{{ url_for('main.edit_profile') }}" class="px-5 py-2.5 rounded-lg gradient-cta text-navy-900 font-bold text-sm hover:shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all">Edit Profile</a>
+            {% endif %}
+            <a href="{{ url_for('main.dashboard') }}" class="px-5 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Dashboard</a>
+        </div>
     </div>
-{% endblock content %}
+</div>
+{% endblock %}

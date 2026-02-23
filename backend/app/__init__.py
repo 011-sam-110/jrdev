@@ -4,6 +4,7 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
+from flask_wtf.csrf import generate_csrf
 import os
 
 db = SQLAlchemy()
@@ -34,5 +35,16 @@ def create_app():
     
     from app.routes import main
     app.register_blueprint(main)
+
+    from app.contract_pdf import contract
+    app.register_blueprint(contract)
+
+    @app.context_processor
+    def inject_csrf_token():
+        return {'csrf_token': generate_csrf()}
+
+    with app.app_context():
+        from app import models
+        db.create_all()
 
     return app

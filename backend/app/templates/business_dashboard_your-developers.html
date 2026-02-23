@@ -1,0 +1,189 @@
+{% extends 'business_layout.html' %}
+
+{% block title %}JrDev | Your Listings{% endblock %}
+{% block main_class %}pb-20 px-6 lg:px-12 max-w-[1600px] mx-auto{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-12">
+    <div class="flex-grow">
+        <header class="mb-12 liquid-glass-in">
+            <h1 class="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">Your Listings</h1>
+            <p class="text-slate-400 text-lg max-w-2xl">
+                Expand each sprint to manage developers (accept, e-sign contracts), then track progress and review their work.
+            </p>
+        </header>
+
+        {% for listing, developers, sprint_phase in developers_by_listing %}
+        <section class="liquid-glass-panel rounded-2xl overflow-hidden border border-white/10 mb-8">
+            <details class="group" {% if loop.first %}open{% endif %}>
+                <summary class="flex items-center justify-between cursor-pointer list-none px-6 py-4 bg-white/5 hover:bg-white/10 transition-colors select-none">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span class="material-symbols-outlined text-primary group-open:rotate-90 transition-transform">expand_more</span>
+                        <h2 class="font-display text-xl font-bold text-white">{{ listing.company_name }}</h2>
+                        <span class="text-xs font-mono text-slate-500">{{ listing.sprint_timeline_days }} day sprint</span>
+                        <span class="text-xs font-mono {% if listing.is_full %}text-purple{% else %}text-mint{% endif %}">
+                            {{ developers|length }}/{{ listing.max_talent_pool }} developers
+                        </span>
+                    </div>
+                    <span class="text-slate-400 text-sm">Sprint ends {{ listing.sprint_ends_at.strftime('%d %b %Y') if listing.sprint_ends_at else '—' }}</span>
+                </summary>
+                <div class="p-6 pt-2">
+                    {% if sprint_phase == 'before' %}
+                    <div class="mb-6 p-4 rounded-xl bg-slate-700/30 border border-white/10">
+                        <h3 class="font-display text-lg font-semibold text-white mb-1">Your developers are waiting for the start date</h3>
+                        <p class="text-slate-400 text-sm">The sprint hasn't started yet. Developers will begin work when the sprint kicks off. Progress updates and videos will appear here once the sprint is underway.</p>
+                    </div>
+                    {% elif sprint_phase == 'during' %}
+                    <div class="mb-6 p-4 rounded-xl bg-mint/10 border border-mint/20">
+                        <h3 class="font-display text-lg font-semibold text-mint mb-1">Development ongoing</h3>
+                        <p class="text-slate-400 text-sm">The sprint is in progress. Your developers are building. Progress videos will be available here once the developer has submitted their work.
+                    </div>
+                    {% else %}
+                    <div class="mb-6 p-4 rounded-xl bg-purple/10 border border-purple/20">
+                        <h3 class="font-display text-lg font-semibold text-purple-300 mb-1">Review your solutions</h3>
+                        <p class="text-slate-400 text-sm">This sprint has concluded. Browse the prototypes built by your developers and select candidates for long-term roles.</p>
+                    </div>
+                    {% endif %}
+
+                    {% if listing.signups %}
+                    <div class="mb-8">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Developers who joined</h3>
+                        <ul class="space-y-4">
+                            {% for signup in listing.signups %}
+                            <li class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <span class="text-white font-medium">{{ signup.user.username }}</span>
+                                    <span class="text-slate-500 text-sm">({{ signup.user.email }})</span>
+                                    {% if signup.status == 'pending' %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">Pending</span>
+                                    {% elif signup.status == 'accepted' %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-mint/20 text-mint">Accepted</span>
+                                    {% elif signup.status == 'denied' %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">Denied</span>
+                                    {% elif signup.status == 'cancelled' %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-400">Cancelled</span>
+                                    {% endif %}
+                                    {% if signup.is_fully_signed %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400">Contract signed</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <a href="{{ url_for('main.developer_profile_view', user_id=signup.user.id) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View profile</a>
+                                    {% if signup.status == 'pending' %}
+                                    <form method="POST" action="{{ url_for('main.signup_accept', id=signup.id) }}" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                                        <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-mint/20 text-mint border border-mint/40 hover:bg-mint/30 text-sm font-medium">Accept</button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('main.signup_deny', id=signup.id) }}" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                                        <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 text-sm font-medium">Deny</button>
+                                    </form>
+                                    {% endif %}
+                                    {% if signup.status == 'accepted' %}
+                                    <a href="{{ url_for('contract.view_contract_for_signup', signup_id=signup.id) }}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View contract</a>
+                                    {% if not signup.business_signed_at %}
+                                    <form method="POST" action="{{ url_for('main.signup_sign_business', id=signup.id) }}" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                                        <button type="submit" class="liquid-glass-cta inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-sm">E-sign contract</button>
+                                    </form>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if developers %}
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Progress & review</h3>
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        {% for developer in developers %}
+                        {% include 'partials/developer_card.html' %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="py-12 text-center text-slate-500 rounded-xl bg-white/5">
+                        <span class="material-symbols-outlined text-4xl mb-2 block opacity-50">groups</span>
+                        <p>No developers on this sprint yet.</p>
+                        <p class="text-sm mt-1">Developers will appear here once they join and are accepted.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </details>
+        </section>
+        {% else %}
+        <div class="liquid-glass-panel rounded-2xl p-12 text-center text-slate-400">
+            <span class="material-symbols-outlined text-5xl mb-4 block opacity-50">rocket_launch</span>
+            <p class="text-lg">You don't have any sprints yet.</p>
+            <p class="text-sm mt-2">Launch a sprint from your dashboard and developers will appear here once they join.</p>
+        </div>
+        {% endfor %}
+    </div>
+    <aside class="w-full lg:w-96">
+        <div class="liquid-glass-panel rounded-3xl p-8 sticky top-32 liquid-glass-in liquid-glass-in-delay-2">
+            <h2 class="font-display text-2xl font-bold mb-8 flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary">gavel</span>
+                Sprint Info & Legal
+            </h2>
+            <div class="space-y-8">
+                <div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 rounded-lg bg-mint/10 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary text-sm">shield_with_heart</span>
+                        </div>
+                        <h4 class="font-bold text-white">Protected Funds</h4>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Your initial <span class="text-primary font-semibold">sprint fee</span> is fully protected. If the prototype doesn't meet enough minimum requirements, a 100% refund within 7 days.
+                    </p>
+                </div>
+                <div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 rounded-lg bg-purple/10 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-secondary text-sm">timer</span>
+                        </div>
+                        <h4 class="font-bold text-white">Developer Screening</h4>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Before hiring, You can click on <span class="text-white">view profile</span> to see the developer's profile and their portfolio.
+                    </p>
+                </div>
+                <div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-slate-300 text-sm">handshake</span>
+                        </div>
+                        <h4 class="font-bold text-white">Non-Disclosure</h4>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Developers only see the technologies required before hiring. Confidentiality is ensured before developers see the deliverables and project details.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-10 p-6 bg-secondary/10 rounded-2xl border border-secondary/20">
+                <!-- Support / CTA placeholder -->
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="border-t border-white/5 py-12 bg-background-dark">
+    <div class="max-w-[1600px] mx-auto px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">terminal</span>
+            <span class="font-display font-bold text-lg tracking-tight">JrDev<span class="text-primary">.</span></span>
+        </div>
+        <div class="text-slate-500 text-sm">
+            © 2026 JrDev Prototyping Platform. Secure Sprint Review.
+        </div>
+        <div class="flex gap-6">
+            <a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+            <a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Support</a>
+            <a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.logout') }}">Log Out</a>
+        </div>
+    </div>
+</footer>
+{% endblock %}

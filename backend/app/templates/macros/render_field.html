@@ -1,0 +1,16 @@
+{% macro render_field(field, extra_class='') %}
+<div>
+    {{ field.label(class="block text-sm font-medium text-glass-body-dim mb-2") }}
+    {% if field.errors %}
+        {{ field(class="liquid-glass-input w-full px-4 py-3 rounded-xl border border-red-500/60 text-white placeholder-slate-500 focus:outline-none focus:border-red-400 focus:ring-0 focus:shadow-[0_0_0_3px_rgba(248,113,113,0.25)] transition-all " + extra_class) }}
+        <div class="text-red-400 text-xs mt-1.5 flex items-center gap-1">
+            <span class="material-icons-round text-sm">error</span>
+            {% for error in field.errors %}
+                <span>{{ error }}</span>
+            {% endfor %}
+        </div>
+    {% else %}
+        {{ field(class="liquid-glass-input w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none transition-all " + extra_class) }}
+    {% endif %}
+</div>
+{% endmacro %}

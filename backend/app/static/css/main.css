@@ -1,11 +1,12 @@
 body {
     background: #fafafa;
-    color: #333333;
+    color: #1a1a1a;
     padding-top: 5rem;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    color: #444444;
+    color: #1a1a1a;
+    font-weight: 700;
   }
   
   .bg-steel {
@@ -26,14 +27,15 @@ body {
   
   .content-section {
     background: #ffffff;
-    padding: 10px 20px;
-    border: 1px solid #dddddd;
-    border-radius: 3px;
-    margin-bottom: 20px;
+    padding: 24px 32px;
+    border: none;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.06);
   }
   
   .article-title {
-    color: #444444;
+    color: #1a1a1a;
   }
   
   .article-title:hover {
@@ -49,16 +51,17 @@ body {
     height: 65px;
     width: 65px;
     margin-right: 16px;
+    border-radius: 50%;
   }
   
   .article-metadata {
     padding-bottom: 1px;
     margin-bottom: 4px;
-    border-bottom: 1px solid #e3e3e3
+    border-bottom: 1px solid #e3e3e3;
   }
   
   .article-metadata a:hover {
-    color: #333;
+    color: #1a1a1a;
     text-decoration: none;
   }
   
@@ -73,6 +76,7 @@ body {
     width: 125px;
     margin-right: 20px;
     margin-bottom: 16px;
+    border-radius: 50%;
   }
   
   .account-heading {

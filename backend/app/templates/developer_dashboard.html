@@ -1,64 +1,229 @@
-{% extends "layout.html" %}
+{% extends "developer_layout.html" %}
+
+{% block title %}JrDev | Developer Dashboard{% endblock %}
+
 {% block content %}
-<div class="dashboard-grid">
-    <aside class="sidebar-col">
-        <div class="profile-header" style="text-align: center;">
-            <div class="avatar-large" style="border: 2px solid #30363d; overflow: hidden; border-radius: 50%; width: 96px; height: 96px; margin: 0 auto 12px;">
-                <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="dev" style="width: 100%; height: 100%; object-fit: cover;">
+<div class="grid lg:grid-cols-12 gap-8">
+    <!-- Sidebar -->
+    <aside class="lg:col-span-4 space-y-6">
+        <!-- Profile Card -->
+        <div class="glass-panel rounded-2xl p-8 text-center reveal">
+            <div class="w-24 h-24 mx-auto rounded-full border-2 border-mint/30 overflow-hidden mb-4 shadow-lg shadow-mint/10">
+                <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="Profile" class="w-full h-full object-cover">
             </div>
-            <h2>{{ current_user.username }}</h2>
-            <p>{{ profile.headline if profile.headline else 'Aspiring Developer' }}</p>
-            <span class="status-pill open-to-work">{{ profile.availability if profile.availability else 'Open to Work' }}</span>
-        </div>
-        <div class="card" style="margin-top: 20px;">
-            <h3>Tech Stack</h3>
-            <div class="badge-group">
-                {% for tech in stack_list %}
-                <span class="badge-tech">{{ tech }}</span>
-                {% endfor %}
-                {% if not stack_list %}
-                <span class="badge-tech">No skills added yet.</span>
-                {% endif %}
-            </div>
-        </div>
-        <a href="{{ url_for('main.edit_profile') }}" class="btn-secondary" style="width: 100%; margin-top: 16px; display: block; text-align: center;">Edit Profile</a>
-    </aside>
-    <section class="main-content">
-        <div class="stat-container">
-            <div class="stat-box"><span>Active Prototypes</span> <i class="material-icons-round" style="color: #8b949e;">bolt</i></div>
-            <div class="stat-box"><span>Completed</span> <i class="material-icons-round" style="color: #8b949e;">check_circle</i></div>
-            <div class="stat-box"><span>Avg. Rating</span> <i class="material-icons-round" style="color: #8b949e;">trending_up</i></div>
-        </div>
-        <div class="card">
-            <div style="display: flex; justify-content: space-between;">
-                <h3>About Me</h3>
-                <a href="#" class="edit-link">Edit Markdown</a>
-            </div>
-            <hr style="border: 0; border-top: 1px solid #30363d; margin: 12px 0;">
-            <div class="markdown-body">
-                <p>{{ profile.custom_markdown if profile.custom_markdown else 'I write code. Hello there.' }}</p>
-            </div>
-        </div>
-        <div class="card" style="margin-top: 24px;">
-            <div style="display: flex; justify-content: space-between;">
-                <h3>Pinned Work</h3>
-                <button class="btn-primary">+ Add Project</button>
-            </div>
-            {% for project in profile.pinned_projects %}
-            <div class="project-item" style="border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-top: 12px;">
-                <strong>{{ project.title }}</strong>
-                <p>{{ project.description }}</p>
-                {% if project.link %}
-                <a href="{{ project.link }}" target="_blank">GitHub Repo</a>
-                {% endif %}
-            </div>
-            {% endfor %}
-            {% if not profile.pinned_projects %}
-            <div class="project-item" style="border: 1px solid #30363d; padding: 12px; border-radius: 6px; margin-top: 12px; text-align: center;">
-                <p>Showcase your best work here.</p>
+            <h2 class="font-display text-xl font-bold text-white">{{ current_user.username }}</h2>
+            <p class="text-slate-400 text-sm mt-1">{{ profile.headline if profile.headline else 'Aspiring Developer' }}</p>
+            <span class="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                {% if profile.availability == 'Open to Work' %}bg-mint/15 text-mint border border-mint/30
+                {% elif profile.availability == 'Busy' %}bg-amber-500/15 text-amber-400 border border-amber-500/30
+                {% elif profile.availability == 'Hired' %}bg-purple/15 text-purple border border-purple/30
+                {% else %}bg-sky-500/15 text-sky-400 border border-sky-500/30{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full {% if profile.availability == 'Open to Work' %}bg-mint{% elif profile.availability == 'Busy' %}bg-amber-400{% elif profile.availability == 'Hired' %}bg-purple{% else %}bg-sky-400{% endif %} animate-pulse"></span>
+                {{ profile.availability if profile.availability else 'Open to Work' }}
+            </span>
+
+            {% if profile.location %}
+            <div class="flex items-center justify-center gap-1.5 mt-4 text-slate-500 text-xs">
+                <span class="material-symbols-outlined text-sm">location_on</span>
+                {{ profile.location }}
             </div>
             {% endif %}
+
+            <!-- Social Links -->
+            <div class="flex justify-center gap-3 mt-5">
+                {% if profile.github_link %}
+                <a href="{{ profile.github_link }}" target="_blank" class="social-icon-lift w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-mint hover:border-mint/30 transition-all">
+                    <span class="material-icons-round text-lg">code</span>
+                </a>
+                {% endif %}
+                {% if profile.linkedin_link %}
+                <a href="{{ profile.linkedin_link }}" target="_blank" class="social-icon-lift w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-mint hover:border-mint/30 transition-all">
+                    <span class="material-icons-round text-lg">work</span>
+                </a>
+                {% endif %}
+                {% if profile.portfolio_link %}
+                <a href="{{ profile.portfolio_link }}" target="_blank" class="social-icon-lift w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-mint hover:border-mint/30 transition-all">
+                    <span class="material-icons-round text-lg">link</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tech Stack Card -->
+        <div class="glass-panel rounded-2xl p-6 reveal reveal-delay-1">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-mint text-lg">terminal</span>
+                <h3 class="font-display font-semibold text-white">Tech Stack</h3>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% for tech in stack_list %}
+                <span class="tech-tag px-3 py-1.5 bg-navy-700/50 border border-white/10 rounded-lg text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-mint"></span>{{ tech }}
+                </span>
+                {% endfor %}
+                {% if not stack_list %}
+                <span class="text-slate-500 text-sm">No skills added yet.</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="glass-panel rounded-2xl p-6 reveal reveal-delay-2">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-purple text-lg">analytics</span>
+                <h3 class="font-display font-semibold text-white">Stats</h3>
+            </div>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-sm text-slate-400">
+                        <span class="material-symbols-outlined text-lg text-mint">bolt</span>
+                        Prototypes Attempted
+                    </div>
+                    <span class="text-xl font-display font-bold text-white">{{ profile.contracts_attempted }}</span>
+                </div>
+                <div class="border-t border-white/5"></div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-sm text-slate-400">
+                        <span class="material-symbols-outlined text-lg text-mint">check_circle</span>
+                        Contracts Won
+                    </div>
+                    <span class="text-xl font-display font-bold text-white">{{ profile.contracts_won }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <a href="{{ url_for('main.edit_profile') }}" class="reveal reveal-delay-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl gradient-cta text-navy-900 font-bold text-sm hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all">
+            <span class="material-symbols-outlined text-lg">edit</span>
+            Edit Profile
+        </a>
+    </aside>
+
+    <!-- Main Content -->
+    <section class="lg:col-span-8 space-y-8">
+        <!-- About Me -->
+        <div class="glass-panel rounded-2xl p-8 reveal">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-purple">person</span>
+                    <h3 class="font-display text-xl font-semibold text-white">About Me</h3>
+                </div>
+                <button id="toggle-markdown-edit" type="button" class="text-xs text-mint hover:text-white transition-colors flex items-center gap-1 font-medium">
+                    <span class="material-symbols-outlined text-sm">edit</span> Edit
+                </button>
+            </div>
+
+            <!-- View Mode -->
+            <div id="markdown-view">
+                <div class="markdown-body">
+                    {% if md_html %}
+                        {{ md_html|safe }}
+                    {% else %}
+                        <p class="text-slate-500 italic">Write something about yourself using Markdown...</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Edit Mode (hidden by default) -->
+            <div id="markdown-edit" class="hidden">
+                <form method="POST" action="{{ url_for('main.update_markdown') }}">
+                    <textarea name="content" rows="8"
+                        class="w-full bg-navy-900/60 border border-white/10 rounded-xl p-4 text-slate-200 text-sm font-mono focus:ring-2 focus:ring-mint focus:border-transparent transition-all placeholder:text-slate-600"
+                        placeholder="Write in Markdown...">{{ profile.custom_markdown if profile.custom_markdown else '' }}</textarea>
+                    <div class="flex gap-3 mt-4">
+                        <button type="submit" class="px-5 py-2 rounded-lg gradient-cta text-navy-900 font-bold text-sm hover:shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all">Save</button>
+                        <button id="cancel-markdown-edit" type="button" class="px-5 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Pinned Projects -->
+        <div class="glass-panel rounded-2xl p-8 reveal reveal-delay-1">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-mint">push_pin</span>
+                    <h3 class="font-display text-xl font-semibold text-white">Pinned Projects</h3>
+                </div>
+                <button id="toggle-add-project" type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-lg gradient-cta text-navy-900 font-bold text-xs hover:shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all">
+                    <span class="material-symbols-outlined text-sm">add</span> Add Project
+                </button>
+            </div>
+
+            <!-- Add Project Form (hidden by default) -->
+            <div id="add-project-form" class="hidden mb-6">
+                <form method="POST" action="{{ url_for('main.add_pinned_project') }}" class="glass-card rounded-xl p-6 space-y-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Project Title</label>
+                        <input type="text" name="title" required
+                            class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                            placeholder="My Awesome Project">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Description</label>
+                        <input type="text" name="description" required
+                            class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                            placeholder="A brief description of the project">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Tags</label>
+                            <input type="text" name="tags"
+                                class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                                placeholder="Python, Flask">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Link</label>
+                            <input type="text" name="link"
+                                class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                                placeholder="https://github.com/...">
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-2">
+                        <button type="submit" class="px-5 py-2 rounded-lg gradient-cta text-navy-900 font-bold text-sm hover:shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all">Pin Project</button>
+                        <button id="cancel-add-project" type="button" class="px-5 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Project Cards -->
+            <div class="grid sm:grid-cols-2 gap-4">
+                {% for project in profile.pinned_projects %}
+                <div class="glass-card rounded-xl p-5 group hover:border-mint/20 transition-all">
+                    <div class="flex items-start justify-between mb-3">
+                        <h4 class="font-display font-bold text-white group-hover:text-mint transition-colors">{{ project.title }}</h4>
+                        <a href="{{ url_for('main.delete_pinned', id=project.id) }}" class="text-slate-600 hover:text-red-400 transition-colors" title="Remove">
+                            <span class="material-symbols-outlined text-lg">close</span>
+                        </a>
+                    </div>
+                    <p class="text-slate-400 text-sm mb-3">{{ project.description }}</p>
+                    {% if project.tags %}
+                    <div class="flex flex-wrap gap-1.5 mb-3">
+                        {% for tag in project.tags.split(',') %}
+                        <span class="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-mint/10 text-mint border border-mint/20">{{ tag.strip() }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if project.link %}
+                    <a href="{{ project.link }}" target="_blank" class="inline-flex items-center gap-1 text-xs text-mint hover:text-white transition-colors font-medium">
+                        <span class="material-symbols-outlined text-sm">open_in_new</span> View Project
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% if not profile.pinned_projects %}
+                <div class="sm:col-span-2 glass-card rounded-xl p-8 text-center">
+                    <span class="material-symbols-outlined text-4xl text-slate-600 mb-3">folder_open</span>
+                    <p class="text-slate-500 text-sm">Showcase your best work here. Click "Add Project" to get started.</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </section>
 </div>
-{% endblock content %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/developer_dashboard.js') }}"></script>
+{% endblock %}

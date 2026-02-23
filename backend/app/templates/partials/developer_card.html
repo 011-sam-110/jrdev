@@ -1,0 +1,109 @@
+<div class="liquid-glass-panel rounded-3xl overflow-hidden group hover:border-primary/30 transition-all duration-500 liquid-glass-in">
+    <div class="aspect-video w-full bg-black border-b border-white/10 overflow-hidden">
+        {% if developer.demo_video_embed_url %}
+        <iframe class="w-full h-full min-h-[200px]" src="{{ developer.demo_video_embed_url }}" title="Demo video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        {% else %}
+        <div class="w-full h-full min-h-[200px] flex flex-col items-center justify-center p-6 bg-white/5">
+            <span class="text-slate-500 text-sm font-medium">No content yet</span>
+            {% if sprint_phase == 'after' %}
+            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-medium mt-2">
+                <span class="material-symbols-outlined text-sm">info</span>
+                No update
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="p-8">
+        <div class="flex justify-between items-start gap-4 mb-6">
+            <div class="flex items-center gap-4">
+                <a href="{{ url_for('main.developer_profile_view', user_id=developer.user.id) }}" class="flex-shrink-0 w-14 h-14 rounded-2xl overflow-hidden bg-navy-700 border border-white/10 flex items-center justify-center">
+                    {% if developer.user.image_file and developer.user.image_file != 'default.jpg' %}
+                    <img src="{{ url_for('static', filename='profile_pics/' + developer.user.image_file) }}" alt="" class="w-full h-full object-cover"/>
+                    {% else %}
+                    <span class="material-symbols-outlined text-mint text-2xl">person</span>
+                    {% endif %}
+                </a>
+                <div>
+                    <h3 class="font-display text-xl font-bold text-white">{{ developer.user.username }}</h3>
+                    <p class="text-slate-500 text-sm mt-0.5">
+                        Progress video due: {{ developer.video_due.strftime('%d %b %Y, %H:%M') if developer.video_due else '—' }}
+                    </p>
+                    <p class="text-slate-400 text-sm mt-1">
+                        Rating: {{ developer.rating if developer.rating is not none else '—' }}
+                    </p>
+                    <p class="text-slate-400 text-sm mt-1">
+                        <a href="mailto:{{ developer.user.email }}" class="text-mint hover:underline">{{ developer.user.email }}</a>
+                    </p>
+                    {% if developer.github_submission_url %}
+                    <p class="text-slate-400 text-sm mt-1">
+                        <a href="{{ developer.github_submission_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700/80 border border-white/20 text-mint font-medium text-sm hover:bg-slate-600/80 transition-colors">
+                            <span class="material-symbols-outlined text-lg">code</span>
+                            View source code (GitHub)
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+                        </a>
+                    </p>
+                    {% endif %}
+                    {% if developer.requirements_met %}
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mt-2 mb-1">Requirements met</p>
+                    <p class="text-slate-400 text-sm">{{ developer.requirements_met }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% if developer.prototype_submitted_at and developer.signup %}
+        {% if developer.reviewed_at %}
+        <p class="text-slate-500 text-xs mb-2">Reviewed {{ developer.reviewed_at.strftime('%d %b %Y') }} · You have been charged for this developer.</p>
+        {% elif developer.flagged_for_review %}
+        <div class="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
+            <p class="font-semibold mb-1">Flagged for review – what happens next</p>
+            <p>Our team will contact you and the developer to resolve the issue. No charge will be made until the sprint is marked complete. If the work is adjusted and accepted, you can then mark as reviewed.</p>
+        </div>
+        {% endif %}
+        <div class="flex flex-wrap gap-2 mb-4">
+            {% if not developer.reviewed_at %}
+            <form method="POST" action="{{ url_for('main.signup_mark_reviewed', id=developer.signup.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-mint/40 bg-mint/20 text-mint hover:bg-mint/30 text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    Mark complete (charge)
+                </button>
+            </form>
+            {% endif %}
+            {% if developer.flagged_for_review %}
+            <form method="POST" action="{{ url_for('main.signup_unflag', id=developer.signup.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-500/40 bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined text-sm">flag</span>
+                    Unflag
+                </button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('main.signup_flag_for_review', id=developer.signup.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined text-sm">flag</span>
+                    Flag for review
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% if developer.reviewed_at and developer.business_rating_of_developer is none %}
+        <form method="POST" action="{{ url_for('main.signup_rate_developer', id=developer.signup.id) }}" class="flex flex-wrap items-center gap-1 mb-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+            <span class="text-slate-400 text-sm mr-1">Rate this developer:</span>
+            {% for star in range(1, 6) %}
+            <button type="submit" name="rating" value="{{ star }}" class="p-0.5 rounded hover:bg-white/10 transition-colors" title="{{ star }} star{{ 's' if star != 1 else '' }}">
+                <span class="material-symbols-outlined text-xl text-slate-500 hover:text-amber-400">star</span>
+            </button>
+            {% endfor %}
+        </form>
+        {% elif developer.reviewed_at and developer.business_rating_of_developer is not none %}
+        <p class="text-slate-500 text-xs mb-4">Your rating: {{ developer.business_rating_of_developer }}/5</p>
+        {% endif %}
+        {% endif %}
+        <a href="{{ url_for('main.developer_profile_view', user_id=developer.user.id) }}" class="block w-full py-3 rounded-2xl border border-white/20 text-center text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+            View profile
+        </a>
+    </div>
+</div>

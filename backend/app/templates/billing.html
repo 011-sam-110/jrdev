@@ -1,0 +1,133 @@
+{% extends 'business_layout.html' %}
+
+{% block title %}JrDev | Billing{% endblock %}
+{% block main_class %}pb-20 px-6 lg:px-12 max-w-[900px] mx-auto{% endblock %}
+
+{% block content %}
+<div class="mb-12 liquid-glass-in">
+    <h1 class="font-display text-4xl font-bold mb-3">Billing & payment</h1>
+    <p class="text-slate-400 text-lg">Add a secure card for sprint fees and developer payments. Card details are handled by Stripe and never stored on our servers.</p>
+</div>
+
+<div class="space-y-8">
+    <!-- Current card on file -->
+    {% if card_last4 %}
+    <section class="liquid-glass-panel rounded-2xl p-8">
+        <h2 class="font-display text-xl font-semibold mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">credit_card</span>
+            Card on file
+        </h2>
+        <p class="text-slate-300">
+            <span class="font-medium">{{ card_brand }}</span> ending in <span class="font-mono font-medium">**** {{ card_last4 }}</span>
+        </p>
+        <p class="text-slate-500 text-sm mt-2">Add a new card below to replace this one.</p>
+    </section>
+    {% endif %}
+
+    <!-- Add / update card -->
+    <section class="liquid-glass-panel rounded-2xl p-8">
+        <h2 class="font-display text-xl font-semibold mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-mint">add_card</span>
+            {{ 'Update' if card_last4 else 'Add' }} payment method
+        </h2>
+        {% if stripe_publishable_key %}
+        <form id="payment-form" class="space-y-6">
+            <input type="hidden" id="csrf-token" value="{{ csrf_token }}"/>
+            <div class="liquid-glass-input rounded-xl p-4 min-h-[44px]" id="card-element"></div>
+            <div id="card-errors" class="text-red-400 text-sm hidden" role="alert"></div>
+            <button type="submit" id="submit-btn" class="w-full py-4 rounded-xl liquid-glass-cta text-navy-900 font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined">lock</span>
+                Save card securely
+            </button>
+        </form>
+        <p class="text-slate-500 text-xs mt-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[14px]">verified_user</span>
+            Secured by Stripe. We never see or store your full card number.
+        </p>
+        {% else %}
+        <div class="p-6 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm">
+            <p class="font-medium mb-1">Stripe not configured</p>
+            <p>Set <code class="bg-black/30 px-1 rounded">STRIPE_SECRET_KEY</code> and <code class="bg-black/30 px-1 rounded">STRIPE_PUBLISHABLE_KEY</code> in your environment to enable card payments.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Info -->
+    <section class="liquid-glass-panel rounded-2xl p-8 border border-white/5">
+        <h3 class="font-display text-lg font-semibold mb-4">How billing works</h3>
+        <ul class="space-y-2 text-slate-400 text-sm">
+            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Your card is charged when you launch a sprint (funds held in escrow).</li>
+            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Developers are paid after you approve deliverables at sprint end.</li>
+            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Refunds are available if the prototype doesn’t meet the brief (within 48 hours).</li>
+        </ul>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if stripe_publishable_key %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(function() {
+    var publishableKey = {{ stripe_publishable_key|tojson }};
+    var stripe = Stripe(publishableKey);
+    var elements = stripe.elements();
+    var cardElement = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#e2e8f0',
+                '::placeholder': { color: '#64748b' },
+                iconColor: '#14F195'
+            },
+            invalid: { color: '#f87171' }
+        }
+    });
+    cardElement.mount('#card-element');
+
+    var form = document.getElementById('payment-form');
+    var submitBtn = document.getElementById('submit-btn');
+    var cardErrors = document.getElementById('card-errors');
+
+    form.addEventListener('submit', function(ev) {
+        ev.preventDefault();
+        submitBtn.disabled = true;
+        cardErrors.classList.add('hidden');
+        cardErrors.textContent = '';
+
+        var csrfToken = document.getElementById('csrf-token') && document.getElementById('csrf-token').value;
+        fetch('{{ url_for("main.billing_create_setup_intent") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken || ''
+            },
+            body: JSON.stringify({})
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) throw new Error(data.error);
+            return stripe.confirmCardSetup(data.client_secret, {
+                payment_method: { card: cardElement }
+            });
+        })
+        .then(function(result) {
+            if (result.error) {
+                cardErrors.textContent = result.error.message || 'Something went wrong.';
+                cardErrors.classList.remove('hidden');
+                submitBtn.disabled = false;
+                return;
+            }
+            window.location.reload();
+        })
+        .catch(function(err) {
+            cardErrors.textContent = err.message || 'Failed to save card.';
+            cardErrors.classList.remove('hidden');
+            submitBtn.disabled = false;
+        });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

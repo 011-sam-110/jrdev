@@ -1,0 +1,222 @@
+{% extends "developer_layout.html" %}
+
+{% block title %}JrDev | Joined Listings{% endblock %}
+
+{% block content %}
+<div class="mb-10 liquid-glass-in">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Joined Listings</h1>
+    <p class="text-slate-400">Sprints you have joined. View and sign the contract, then see full deliverables once both parties have signed.</p>
+</div>
+
+{% if not signups %}
+<div class="liquid-glass-panel rounded-2xl p-12 text-center liquid-glass-in liquid-glass-in-delay-1">
+    <span class="material-symbols-outlined text-5xl text-slate-500 mb-4">inbox</span>
+    <p class="text-slate-400 mb-4">You haven't joined any sprints yet.</p>
+    <a href="{{ url_for('main.developer_listings') }}" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+        Browse Listings
+        <span class="material-symbols-outlined">arrow_forward</span>
+    </a>
+</div>
+{% else %}
+<div class="space-y-8">
+    {% for signup in signups %}
+    {% set listing = signup.listing %}
+    <article class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+        <div class="flex flex-col gap-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="font-display text-xl font-bold text-white mb-1">{{ listing.company_name }}</h2>
+                    <p class="text-slate-500 text-sm">Joined {{ signup.joined_at.strftime('%d %b %Y') }} · Sprint {{ listing.sprint_begins_at.strftime('%d %b') }} – {{ listing.sprint_ends_at.strftime('%d %b %Y') }}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    {% if signup.reviewed_at %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Complete and reviewed successfully</span>
+                    {% elif signup.flagged_for_review %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40">Not enough completed – under review</span>
+                    {% elif signup.status == 'pending' %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40">Pending business approval</span>
+                    {% elif signup.status == 'denied' %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/40">Denied</span>
+                    {% elif signup.status == 'cancelled' %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-400 border border-slate-500/40">Cancelled</span>
+                    {% elif signup.is_fully_signed and signup.prototype_submitted_at %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Prototype uploaded · Under review</span>
+                    {% elif signup.is_fully_signed %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Contract signed</span>
+                    {% elif signup.developer_signed_at and not signup.business_signed_at %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/40">Waiting for business to sign</span>
+                    {% elif signup.business_signed_at and not signup.developer_signed_at %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/40">Waiting for you to sign</span>
+                    {% elif signup.status == 'accepted' %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Accepted – sign contract below</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 items-center">
+                <a href="{{ url_for('contract.view_contract_for_signup', signup_id=signup.id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
+                    <span class="material-symbols-outlined text-lg">description</span>
+                    View contract
+                </a>
+                {% if signup.status == 'accepted' and not signup.developer_signed_at %}
+                <form method="POST" action="{{ url_for('main.signup_sign_developer', id=signup.id) }}" class="inline">
+                    {{ form.hidden_tag() }}
+                    <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
+                        <span class="material-symbols-outlined text-lg">edit_document</span>
+                        E-sign contract
+                    </button>
+                </form>
+                {% endif %}
+                {% if signup.status != 'cancelled' and not signup.is_fully_signed %}
+                <form method="POST" action="{{ url_for('main.signup_cancel', id=signup.id) }}" class="inline" onsubmit="return confirm('Withdraw from this listing? This cannot be undone.');">
+                    {{ form.hidden_tag() }}
+                    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium">
+                        <span class="material-symbols-outlined text-lg">cancel</span>
+                        Cancel contract
+                    </button>
+                </form>
+                {% endif %}
+                <button type="button" class="js-contact-toggle inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium" data-signup-id="{{ signup.id }}">
+                    <span class="material-symbols-outlined text-lg">mail</span>
+                    Contact
+                </button>
+            </div>
+            <div id="contact-info-{{ signup.id }}" class="hidden js-contact-info mt-3 p-4 rounded-xl bg-white/5 border border-white/10 text-sm">
+                <p class="font-medium text-white mb-1">Company: {{ listing.company_name }}</p>
+                <p class="text-slate-300">Email: <a href="mailto:{{ listing.business.email }}" class="text-mint hover:underline">{{ listing.business.email }}</a></p>
+            </div>
+
+            {% if signup.reviewed_at %}
+            <div class="mt-4 p-4 rounded-xl bg-mint/10 border border-mint/20">
+                <p class="text-mint font-medium mb-2">Project complete and reviewed successfully</p>
+                <p class="text-slate-400 text-sm mb-3">Your payment of £{{ listing.pay_for_prototype }} will be processed for this sprint.</p>
+                {% if signup.developer_rating_of_business is none %}
+                <form method="POST" action="{{ url_for('main.signup_rate_business', id=signup.id) }}" class="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                    <span class="text-slate-400 text-sm">Rate this business:</span>
+                    {% for star in range(1, 6) %}
+                    <button type="submit" name="rating" value="{{ star }}" class="p-0.5 rounded hover:bg-white/10 transition-colors" title="{{ star }} star{{ 's' if star != 1 else '' }}">
+                        <span class="material-symbols-outlined text-xl text-slate-500 hover:text-amber-400">star</span>
+                    </button>
+                    {% endfor %}
+                </form>
+                {% else %}
+                <p class="text-slate-500 text-sm">Your rating: {{ signup.developer_rating_of_business }}/5</p>
+                {% endif %}
+            </div>
+            {% elif signup.flagged_for_review %}
+            <div class="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                <p class="text-amber-400 font-medium flex items-center gap-2">
+                    <span class="material-symbols-outlined">warning</span>
+                    Not enough completed – flagged for review
+                </p>
+                <p class="text-slate-400 text-sm mt-1">The business flagged this submission. Our team may contact you to resolve. Payment is not guaranteed until the sprint is marked complete.</p>
+            </div>
+            {% endif %}
+
+            {% if signup.is_fully_signed %}
+            <div class="pt-4 border-t border-white/10 space-y-6">
+                <h3 class="font-display text-sm font-bold text-white uppercase tracking-wider mb-3">Full deliverables & requirements (confidentiality agreed)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-mint text-lg">task_alt</span>
+                        <span class="text-slate-400">Minimum requirements for pay:</span>
+                        <span class="text-white font-medium">{{ listing.minimum_requirements_for_pay }} task(s)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-mint text-lg">payments</span>
+                        <span class="text-slate-400">Your payment (per developer):</span>
+                        <span class="text-white font-medium">£{{ listing.pay_for_prototype }}</span>
+                    </div>
+                </div>
+                {% if listing.deliverables_only_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Deliverables (from contract)</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for item in listing.deliverables_only_list %}
+                    <span class="tech-tag px-3 py-1 bg-navy-700/60 border border-white/10 rounded-lg text-xs text-slate-300">{{ item }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if listing.technologies_required %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Technologies required</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for tech in listing.technologies_required.split(',') %}
+                    {% if tech.strip() %}
+                    <span class="tech-tag px-3 py-1 bg-navy-700/60 border border-white/10 rounded-lg text-xs text-slate-300">{{ tech.strip() }}</span>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider mt-6 mb-2">Submit your work</h4>
+                {% if signup.prototype_submitted_at %}
+                <p class="text-slate-400 text-sm mb-3">Your prototype has been uploaded and delivered to the client. It is now under review.</p>
+                {% if signup.requirements_met %}
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Requirements you marked as met</p>
+                <p class="text-slate-400 text-sm mb-3">{{ signup.requirements_met }}</p>
+                {% endif %}
+                {% if signup.github_submission_url or signup.demo_video_url %}
+                <div class="space-y-2 text-sm">
+                    {% if signup.github_submission_url %}
+                    <p class="text-slate-400">Source code (GitHub): <a href="{{ signup.github_submission_url }}" target="_blank" rel="noopener noreferrer" class="text-mint hover:underline">{{ signup.github_submission_url }}</a></p>
+                    {% endif %}
+                    {% if signup.demo_video_url %}
+                    <p class="text-slate-400">Demo video: <a href="{{ signup.demo_video_url }}" target="_blank" rel="noopener noreferrer" class="text-mint hover:underline">Watch</a></p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% else %}
+                <form method="POST" action="{{ url_for('main.signup_submit_deliverables', id=signup.id) }}" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                    {% if listing.deliverables_only_list %}
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-2">Requirements met (tick each deliverable you have completed)</label>
+                        <div class="flex flex-wrap gap-3">
+                            {% set ns = namespace(met=[]) %}
+                            {% for r in (signup.requirements_met or '').split(',') %}
+                            {% if r.strip() %}{% set _ = ns.met.append(r.strip()) %}{% endif %}
+                            {% endfor %}
+                            {% for item in listing.deliverables_only_list %}
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="requirements_met" value="{{ item }}" {% if item in ns.met %}checked{% endif %} class="rounded border-white/30 bg-white/5 text-mint focus:ring-mint"/>
+                                <span class="text-slate-300 text-sm">{{ item }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-slate-500 text-sm">No deliverables were set for this sprint. Submit your prototype links below.</p>
+                    {% endif %}
+                    <div>
+                        <label for="github-{{ signup.id }}" class="block text-xs font-medium text-slate-400 mb-1">GitHub repository link (source code)</label>
+                        <input type="url" id="github-{{ signup.id }}" name="github_submission_url" value="{{ signup.github_submission_url or '' }}" placeholder="https://github.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                    </div>
+                    <div>
+                        <label for="demo-{{ signup.id }}" class="block text-xs font-medium text-slate-400 mb-1">Demonstration video (YouTube link)</label>
+                        <input type="url" id="demo-{{ signup.id }}" name="demo_video_url" value="{{ signup.demo_video_url or '' }}" placeholder="https://www.youtube.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                    </div>
+                    <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
+                        <span class="material-symbols-outlined text-lg">upload</span>
+                        Upload prototype
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% endif %}
+<script>
+(function() {
+    document.querySelectorAll('.js-contact-toggle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.getAttribute('data-signup-id');
+            var el = document.getElementById('contact-info-' + id);
+            if (el) el.classList.toggle('hidden');
+        });
+    });
+})();
+</script>
+{% endblock %}

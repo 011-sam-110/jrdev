@@ -68,10 +68,10 @@
                 </div>
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-8">
-                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#how-it-works">How it works</a>
-                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#students">For Students</a>
-                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#business">For Businesses</a>
-                        <a class="hover:text-primary transition-colors text-sm font-medium" href="#">Pricing</a>
+                        <a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#how-it-works">How it works</a>
+                        <a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#students">For Students</a>
+                        <a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#business">For Businesses</a>
+                        <a class="nav-link-animated hover:text-primary transition-colors text-sm font-medium" href="#">Pricing</a>
                     </div>
                 </div>
                 <div class="hidden md:flex items-center gap-4">
@@ -112,5 +112,15 @@
         </defs>
     </svg>
 
+    <script>
+    (function() {
+        var io = new IntersectionObserver(function(entries) {
+            entries.forEach(function(e) {
+                if (e.isIntersecting) { e.target.classList.add('active'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
+    })();
+    </script>
 </body>
 </html>
