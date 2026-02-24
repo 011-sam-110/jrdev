@@ -95,13 +95,20 @@ def view_contract_for_signup(signup_id):
         if current_user.role == 'DEVELOPER':
             return redirect(url_for('main.developer_joined_listings'))
         return redirect(url_for('main.review_gallery'))
-    # Use deliverables for contract tasks; fall back to technologies if no deliverables stored
+
+    is_developer_viewing = (current_user.id == signup.user_id)
+    developer_has_signed = signup.developer_signed_at is not None
+
     if listing.deliverables:
         tasks = [t.strip() for t in listing.deliverables.split('\n') if t.strip()]
     else:
         tasks = [t.strip() for t in (listing.technologies_required or '').split(',') if t.strip()]
     if not tasks:
         tasks = ['As per listing']
+
+    if is_developer_viewing and not developer_has_signed:
+        tasks = [f'[REDACTED \u2013 sign contract to view deliverable {i+1}]' for i in range(len(tasks))]
+
     data = {
         'company_name': listing.company_name,
         'contractor_name': signup.user.username,

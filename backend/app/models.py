@@ -165,6 +165,7 @@ class ListingSignup(db.Model):
     flagged_for_review = db.Column(db.Boolean, default=False)
     business_rating_of_developer = db.Column(db.Integer, nullable=True)  # 1-5
     developer_rating_of_business = db.Column(db.Integer, nullable=True)  # 1-5
+    developer_withdrew = db.Column(db.Boolean, default=False)
 
     user = db.relationship('User', backref='listing_signups')
 

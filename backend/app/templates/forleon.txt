@@ -10,7 +10,7 @@ you can always make new accounts with ur own credientials, just make sure one is
 
 ------------------------------
 
-shit to do:
+to do:
 - copyright at bottom of page (some are showing 2024, make it 2026)
 - contract generation tidy up (make sure its actually legally standing, and generates properly with the correct values (the deliverables, not the technologies required))
 - when a new account is made and set up with 2fa, it takes them back to the home page, not straight to the dashboard.
@@ -29,3 +29,7 @@ shit to do:
 - fully impliment the rating system (does exist, but not reflected anywhere on profiles)
 - if a business approves of work, the flag for review button does not go. Also, it should display more on this page that the developer has completed their work. Maybe an overlay over the youtube video saying completed?
 - after a sprint, the developers stats do not increase. Their tech stack should also increase, with whatever technologies were involved with that project. if they have entered projects with the same tech stack twice, a counter increases (e.g javascript +2, and then the enxt time "javascript" is on the tech stack, it becomes javascript+3)
+#
+
+
+all account passwords are Test1234!

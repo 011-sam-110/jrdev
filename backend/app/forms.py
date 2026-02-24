@@ -18,6 +18,8 @@ class RegistrationForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password',
                                      validators=[DataRequired(), EqualTo('password')])
     role = SelectField('Register as:', choices=[('DEVELOPER', 'Developer'), ('BUSINESS', 'Business')], validators=[DataRequired()])
+    accept_terms = BooleanField('I agree to the Terms & Conditions and Privacy Policy',
+                                validators=[DataRequired(message='You must agree to the Terms & Conditions to register.')])
     submit = SubmitField('Sign Up')
 
     def validate_username(self, username):

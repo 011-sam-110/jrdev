@@ -89,6 +89,22 @@
                     </div>
                     <span class="text-xl font-display font-bold text-white">{{ profile.contracts_won }}</span>
                 </div>
+                <div class="border-t border-white/5"></div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-sm text-slate-400">
+                        <span class="material-symbols-outlined text-lg text-mint">verified</span>
+                        Prototypes Completed
+                    </div>
+                    <span class="text-xl font-display font-bold text-white">{{ profile.prototypes_completed or 0 }}</span>
+                </div>
+                <div class="border-t border-white/5"></div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-sm text-slate-400">
+                        <span class="material-symbols-outlined text-lg text-amber-400">star</span>
+                        Avg Rating
+                    </div>
+                    <span class="text-xl font-display font-bold text-white">{{ avg_rating if avg_rating is not none else '—' }}</span>
+                </div>
             </div>
         </div>
 

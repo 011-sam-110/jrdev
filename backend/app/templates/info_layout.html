@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html class="scroll-smooth h-full" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}JrDev{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#14F195",
+                        mint: "#14F195",
+                        purple: "#8B5CF6",
+                        secondary: "#8B5CF6",
+                        navy: { 900: "#0F172A", 800: "#1E293B", 700: "#334155" },
+                        "background-dark": "#0F172A",
+                        "surface-dark": "#1E293B",
+                    },
+                    fontFamily: {
+                        display: ["'Space Grotesk'", "sans-serif"],
+                        body: ["'Inter'", "sans-serif"],
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .text-glow { text-shadow: 0 0 20px rgba(20, 241, 149, 0.3); }
+        .btn-gradient {
+            background: linear-gradient(90deg, #14F195, #8B5CF6, #14F195);
+            background-size: 200% 200%;
+            animation: gradientShift 5s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="bg-navy-900 text-slate-100 font-body h-full min-h-screen flex flex-col relative">
+    <div class="liquid-glass-bg" aria-hidden="true"></div>
+
+    <nav class="fixed top-0 w-full z-50 border-b border-white/5 bg-navy-900/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <a href="{{ url_for('main.home') }}" class="flex-shrink-0 flex items-center gap-2">
+                    <span class="material-icons-round text-primary text-3xl">code</span>
+                    <span class="font-display font-bold text-xl tracking-tight text-white">Jr<span class="text-primary text-glow">Dev</span></span>
+                </a>
+                <div class="hidden md:flex items-center gap-4">
+                {% if current_user.is_authenticated %}
+                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.account') }}">My Account</a>
+                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
+                {% else %}
+                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.login') }}">Login</a>
+                    <a class="btn-gradient text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all" href="{{ url_for('main.register') }}">Get Started</a>
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full relative z-10">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="border-t border-white/5 py-10 mt-auto relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-slate-500 text-sm">&copy; 2026 JrDev Platform. All rights reserved.</div>
+            <div class="flex gap-6 text-sm text-slate-400">
+                <a class="hover:text-primary transition-colors" href="{{ url_for('main.privacy') }}">Privacy Policy</a>
+                <a class="hover:text-primary transition-colors" href="{{ url_for('main.terms') }}">Terms &amp; Conditions</a>
+                <a class="hover:text-primary transition-colors" href="{{ url_for('main.support') }}">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="glass-refraction" x="-5%" y="-5%" width="110%" height="110%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.012 0.012" numOctaves="2" seed="2" result="noise"/>
+                <feGaussianBlur in="noise" stdDeviation="1.2" result="blurredNoise"/>
+                <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+            </filter>
+        </defs>
+    </svg>
+</body>
+</html>

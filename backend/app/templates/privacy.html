@@ -1,0 +1,97 @@
+{% extends 'info_layout.html' %}
+
+{% block title %}JrDev | Privacy Policy{% endblock %}
+
+{% block content %}
+<div class="liquid-glass-panel rounded-2xl p-8 sm:p-12 liquid-glass-in">
+    <div class="flex items-center gap-3 mb-2">
+        <span class="material-symbols-outlined text-primary text-3xl">shield</span>
+        <h1 class="font-display text-3xl sm:text-4xl font-bold text-white">Privacy Policy</h1>
+    </div>
+    <p class="text-slate-500 text-sm mb-10">Last updated: 23 February 2026</p>
+
+    <div class="space-y-8 text-slate-300 leading-relaxed">
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">01</span> Information We Collect
+            </h2>
+            <p>When you register an account on JrDev, we collect your username, email address, and an encrypted version of your password. If you are a business user, we may also collect payment information via Stripe (card details are stored by Stripe, not by us).</p>
+            <p class="mt-2">Developer profiles may include optional information such as your location, tech stack, social links, a profile picture, and portfolio content you choose to share.</p>
+        </section>
+
+        <div class="border-t border-white/5"></div>
+
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">02</span> How We Use Your Information
+            </h2>
+            <ul class="space-y-2 ml-1">
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>To provide and maintain the JrDev platform and your account.</li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>To facilitate sprint listings, contract generation, and developer&ndash;business matching.</li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>To process payments securely through Stripe.</li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>To send important notifications about your account, sprints, or contracts.</li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>To improve the platform based on aggregated, anonymised usage data.</li>
+            </ul>
+        </section>
+
+        <div class="border-t border-white/5"></div>
+
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">03</span> Data Sharing
+            </h2>
+            <p>We do not sell your personal data. Information is shared only:</p>
+            <ul class="space-y-2 ml-1 mt-2">
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>With other users as necessary for the platform (e.g. a business sees a developer&rsquo;s profile when they join a sprint).</li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>With Stripe for payment processing.</li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-1">&#8226;</span>If required by law or to protect our legal rights.</li>
+            </ul>
+        </section>
+
+        <div class="border-t border-white/5"></div>
+
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">04</span> Data Security
+            </h2>
+            <p>Passwords are hashed using bcrypt. Sessions are signed with a secure secret key. Payment data is handled entirely by Stripe and never stored on our servers. Two-factor authentication is available for additional account security.</p>
+        </section>
+
+        <div class="border-t border-white/5"></div>
+
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">05</span> Your Rights
+            </h2>
+            <p>You may request access to, correction of, or deletion of your personal data at any time by contacting us. You can delete your account and all associated data by emailing support.</p>
+        </section>
+
+        <div class="border-t border-white/5"></div>
+
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">06</span> Cookies
+            </h2>
+            <p>JrDev uses session cookies to keep you logged in. We do not use third-party tracking or advertising cookies.</p>
+        </section>
+
+        <div class="border-t border-white/5"></div>
+
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">07</span> Changes to This Policy
+            </h2>
+            <p>We may update this policy from time to time. Changes will be posted on this page with an updated date.</p>
+        </section>
+
+        <div class="border-t border-white/5"></div>
+
+        <section>
+            <h2 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <span class="text-primary font-mono text-sm">08</span> Contact
+            </h2>
+            <p>If you have any questions about this privacy policy, please visit our <a href="{{ url_for('main.support') }}" class="text-primary hover:underline font-medium">Support page</a> or email <a href="mailto:support@jrdev.io" class="text-primary hover:underline font-medium">support@jrdev.io</a>.</p>
+        </section>
+    </div>
+</div>
+{% endblock %}

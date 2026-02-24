@@ -4,9 +4,9 @@
 
 {% block content %}
 <div class="mb-8">
-    <a href="{{ url_for('main.business_my_listings') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-base font-medium transition-colors">
+    <a href="{{ url_for('main.review_gallery') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-base font-medium transition-colors">
         <span class="material-symbols-outlined text-xl">arrow_back</span>
-        Back to My Listings
+        Back to Your Listings
     </a>
 </div>
 <div class="liquid-glass-panel rounded-2xl p-10 sm:p-12 max-w-5xl">
@@ -22,8 +22,32 @@
             <h1 class="font-display text-2xl sm:text-3xl font-bold text-white mt-6">{{ dev_user.username }}</h1>
             <p class="text-slate-400 text-lg mt-2">{{ profile.headline or 'Aspiring Developer' }}</p>
             <span class="inline-block mt-4 px-4 py-2 rounded-full text-sm font-semibold bg-mint/20 text-mint border border-mint/40">{{ profile.availability or 'Open to Work' }}</span>
+            {% if avg_rating is not none %}
+            <div class="flex items-center justify-center lg:justify-start gap-1.5 mt-3">
+                {% for i in range(1, 6) %}
+                <span class="material-symbols-outlined text-lg {% if i <= avg_rating|round(0,'floor')|int %}text-amber-400{% else %}text-slate-600{% endif %}">star</span>
+                {% endfor %}
+                <span class="text-slate-400 text-sm ml-1">{{ avg_rating }}/5</span>
+            </div>
+            {% endif %}
         </div>
         <div class="flex-1 space-y-8">
+            {% if profile %}
+            <div class="grid grid-cols-3 gap-4 mb-2">
+                <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p class="text-2xl font-display font-bold text-white">{{ profile.prototypes_completed or 0 }}</p>
+                    <p class="text-slate-500 text-xs mt-1 uppercase tracking-wider font-bold">Completed</p>
+                </div>
+                <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p class="text-2xl font-display font-bold text-white">{{ profile.contracts_won or 0 }}</p>
+                    <p class="text-slate-500 text-xs mt-1 uppercase tracking-wider font-bold">Won</p>
+                </div>
+                <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p class="text-2xl font-display font-bold text-white">{{ avg_rating if avg_rating is not none else '—' }}</p>
+                    <p class="text-slate-500 text-xs mt-1 uppercase tracking-wider font-bold">Rating</p>
+                </div>
+            </div>
+            {% endif %}
             {% if profile.technologies %}
             <div>
                 <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Tech Stack</h2>

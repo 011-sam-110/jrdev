@@ -47,6 +47,8 @@
                     <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/40">Waiting for business to sign</span>
                     {% elif signup.business_signed_at and not signup.developer_signed_at %}
                     <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/40">Waiting for you to sign</span>
+                    {% elif signup.developer_withdrew %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/40">Withdrew – cannot complete</span>
                     {% elif signup.status == 'accepted' %}
                     <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Accepted – sign contract below</span>
                     {% endif %}
@@ -73,6 +75,15 @@
                     <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium">
                         <span class="material-symbols-outlined text-lg">cancel</span>
                         Cancel contract
+                    </button>
+                </form>
+                {% endif %}
+                {% if signup.is_fully_signed and not signup.prototype_submitted_at and not signup.reviewed_at and not signup.developer_withdrew %}
+                <form method="POST" action="{{ url_for('main.signup_cannot_complete', id=signup.id) }}" class="inline" onsubmit="return confirm('Are you sure you cannot complete this project? The business will be notified.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-amber-500/40 text-amber-400 hover:bg-amber-500/20 transition-colors text-sm font-medium">
+                        <span class="material-symbols-outlined text-lg">block</span>
+                        Cannot complete
                     </button>
                 </form>
                 {% endif %}
@@ -112,6 +123,14 @@
                 </p>
                 <p class="text-slate-400 text-sm mt-1">The business flagged this submission. Our team may contact you to resolve. Payment is not guaranteed until the sprint is marked complete.</p>
             </div>
+            {% elif signup.developer_withdrew %}
+            <div class="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+                <p class="text-red-400 font-medium flex items-center gap-2">
+                    <span class="material-symbols-outlined">block</span>
+                    You indicated you cannot complete this project
+                </p>
+                <p class="text-slate-400 text-sm mt-1">The business has been notified. You will not be paid for this sprint. Contact the business if you'd like to discuss further.</p>
+            </div>
             {% endif %}
 
             {% if signup.is_fully_signed %}
@@ -131,11 +150,14 @@
                 </div>
                 {% if listing.deliverables_only_list %}
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Deliverables (from contract)</p>
-                <div class="flex flex-wrap gap-2">
+                <ol class="list-none space-y-1.5 ml-1">
                     {% for item in listing.deliverables_only_list %}
-                    <span class="tech-tag px-3 py-1 bg-navy-700/60 border border-white/10 rounded-lg text-xs text-slate-300">{{ item }}</span>
+                    <li class="flex items-baseline gap-2 text-sm text-slate-300">
+                        <span class="text-mint font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
+                        {{ item }}
+                    </li>
                     {% endfor %}
-                </div>
+                </ol>
                 {% endif %}
                 {% if listing.technologies_required %}
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Technologies required</p>
@@ -171,14 +193,15 @@
                     {% if listing.deliverables_only_list %}
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-2">Requirements met (tick each deliverable you have completed)</label>
-                        <div class="flex flex-wrap gap-3">
+                        <div class="space-y-2">
                             {% set ns = namespace(met=[]) %}
                             {% for r in (signup.requirements_met or '').split(',') %}
                             {% if r.strip() %}{% set _ = ns.met.append(r.strip()) %}{% endif %}
                             {% endfor %}
                             {% for item in listing.deliverables_only_list %}
-                            <label class="inline-flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="requirements_met" value="{{ item }}" {% if item in ns.met %}checked{% endif %} class="rounded border-white/30 bg-white/5 text-mint focus:ring-mint"/>
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                <input type="checkbox" name="requirements_met" value="{{ item }}" {% if item in ns.met %}checked{% endif %} class="rounded border-white/30 bg-white/5 text-mint focus:ring-mint flex-shrink-0"/>
+                                <span class="text-mint font-mono text-xs font-bold flex-shrink-0">{{ loop.index }}.</span>
                                 <span class="text-slate-300 text-sm">{{ item }}</span>
                             </label>
                             {% endfor %}

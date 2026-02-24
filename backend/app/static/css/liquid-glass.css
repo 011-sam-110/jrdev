@@ -340,3 +340,21 @@ select:focus-visible {
 .social-icon-lift:hover {
 	transform: translateY(-2px);
 }
+
+/* ── Text readability on gradient / bright backgrounds ── */
+.liquid-glass-cta,
+.gradient-cta,
+.btn-gradient {
+	color: #0F172A;
+	text-shadow: none;
+}
+
+/* Ensure light text on dark surfaces has enough contrast */
+.liquid-glass-panel p,
+.liquid-glass-panel span,
+.glass-panel p,
+.glass-panel span,
+.glass-card p,
+.glass-card span {
+	text-rendering: optimizeLegibility;
+}

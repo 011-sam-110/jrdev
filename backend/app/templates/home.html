@@ -374,9 +374,10 @@
 <div class="text-slate-500 dark:text-slate-400 text-sm">
                 © 2026 JrDev Platform. All rights reserved.
             </div>
-<div class="flex gap-4">
-<a class="text-slate-400 hover:text-primary transition-colors" href="#"><i class="material-icons-round text-xl">email</i></a>
-<a class="text-slate-400 hover:text-primary transition-colors" href="#"><i class="material-icons-round text-xl">share</i></a>
+<div class="flex gap-6 text-sm text-slate-400">
+<a class="hover:text-primary transition-colors" href="{{ url_for('main.privacy') }}">Privacy</a>
+<a class="hover:text-primary transition-colors" href="{{ url_for('main.terms') }}">Terms</a>
+<a class="hover:text-primary transition-colors" href="{{ url_for('main.support') }}">Support</a>
 </div>
 </div>
 </footer>

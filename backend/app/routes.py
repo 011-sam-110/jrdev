@@ -112,12 +112,20 @@ def dashboard():
         md_html = markdown.markdown(profile.custom_markdown) if profile.custom_markdown else ""
         stack_list = [t.strip() for t in profile.technologies.split(',')] if profile.technologies else []
         form = AddPinnedProjectForm()
+
+        rated = ListingSignup.query.filter(
+            ListingSignup.user_id == current_user.id,
+            ListingSignup.business_rating_of_developer.isnot(None)
+        ).all()
+        avg_rating = round(sum(r.business_rating_of_developer for r in rated) / len(rated), 1) if rated else None
+
         return render_template('developer_dashboard.html', 
                                title='Dashboard', 
                                profile=profile, 
                                md_html=md_html,
                                stack_list=stack_list,
                                form=form,
+                               avg_rating=avg_rating,
                                nav_active='dashboard')
     elif current_user.role == 'BUSINESS':
         my_listings = SprintListing.query.filter_by(business_id=current_user.id).order_by(SprintListing.created_at.desc()).all()
@@ -127,6 +135,18 @@ def dashboard():
 @main.route("/about")
 def about():
     return render_template('about.html', title='About')
+
+@main.route("/privacy")
+def privacy():
+    return render_template('privacy.html', title='Privacy Policy')
+
+@main.route("/terms")
+def terms():
+    return render_template('terms.html', title='Terms & Conditions')
+
+@main.route("/support")
+def support():
+    return render_template('support.html', title='Support')
 
 @main.route("/edit-profile", methods=['GET', 'POST'])
 @login_required
@@ -266,8 +286,8 @@ def setup_2fa():
             user.is_verified = True 
             db.session.commit()
             
-            flash('2FA Setup Complete! (Email verification skipped for demo). Your account is secure.', 'success')
-            return redirect_after_action()
+            flash('2FA Setup Complete! Your account is secure.', 'success')
+            return redirect(url_for('main.dashboard'))
         else:
             flash('Invalid Code. Please try again.', 'danger')
             
@@ -278,6 +298,14 @@ def setup_2fa():
     qr_code = base64.b64encode(buf.getvalue()).decode('utf-8')
     
     return render_template('setup_2fa.html', qr_code=qr_code)
+
+@main.route("/skip-2fa")
+@login_required
+def skip_2fa():
+    current_user.is_verified = True
+    db.session.commit()
+    flash('2FA skipped. You can set it up later from account settings.', 'info')
+    return redirect(url_for('main.dashboard'))
 
 @main.route("/verify-2fa", methods=['GET', 'POST'])
 def verify_2fa():
@@ -446,6 +474,13 @@ def launch_sprint():
         sprint_ends = sprint_begins + timedelta(days=7)
         signup_ends = sprint_begins
 
+    if sprint_ends <= sprint_begins:
+        flash('Sprint end date must be after the start date.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    if sprint_begins.date() < datetime.utcnow().date():
+        flash('Sprint start date cannot be in the past.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
     listing = SprintListing(
         business_id=current_user.id,
         company_name=company_name,
@@ -589,6 +624,33 @@ def signup_mark_reviewed(id):
     profile = signup.user.developer_profile
     if profile:
         profile.prototypes_completed = (profile.prototypes_completed or 0) + 1
+        profile.contracts_won = (profile.contracts_won or 0) + 1
+
+        sprint_techs = [t.strip() for t in (signup.listing.technologies_required or '').split(',') if t.strip()]
+        if sprint_techs:
+            existing = {}
+            for entry in (profile.technologies or '').split(','):
+                entry = entry.strip()
+                if not entry:
+                    continue
+                if '+' in entry:
+                    parts = entry.rsplit('+', 1)
+                    existing[parts[0].strip().lower()] = {'name': parts[0].strip(), 'count': int(parts[1])}
+                else:
+                    existing[entry.lower()] = {'name': entry, 'count': 1}
+            for tech in sprint_techs:
+                key = tech.lower()
+                if key in existing:
+                    existing[key]['count'] += 1
+                else:
+                    existing[key] = {'name': tech, 'count': 1}
+            updated = []
+            for info in existing.values():
+                if info['count'] > 1:
+                    updated.append(f"{info['name']}+{info['count']}")
+                else:
+                    updated.append(info['name'])
+            profile.technologies = ','.join(updated)
     db.session.commit()
     flash(f'Marked as reviewed. You have been charged £{signup.listing.pay_for_prototype:.0f} for this developer.', 'success')
     return redirect(url_for('main.review_gallery'))
@@ -659,6 +721,19 @@ def signup_rate_business(id):
         flash('Invalid rating.', 'warning')
     return redirect(url_for('main.developer_joined_listings'))
 
+@main.route("/signup/<int:id>/cannot-complete", methods=['POST'])
+@login_required
+@require_role('DEVELOPER')
+def signup_cannot_complete(id):
+    signup = ListingSignup.query.get_or_404(id)
+    if signup.user_id != current_user.id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('main.developer_joined_listings'))
+    signup.developer_withdrew = True
+    db.session.commit()
+    flash('You have indicated you cannot complete this project. The business has been notified.', 'info')
+    return redirect(url_for('main.developer_joined_listings'))
+
 # ── Developer public profile view (for businesses) ──
 
 @main.route("/developer/<int:user_id>")
@@ -673,6 +748,13 @@ def developer_profile_view(user_id):
     md_html = markdown.markdown(profile.custom_markdown) if profile and profile.custom_markdown else ""
     stack_list = [t.strip() for t in profile.technologies.split(',')] if profile and profile.technologies else []
     pinned_projects = profile.pinned_projects if profile else []
+
+    rated = ListingSignup.query.filter(
+        ListingSignup.user_id == dev_user.id,
+        ListingSignup.business_rating_of_developer.isnot(None)
+    ).all()
+    avg_rating = round(sum(r.business_rating_of_developer for r in rated) / len(rated), 1) if rated else None
+
     return render_template('developer_profile_view.html',
                            title=f'{dev_user.username} - Profile',
                            dev_user=dev_user,
@@ -680,4 +762,5 @@ def developer_profile_view(user_id):
                            md_html=md_html,
                            stack_list=stack_list,
                            pinned_projects=pinned_projects,
+                           avg_rating=avg_rating,
                            nav_active='listings')

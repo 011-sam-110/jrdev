@@ -29,6 +29,18 @@
             {{ render_field(form.password) }}
             {{ render_field(form.confirm_password) }}
 
+            <div class="mt-4">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    {{ form.accept_terms(class="rounded border-slate-600 bg-black/20 text-primary focus:ring-primary mt-0.5 flex-shrink-0") }}
+                    <span class="text-sm text-slate-400 leading-snug">
+                        I agree to the <a href="{{ url_for('main.terms') }}" target="_blank" class="text-primary hover:underline">Terms &amp; Conditions</a> and <a href="{{ url_for('main.privacy') }}" target="_blank" class="text-primary hover:underline">Privacy Policy</a>
+                    </span>
+                </label>
+                {% if form.accept_terms.errors %}
+                <p class="text-red-400 text-xs mt-1">{{ form.accept_terms.errors[0] }}</p>
+                {% endif %}
+            </div>
+
             {{ form.submit(class="w-full mt-8 btn-gradient py-4 rounded-xl text-slate-900 font-bold text-lg cursor-pointer hover:scale-[1.02] transform transition-all shadow-lg hover:shadow-primary/25") }}
         </div>
     </form>
@@ -42,7 +54,12 @@
     <footer class="border-t border-white/5 py-8 bg-background-dark mt-auto relative z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="text-slate-500 text-sm">
-                © 2024 JrDev Platform. All rights reserved.
+                &copy; 2026 JrDev Platform. All rights reserved.
+            </div>
+            <div class="flex gap-6 text-sm text-slate-500">
+                <a class="hover:text-primary transition-colors" href="{{ url_for('main.privacy') }}">Privacy</a>
+                <a class="hover:text-primary transition-colors" href="{{ url_for('main.terms') }}">Terms</a>
+                <a class="hover:text-primary transition-colors" href="{{ url_for('main.support') }}">Support</a>
             </div>
         </div>
     </footer>

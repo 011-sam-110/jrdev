@@ -1,5 +1,5 @@
 <div class="liquid-glass-panel rounded-3xl overflow-hidden group hover:border-primary/30 transition-all duration-500 liquid-glass-in">
-    <div class="aspect-video w-full bg-black border-b border-white/10 overflow-hidden">
+    <div class="aspect-video w-full bg-black border-b border-white/10 overflow-hidden relative">
         {% if developer.demo_video_embed_url %}
         <iframe class="w-full h-full min-h-[200px]" src="{{ developer.demo_video_embed_url }}" title="Demo video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         {% else %}
@@ -11,6 +11,19 @@
                 No update
             </span>
             {% endif %}
+        </div>
+        {% endif %}
+        {% if developer.reviewed_at %}
+        <div class="absolute inset-0 bg-navy-900/70 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+            <span class="material-symbols-outlined text-5xl text-mint mb-2">verified</span>
+            <span class="text-mint font-display font-bold text-lg">Completed</span>
+            <span class="text-slate-400 text-xs mt-1">Reviewed {{ developer.reviewed_at.strftime('%d %b %Y') }}</span>
+        </div>
+        {% elif developer.signup and developer.signup.developer_withdrew %}
+        <div class="absolute inset-0 bg-navy-900/70 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+            <span class="material-symbols-outlined text-5xl text-red-400 mb-2">block</span>
+            <span class="text-red-400 font-display font-bold text-lg">Withdrew</span>
+            <span class="text-slate-400 text-xs mt-1">Developer cannot complete</span>
         </div>
         {% endif %}
     </div>
@@ -60,8 +73,8 @@
             <p>Our team will contact you and the developer to resolve the issue. No charge will be made until the sprint is marked complete. If the work is adjusted and accepted, you can then mark as reviewed.</p>
         </div>
         {% endif %}
+        {% if not developer.reviewed_at %}
         <div class="flex flex-wrap gap-2 mb-4">
-            {% if not developer.reviewed_at %}
             <form method="POST" action="{{ url_for('main.signup_mark_reviewed', id=developer.signup.id) }}" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-mint/40 bg-mint/20 text-mint hover:bg-mint/30 text-sm font-medium transition-colors">
@@ -69,7 +82,6 @@
                     Mark complete (charge)
                 </button>
             </form>
-            {% endif %}
             {% if developer.flagged_for_review %}
             <form method="POST" action="{{ url_for('main.signup_unflag', id=developer.signup.id) }}" class="inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
@@ -88,6 +100,7 @@
             </form>
             {% endif %}
         </div>
+        {% endif %}
         {% if developer.reviewed_at and developer.business_rating_of_developer is none %}
         <form method="POST" action="{{ url_for('main.signup_rate_developer', id=developer.signup.id) }}" class="flex flex-wrap items-center gap-1 mb-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>

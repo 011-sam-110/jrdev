@@ -36,7 +36,7 @@
                     {% elif sprint_phase == 'during' %}
                     <div class="mb-6 p-4 rounded-xl bg-mint/10 border border-mint/20">
                         <h3 class="font-display text-lg font-semibold text-mint mb-1">Development ongoing</h3>
-                        <p class="text-slate-400 text-sm">The sprint is in progress. Your developers are building. Progress videos will be available here once the developer has submitted their work.
+                        <p class="text-slate-400 text-sm">The sprint is in progress. Your developers are building. Progress videos will be available here once the developer has submitted their work.</p>
                     </div>
                     {% else %}
                     <div class="mb-6 p-4 rounded-xl bg-purple/10 border border-purple/20">
@@ -62,6 +62,9 @@
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">Denied</span>
                                     {% elif signup.status == 'cancelled' %}
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-400">Cancelled</span>
+                                    {% endif %}
+                                    {% if signup.developer_withdrew %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">Developer withdrew</span>
                                     {% endif %}
                                     {% if signup.is_fully_signed %}
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400">Contract signed</span>
@@ -181,7 +184,7 @@
         </div>
         <div class="flex gap-6">
             <a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-            <a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Support</a>
+            <a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.support') }}">Support</a>
             <a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.logout') }}">Log Out</a>
         </div>
     </div>
