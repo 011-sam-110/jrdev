@@ -1,27 +1,32 @@
 {% extends 'business_layout.html' %}
+{% set profile_theme = profile_theme|default('mint') %}
+{% set profile_animation = profile_animation|default('glow') %}
+{% set profile_panel_style = profile_panel_style|default('solid') %}
+{% set profile_background = profile_background|default('default') %}
 
 {% block title %}JrDev | Developer Profile{% endblock %}
-
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/developer_themes.css') }}"/>
 <div class="mb-8">
     <a href="{{ url_for('main.review_gallery') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-base font-medium transition-colors">
         <span class="material-symbols-outlined text-xl">arrow_back</span>
         Back to Your Listings
     </a>
 </div>
-<div class="liquid-glass-panel rounded-2xl p-10 sm:p-12 max-w-5xl">
+<div class="dev-profile-wrap" data-theme="{{ profile_theme }}" data-animation="{{ profile_animation }}" data-panel-style="{{ profile_panel_style }}" data-background="{{ profile_background }}">
+<div class="liquid-glass-panel rounded-2xl p-10 sm:p-12 max-w-5xl border-0 dev-panel">
     <div class="flex flex-col lg:flex-row gap-10 lg:gap-12">
         <div class="flex-shrink-0 text-center lg:text-left">
-            <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden mx-auto lg:mx-0 bg-navy-700 border-2 border-white/10">
+            <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden mx-auto lg:mx-0 bg-navy-700 border-2 dev-avatar-ring">
                 {% if dev_user.image_file and dev_user.image_file != 'default.jpg' %}
                 <img src="{{ url_for('static', filename='profile_pics/' + dev_user.image_file) }}" alt="Profile" class="w-full h-full object-cover"/>
                 {% else %}
-                <div class="w-full h-full flex items-center justify-center text-mint"><span class="material-symbols-outlined text-5xl sm:text-6xl">person</span></div>
+                <div class="w-full h-full flex items-center justify-center dev-accent-text"><span class="material-symbols-outlined text-5xl sm:text-6xl">person</span></div>
                 {% endif %}
             </div>
             <h1 class="font-display text-2xl sm:text-3xl font-bold text-white mt-6">{{ dev_user.username }}</h1>
             <p class="text-slate-400 text-lg mt-2">{{ profile.headline or 'Aspiring Developer' }}</p>
-            <span class="inline-block mt-4 px-4 py-2 rounded-full text-sm font-semibold bg-mint/20 text-mint border border-mint/40">{{ profile.availability or 'Open to Work' }}</span>
+            <span class="inline-block mt-4 px-4 py-2 rounded-full text-sm font-semibold dev-accent-bg-subtle dev-accent-text border dev-accent-border">{{ profile.availability or 'Open to Work' }}</span>
             {% if avg_rating is not none %}
             <div class="flex items-center justify-center lg:justify-start gap-1.5 mt-3">
                 {% for i in range(1, 6) %}
@@ -34,11 +39,11 @@
         <div class="flex-1 space-y-8">
             {% if profile %}
             <div class="grid grid-cols-2 gap-4 mb-2">
-                <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
+                <div class="dev-card text-center p-4 rounded-xl transition-all">
                     <p class="text-2xl font-display font-bold text-white">{{ profile.prototypes_completed or 0 }}</p>
                     <p class="text-slate-500 text-xs mt-1 uppercase tracking-wider font-bold">Completed</p>
                 </div>
-                <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
+                <div class="dev-card text-center p-4 rounded-xl transition-all">
                     <p class="text-2xl font-display font-bold text-white">{{ avg_rating if avg_rating is not none else '—' }}</p>
                     <p class="text-slate-500 text-xs mt-1 uppercase tracking-wider font-bold">Rating</p>
                 </div>
@@ -49,7 +54,7 @@
                 <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Tech Stack</h2>
                 <div class="flex flex-wrap gap-3">
                     {% for tech in stack_list %}
-                    <span class="tech-tag px-4 py-2 bg-navy-700/60 border border-white/10 rounded-lg text-sm text-slate-300">{{ tech }}</span>
+                    <span class="tech-tag px-4 py-2 bg-navy-700/60 border dev-accent-border rounded-lg text-sm text-slate-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full dev-tag-dot"></span>{{ tech }}</span>
                     {% endfor %}
                 </div>
             </div>
@@ -75,11 +80,11 @@
                 {% if pinned_projects %}
                 <ul class="space-y-4">
                     {% for proj in pinned_projects %}
-                    <li class="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <li class="dev-card p-4 rounded-xl transition-all">
                         <h4 class="font-semibold text-white">{{ proj.title }}</h4>
                         <p class="text-slate-400 text-sm mt-1">{{ proj.description }}</p>
                         {% if proj.link %}
-                        <a href="{{ proj.link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-mint text-sm font-medium mt-2 hover:underline">View project <span class="material-symbols-outlined text-sm">open_in_new</span></a>
+                        <a href="{{ proj.link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 dev-accent-text text-sm font-medium mt-2 hover:underline">View project <span class="material-symbols-outlined text-sm">open_in_new</span></a>
                         {% endif %}
                         {% if proj.tags %}
                         <p class="text-slate-500 text-xs mt-2">{{ proj.tags }}</p>
@@ -95,19 +100,19 @@
                 <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Linked work & socials</h2>
                 <div class="flex flex-wrap gap-4">
                     {% if profile.github_link %}
-                    <a href="{{ profile.github_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-base font-medium">
+                    <a href="{{ profile.github_link }}" target="_blank" rel="noopener noreferrer" class="dev-link-hover inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 transition-colors text-base font-medium">
                         <span class="material-symbols-outlined text-xl">code</span>
                         GitHub
                     </a>
                     {% endif %}
                     {% if profile.linkedin_link %}
-                    <a href="{{ profile.linkedin_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-base font-medium">
+                    <a href="{{ profile.linkedin_link }}" target="_blank" rel="noopener noreferrer" class="dev-link-hover inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 transition-colors text-base font-medium">
                         <span class="material-symbols-outlined text-xl">work</span>
                         LinkedIn
                     </a>
                     {% endif %}
                     {% if profile.portfolio_link %}
-                    <a href="{{ profile.portfolio_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-base font-medium">
+                    <a href="{{ profile.portfolio_link }}" target="_blank" rel="noopener noreferrer" class="dev-link-hover inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 transition-colors text-base font-medium">
                         <span class="material-symbols-outlined text-xl">public</span>
                         Portfolio
                     </a>
@@ -119,5 +124,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}

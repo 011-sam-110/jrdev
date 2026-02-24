@@ -72,6 +72,12 @@ class DeveloperProfile(db.Model):
     # Custom Content
     custom_markdown = db.Column(db.Text, default='# About Me\nI write code.')
     
+    # Appearance (dashboard & public profile)
+    profile_theme = db.Column(db.String(30), default='mint')   # mint, ocean, sunset, neon, rose, amber
+    profile_animation = db.Column(db.String(30), default='glow')  # none, glow, shimmer, float
+    profile_panel_style = db.Column(db.String(30), default='solid')  # solid, translucent (liquid glass)
+    profile_background = db.Column(db.String(30), default='default')  # default, gradient, mesh, dots, glow
+    
     # Stats
     contracts_attempted = db.Column(db.Integer, default=0)
     contracts_won = db.Column(db.Integer, default=0)

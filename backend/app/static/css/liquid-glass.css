@@ -358,3 +358,74 @@ select:focus-visible {
 .glass-card span {
 	text-rendering: optimizeLegibility;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Global UX – high-end, smooth app experience (dashboards, forms, listings)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+	--ux-ease: cubic-bezier(0.16, 1, 0.3, 1);
+	--ux-duration: 0.25s;
+	--ux-duration-slow: 0.4s;
+}
+
+/* ── App shell: gentle page-in for main content ── */
+.app-main-in {
+	animation: appMainIn 0.5s var(--ux-ease) forwards;
+}
+
+@keyframes appMainIn {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ── Interactive elements: consistent hover/active ── */
+.glass-card a:not(.btn):not([class*="rounded-full"]),
+.glass-panel a:not(.btn):not([class*="rounded-full"]) {
+	transition: color var(--ux-duration) ease, opacity var(--ux-duration) ease;
+}
+.glass-card a:hover:not(.btn),
+.glass-panel a:hover:not(.btn) {
+	opacity: 0.9;
+}
+
+/* ── Inputs and selects: smooth focus transition ── */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+	transition:
+		border-color var(--ux-duration) ease,
+		box-shadow var(--ux-duration) ease,
+		background-color var(--ux-duration) ease;
+}
+
+/* ── Tables and lists: row hover (for listing tables) ── */
+.app-table tbody tr,
+.app-list-item {
+	transition: background-color var(--ux-duration) ease;
+}
+
+/* ── Nav bar: subtle shadow when scrolled ── */
+.nav-bar-scrolled {
+	box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Reduced motion preference ── */
+@media (prefers-reduced-motion: reduce) {
+	.reveal,
+	.reveal.active,
+	.liquid-glass-panel.liquid-glass-in,
+	.glass-card,
+	.glass-panel,
+	.home-reveal,
+	.home-glass-card {
+		animation: none !important;
+		transition-duration: 0.01ms !important;
+	}
+}

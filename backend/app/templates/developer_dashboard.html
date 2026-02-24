@@ -1,24 +1,28 @@
 {% extends "developer_layout.html" %}
+{% set profile_theme = profile.profile_theme if profile and profile.profile_theme else 'mint' %}
+{% set profile_animation = profile.profile_animation if profile and profile.profile_animation else 'glow' %}
+{% set profile_panel_style = profile.profile_panel_style if profile and profile.profile_panel_style else 'solid' %}
+{% set profile_background = profile.profile_background if profile and profile.profile_background else 'default' %}
 
 {% block title %}JrDev | Developer Dashboard{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/developer_themes.css') }}"/>
+{% endblock %}
 
 {% block content %}
+<div class="dev-profile-wrap min-h-[60vh]" data-theme="{{ profile_theme }}" data-animation="{{ profile_animation }}" data-panel-style="{{ profile_panel_style }}" data-background="{{ profile_background }}">
 <div class="grid lg:grid-cols-12 gap-8">
     <!-- Sidebar -->
     <aside class="lg:col-span-4 space-y-6">
         <!-- Profile Card -->
-        <div class="glass-panel rounded-2xl p-8 text-center reveal">
-            <div class="w-24 h-24 mx-auto rounded-full border-2 border-mint/30 overflow-hidden mb-4 shadow-lg shadow-mint/10">
+        <div class="dev-panel rounded-2xl p-8 text-center reveal">
+            <div class="w-24 h-24 mx-auto rounded-full border-2 dev-avatar-ring overflow-hidden mb-4">
                 <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="Profile" class="w-full h-full object-cover">
             </div>
             <h2 class="font-display text-xl font-bold text-white">{{ current_user.username }}</h2>
             <p class="text-slate-400 text-sm mt-1">{{ profile.headline if profile.headline else 'Aspiring Developer' }}</p>
-            <span class="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                {% if profile.availability == 'Open to Work' %}bg-mint/15 text-mint border border-mint/30
-                {% elif profile.availability == 'Busy' %}bg-amber-500/15 text-amber-400 border border-amber-500/30
-                {% elif profile.availability == 'Hired' %}bg-purple/15 text-purple border border-purple/30
-                {% else %}bg-sky-500/15 text-sky-400 border border-sky-500/30{% endif %}">
-                <span class="w-1.5 h-1.5 rounded-full {% if profile.availability == 'Open to Work' %}bg-mint{% elif profile.availability == 'Busy' %}bg-amber-400{% elif profile.availability == 'Hired' %}bg-purple{% else %}bg-sky-400{% endif %} animate-pulse"></span>
+            <span class="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider dev-accent-bg-subtle dev-accent-text border dev-accent-border">
+                <span class="w-1.5 h-1.5 rounded-full dev-tag-dot animate-pulse"></span>
                 {{ profile.availability if profile.availability else 'Open to Work' }}
             </span>
 
@@ -29,36 +33,51 @@
             </div>
             {% endif %}
 
-            <!-- Social Links -->
-            <div class="flex justify-center gap-3 mt-5">
-                {% if profile.github_link %}
-                <a href="{{ profile.github_link }}" target="_blank" class="social-icon-lift w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-mint hover:border-mint/30 transition-all">
-                    <span class="material-icons-round text-lg">code</span>
-                </a>
-                {% endif %}
-                {% if profile.linkedin_link %}
-                <a href="{{ profile.linkedin_link }}" target="_blank" class="social-icon-lift w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-mint hover:border-mint/30 transition-all">
-                    <span class="material-icons-round text-lg">work</span>
-                </a>
-                {% endif %}
-                {% if profile.portfolio_link %}
-                <a href="{{ profile.portfolio_link }}" target="_blank" class="social-icon-lift w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-mint hover:border-mint/30 transition-all">
-                    <span class="material-icons-round text-lg">link</span>
-                </a>
-                {% endif %}
+            <!-- Social Links (always visible so users see where links appear) -->
+            <div class="mt-5 pt-4 border-t border-white/5">
+                <p class="text-slate-500 text-xs uppercase tracking-wider font-bold mb-3">Social links</p>
+                <div class="flex justify-center gap-3 flex-wrap">
+                    {% if profile.github_link %}
+                    <a href="{{ profile.github_link }}" target="_blank" rel="noopener noreferrer" class="social-icon-lift w-10 h-10 rounded-xl dev-card flex items-center justify-center text-slate-300 dev-link-hover border transition-all" title="GitHub">
+                        <span class="material-icons-round text-xl">code</span>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('main.edit_profile') }}#social-links" class="w-10 h-10 rounded-xl border border-dashed border-white/20 flex items-center justify-center text-slate-600 hover:text-slate-400 hover:border-white/30 transition-all" title="Add GitHub">
+                        <span class="material-icons-round text-xl">code</span>
+                    </a>
+                    {% endif %}
+                    {% if profile.linkedin_link %}
+                    <a href="{{ profile.linkedin_link }}" target="_blank" rel="noopener noreferrer" class="social-icon-lift w-10 h-10 rounded-xl dev-card flex items-center justify-center text-slate-300 dev-link-hover border transition-all" title="LinkedIn">
+                        <span class="material-icons-round text-xl">work</span>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('main.edit_profile') }}#social-links" class="w-10 h-10 rounded-xl border border-dashed border-white/20 flex items-center justify-center text-slate-600 hover:text-slate-400 hover:border-white/30 transition-all" title="Add LinkedIn">
+                        <span class="material-icons-round text-xl">work</span>
+                    </a>
+                    {% endif %}
+                    {% if profile.portfolio_link %}
+                    <a href="{{ profile.portfolio_link }}" target="_blank" rel="noopener noreferrer" class="social-icon-lift w-10 h-10 rounded-xl dev-card flex items-center justify-center text-slate-300 dev-link-hover border transition-all" title="Portfolio">
+                        <span class="material-icons-round text-xl">link</span>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('main.edit_profile') }}#social-links" class="w-10 h-10 rounded-xl border border-dashed border-white/20 flex items-center justify-center text-slate-600 hover:text-slate-400 hover:border-white/30 transition-all" title="Add Portfolio">
+                        <span class="material-icons-round text-xl">link</span>
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
         <!-- Tech Stack Card -->
-        <div class="glass-panel rounded-2xl p-6 reveal reveal-delay-1">
+        <div class="dev-panel rounded-2xl p-6 reveal reveal-delay-1 dev-stagger-1">
             <div class="flex items-center gap-2 mb-4">
-                <span class="material-symbols-outlined text-mint text-lg">terminal</span>
+                <span class="material-symbols-outlined dev-accent-text text-lg">terminal</span>
                 <h3 class="font-display font-semibold text-white">Tech Stack</h3>
             </div>
             <div class="flex flex-wrap gap-2">
                 {% for tech in stack_list %}
-                <span class="tech-tag px-3 py-1.5 bg-navy-700/50 border border-white/10 rounded-lg text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-mint"></span>{{ tech }}
+                <span class="tech-tag px-3 py-1.5 bg-navy-700/50 border dev-accent-border rounded-lg text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full dev-tag-dot"></span>{{ tech }}
                 </span>
                 {% endfor %}
                 {% if not stack_list %}
@@ -68,15 +87,15 @@
         </div>
 
         <!-- Stats Card -->
-        <div class="glass-panel rounded-2xl p-6 reveal reveal-delay-2">
+        <div class="dev-panel rounded-2xl p-6 reveal reveal-delay-2 dev-stagger-2">
             <div class="flex items-center gap-2 mb-4">
-                <span class="material-symbols-outlined text-purple text-lg">analytics</span>
+                <span class="material-symbols-outlined dev-accent-text text-lg">analytics</span>
                 <h3 class="font-display font-semibold text-white">Stats</h3>
             </div>
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2 text-sm text-slate-400">
-                        <span class="material-symbols-outlined text-lg text-mint">bolt</span>
+                        <span class="material-symbols-outlined dev-accent-text text-lg">bolt</span>
                         Prototypes Attempted
                     </div>
                     <span class="text-xl font-display font-bold text-white">{{ profile.contracts_attempted or 0 }}</span>
@@ -84,7 +103,7 @@
                 <div class="border-t border-white/5"></div>
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2 text-sm text-slate-400">
-                        <span class="material-symbols-outlined text-lg text-mint">verified</span>
+                        <span class="material-symbols-outlined dev-accent-text text-lg">verified</span>
                         Prototypes Completed
                     </div>
                     <span class="text-xl font-display font-bold text-white">{{ profile.prototypes_completed or 0 }}</span>
@@ -92,7 +111,7 @@
                 <div class="border-t border-white/5"></div>
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2 text-sm text-slate-400">
-                        <span class="material-symbols-outlined text-lg text-amber-400">star</span>
+                        <span class="material-symbols-outlined text-amber-400 text-lg">star</span>
                         Avg Rating
                     </div>
                     <span class="text-xl font-display font-bold text-white">{{ avg_rating if avg_rating is not none else '—' }}</span>
@@ -101,22 +120,22 @@
         </div>
 
         <!-- Quick Actions -->
-        <a href="{{ url_for('main.edit_profile') }}" class="reveal reveal-delay-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl gradient-cta text-navy-900 font-bold text-sm hover:shadow-[0_0_20px_rgba(20,241,149,0.3)] transition-all">
-            <span class="material-symbols-outlined text-lg">edit</span>
-            Edit Profile
+        <a href="{{ url_for('main.edit_profile') }}#appearance" class="reveal reveal-delay-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl dev-cta font-bold text-sm transition-all">
+            <span class="material-symbols-outlined text-lg">palette</span>
+            Customize profile
         </a>
     </aside>
 
     <!-- Main Content -->
     <section class="lg:col-span-8 space-y-8">
         <!-- About Me -->
-        <div class="glass-panel rounded-2xl p-8 reveal">
+        <div class="dev-panel rounded-2xl p-8 reveal dev-stagger-3">
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-purple">person</span>
+                    <span class="material-symbols-outlined dev-accent-text">person</span>
                     <h3 class="font-display text-xl font-semibold text-white">About Me</h3>
                 </div>
-                <button id="toggle-markdown-edit" type="button" class="text-xs text-mint hover:text-white transition-colors flex items-center gap-1 font-medium">
+                <button id="toggle-markdown-edit" type="button" class="text-xs dev-accent-text hover:text-white transition-colors flex items-center gap-1 font-medium">
                     <span class="material-symbols-outlined text-sm">edit</span> Edit
                 </button>
             </div>
@@ -136,10 +155,10 @@
             <div id="markdown-edit" class="hidden">
                 <form method="POST" action="{{ url_for('main.update_markdown') }}">
                     <textarea name="content" rows="8"
-                        class="w-full bg-navy-900/60 border border-white/10 rounded-xl p-4 text-slate-200 text-sm font-mono focus:ring-2 focus:ring-mint focus:border-transparent transition-all placeholder:text-slate-600"
+                        class="w-full bg-navy-900/60 border border-white/10 rounded-xl p-4 text-slate-200 text-sm font-mono dev-input-focus focus:ring-2 focus:border-transparent transition-all placeholder:text-slate-600"
                         placeholder="Write in Markdown...">{{ profile.custom_markdown if profile.custom_markdown else '' }}</textarea>
                     <div class="flex gap-3 mt-4">
-                        <button type="submit" class="px-5 py-2 rounded-lg gradient-cta text-navy-900 font-bold text-sm hover:shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all">Save</button>
+                        <button type="submit" class="px-5 py-2 rounded-lg dev-cta font-bold text-sm transition-all">Save</button>
                         <button id="cancel-markdown-edit" type="button" class="px-5 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
                     </div>
                 </form>
@@ -147,20 +166,20 @@
         </div>
 
         <!-- Pinned Projects -->
-        <div class="glass-panel rounded-2xl p-8 reveal reveal-delay-1">
+        <div class="dev-panel rounded-2xl p-8 reveal reveal-delay-1 dev-stagger-4">
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-mint">push_pin</span>
+                    <span class="material-symbols-outlined dev-accent-text">push_pin</span>
                     <h3 class="font-display text-xl font-semibold text-white">Pinned Projects</h3>
                 </div>
-                <button id="toggle-add-project" type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-lg gradient-cta text-navy-900 font-bold text-xs hover:shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all">
+                <button id="toggle-add-project" type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-lg dev-cta font-bold text-xs transition-all">
                     <span class="material-symbols-outlined text-sm">add</span> Add Project
                 </button>
             </div>
 
             <!-- Add Project Form (hidden by default) -->
             <div id="add-project-form" class="hidden mb-6">
-                <form method="POST" action="{{ url_for('main.add_pinned_project') }}" class="glass-card rounded-xl p-6 space-y-4">
+                <form method="POST" action="{{ url_for('main.add_pinned_project') }}" class="dev-card rounded-xl p-6 space-y-4">
                     <div>
                         <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Project Title</label>
                         <input type="text" name="title" required
@@ -188,7 +207,7 @@
                         </div>
                     </div>
                     <div class="flex gap-3 pt-2">
-                        <button type="submit" class="px-5 py-2 rounded-lg gradient-cta text-navy-900 font-bold text-sm hover:shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all">Pin Project</button>
+                        <button type="submit" class="px-5 py-2 rounded-lg dev-cta font-bold text-sm transition-all">Pin Project</button>
                         <button id="cancel-add-project" type="button" class="px-5 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
                     </div>
                 </form>
@@ -197,9 +216,9 @@
             <!-- Project Cards -->
             <div class="grid sm:grid-cols-2 gap-4">
                 {% for project in profile.pinned_projects %}
-                <div class="glass-card rounded-xl p-5 group hover:border-mint/20 transition-all">
+                <div class="dev-card rounded-xl p-5 group transition-all">
                     <div class="flex items-start justify-between mb-3">
-                        <h4 class="font-display font-bold text-white group-hover:text-mint transition-colors">{{ project.title }}</h4>
+                        <h4 class="font-display font-bold text-white group-hover:dev-accent-text transition-colors">{{ project.title }}</h4>
                         <a href="{{ url_for('main.delete_pinned', id=project.id) }}" class="text-slate-600 hover:text-red-400 transition-colors" title="Remove">
                             <span class="material-symbols-outlined text-lg">close</span>
                         </a>
@@ -208,12 +227,12 @@
                     {% if project.tags %}
                     <div class="flex flex-wrap gap-1.5 mb-3">
                         {% for tag in project.tags.split(',') %}
-                        <span class="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-mint/10 text-mint border border-mint/20">{{ tag.strip() }}</span>
+                        <span class="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded dev-accent-bg-subtle dev-accent-text border dev-accent-border">{{ tag.strip() }}</span>
                         {% endfor %}
                     </div>
                     {% endif %}
                     {% if project.link %}
-                    <a href="{{ project.link }}" target="_blank" class="inline-flex items-center gap-1 text-xs text-mint hover:text-white transition-colors font-medium">
+                    <a href="{{ project.link }}" target="_blank" class="inline-flex items-center gap-1 text-xs dev-accent-text hover:text-white transition-colors font-medium">
                         <span class="material-symbols-outlined text-sm">open_in_new</span> View Project
                     </a>
                     {% endif %}
@@ -221,7 +240,7 @@
                 {% endfor %}
 
                 {% if not profile.pinned_projects %}
-                <div class="sm:col-span-2 glass-card rounded-xl p-8 text-center">
+                <div class="sm:col-span-2 dev-card rounded-xl p-8 text-center">
                     <span class="material-symbols-outlined text-4xl text-slate-600 mb-3">folder_open</span>
                     <p class="text-slate-500 text-sm">Showcase your best work here. Click "Add Project" to get started.</p>
                 </div>
@@ -229,6 +248,7 @@
             </div>
         </div>
     </section>
+</div>
 </div>
 {% endblock %}
 

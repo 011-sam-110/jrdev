@@ -1,0 +1,267 @@
+/**
+ * Developer profile themes & animations.
+ * Apply to a wrapper: <div class="dev-profile-wrap" data-theme="mint" data-animation="glow">
+ */
+
+/* ── Theme: Mint (default) ── */
+.dev-profile-wrap[data-theme="mint"] {
+  --dev-accent: #14F195;
+  --dev-accent-rgb: 20, 241, 149;
+  --dev-secondary: #8B5CF6;
+  --dev-secondary-rgb: 139, 92, 246;
+  --dev-panel-bg: rgba(30, 41, 59, 0.7);
+  --dev-card-bg: rgba(255, 255, 255, 0.03);
+  --dev-border: rgba(255, 255, 255, 0.1);
+  --dev-glow: rgba(20, 241, 149, 0.35);
+}
+
+/* ── Theme: Ocean ── */
+.dev-profile-wrap[data-theme="ocean"] {
+  --dev-accent: #22D3EE;
+  --dev-accent-rgb: 34, 211, 238;
+  --dev-secondary: #0EA5E9;
+  --dev-secondary-rgb: 14, 165, 233;
+  --dev-panel-bg: rgba(15, 23, 42, 0.85);
+  --dev-card-bg: rgba(34, 211, 238, 0.05);
+  --dev-border: rgba(34, 211, 238, 0.2);
+  --dev-glow: rgba(34, 211, 238, 0.4);
+}
+
+/* ── Theme: Sunset ── */
+.dev-profile-wrap[data-theme="sunset"] {
+  --dev-accent: #FB923C;
+  --dev-accent-rgb: 251, 146, 60;
+  --dev-secondary: #F472B6;
+  --dev-secondary-rgb: 244, 114, 182;
+  --dev-panel-bg: rgba(30, 27, 35, 0.8);
+  --dev-card-bg: rgba(251, 146, 60, 0.06);
+  --dev-border: rgba(251, 146, 60, 0.25);
+  --dev-glow: rgba(251, 146, 60, 0.4);
+}
+
+/* ── Theme: Neon ── */
+.dev-profile-wrap[data-theme="neon"] {
+  --dev-accent: #A78BFA;
+  --dev-accent-rgb: 167, 139, 250;
+  --dev-secondary: #C084FC;
+  --dev-secondary-rgb: 192, 132, 252;
+  --dev-panel-bg: rgba(15, 10, 25, 0.9);
+  --dev-card-bg: rgba(167, 139, 250, 0.08);
+  --dev-border: rgba(167, 139, 250, 0.3);
+  --dev-glow: rgba(167, 139, 250, 0.5);
+}
+
+/* ── Theme: Rose ── */
+.dev-profile-wrap[data-theme="rose"] {
+  --dev-accent: #F43F5E;
+  --dev-accent-rgb: 244, 63, 94;
+  --dev-secondary: #FB7185;
+  --dev-secondary-rgb: 251, 113, 133;
+  --dev-panel-bg: rgba(30, 25, 35, 0.85);
+  --dev-card-bg: rgba(244, 63, 94, 0.06);
+  --dev-border: rgba(244, 63, 94, 0.25);
+  --dev-glow: rgba(244, 63, 94, 0.4);
+}
+
+/* ── Theme: Amber ── */
+.dev-profile-wrap[data-theme="amber"] {
+  --dev-accent: #FBBF24;
+  --dev-accent-rgb: 251, 191, 36;
+  --dev-secondary: #F59E0B;
+  --dev-secondary-rgb: 245, 158, 11;
+  --dev-panel-bg: rgba(28, 25, 23, 0.85);
+  --dev-card-bg: rgba(251, 191, 36, 0.06);
+  --dev-border: rgba(251, 191, 36, 0.25);
+  --dev-glow: rgba(251, 191, 36, 0.4);
+}
+
+/* Apply theme variables to panels/cards inside wrapper */
+.dev-profile-wrap .dev-panel {
+  background: var(--dev-panel-bg);
+  border-color: var(--dev-border);
+  border-width: 1px;
+  border-style: solid;
+  backdrop-filter: blur(12px);
+}
+.dev-profile-wrap .dev-card {
+  background: var(--dev-card-bg);
+  border-color: var(--dev-border);
+  border-width: 1px;
+  border-style: solid;
+}
+.dev-profile-wrap .dev-accent-text { color: var(--dev-accent); }
+.dev-profile-wrap .dev-accent-border { border-color: var(--dev-accent); }
+.dev-profile-wrap .dev-accent-bg { background-color: var(--dev-accent); }
+.dev-profile-wrap .dev-accent-bg-subtle { background-color: color-mix(in srgb, var(--dev-accent) 15%, transparent); }
+.dev-profile-wrap .dev-cta {
+  background: linear-gradient(135deg, var(--dev-accent) 0%, var(--dev-secondary) 100%);
+  color: #0f172a;
+}
+.dev-profile-wrap .dev-tag-dot { background-color: var(--dev-accent); }
+.dev-profile-wrap .dev-link-hover:hover { color: var(--dev-accent); border-color: color-mix(in srgb, var(--dev-accent) 40%, transparent); }
+.dev-profile-wrap .dev-input-focus:focus { --tw-ring-color: color-mix(in srgb, var(--dev-accent) 50%, transparent); }
+.dev-profile-wrap .dev-avatar-ring { border-color: color-mix(in srgb, var(--dev-accent) 40%, transparent); box-shadow: 0 0 24px var(--dev-glow); }
+.dev-profile-wrap .markdown-body a { color: var(--dev-accent); }
+.dev-profile-wrap .markdown-body a:hover { color: var(--dev-secondary); }
+
+/* ── Panel style: Translucent (liquid glass) ──
+   Uses explicit rgba so backdrop-filter has something to blur; matches .liquid-glass-panel */
+.dev-profile-wrap[data-panel-style="translucent"] .dev-panel {
+  background: rgba(30, 41, 59, 0.45) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+              0 20px 60px -10px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.dev-profile-wrap[data-panel-style="translucent"] .dev-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ── Background: wrapper needs a canvas behind content ── */
+.dev-profile-wrap {
+  position: relative;
+  isolation: isolate;
+}
+.dev-profile-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -2rem;
+  z-index: -1;
+  pointer-events: none;
+}
+/* Default: no extra background (unless translucent – then subtle gradient so glass is visible) */
+.dev-profile-wrap[data-background="default"]::before {
+  display: none;
+}
+.dev-profile-wrap[data-panel-style="translucent"][data-background="default"]::before {
+  display: block;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--dev-accent) 8%, transparent) 0%, transparent 50%, color-mix(in srgb, var(--dev-secondary) 6%, transparent) 100%);
+}
+/* Gradient: subtle theme gradient */
+.dev-profile-wrap[data-background="gradient"]::before {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--dev-accent) 6%, transparent) 0%,
+    transparent 40%,
+    transparent 60%,
+    color-mix(in srgb, var(--dev-secondary) 6%, transparent) 100%
+  );
+}
+/* Mesh: soft grid / mesh gradient */
+.dev-profile-wrap[data-background="mesh"]::before {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--dev-accent) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, color-mix(in srgb, var(--dev-accent) 4%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: 0 0, 0 0;
+}
+/* Dots: subtle dot pattern */
+.dev-profile-wrap[data-background="dots"]::before {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--dev-accent) 12%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+/* Glow: soft blurred orb (liquid-glass style) */
+.dev-profile-wrap[data-background="glow"]::before {
+  width: 80%;
+  height: 60%;
+  max-width: 500px;
+  max-height: 400px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--dev-accent);
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.2;
+  animation: dev-bg-glow 18s ease-in-out infinite alternate;
+}
+.dev-profile-wrap[data-background="glow"] {
+  overflow: hidden;
+}
+@keyframes dev-bg-glow {
+  from { opacity: 0.15; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0.25; transform: translate(-48%, -52%) scale(1.15); }
+}
+
+/* ── Animation: None (no extra effects) ── */
+.dev-profile-wrap[data-animation="none"] .dev-avatar-ring { animation: none; }
+
+/* ── Animation: Glow (subtle pulse on accent elements) ── */
+.dev-profile-wrap[data-animation="glow"] .dev-panel:hover,
+.dev-profile-wrap[data-animation="glow"] .dev-card:hover {
+  box-shadow: 0 0 30px var(--dev-glow);
+  transition: box-shadow 0.4s ease, transform 0.3s ease;
+}
+.dev-profile-wrap[data-animation="glow"] .dev-cta:hover {
+  box-shadow: 0 0 28px var(--dev-glow);
+  transform: translateY(-1px);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.dev-profile-wrap[data-animation="glow"] .dev-avatar-ring {
+  animation: dev-glow-pulse 3s ease-in-out infinite;
+}
+@keyframes dev-glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px var(--dev-glow); }
+  50% { box-shadow: 0 0 32px var(--dev-glow); }
+}
+
+/* ── Animation: Shimmer (gradient sweep on cards) ── */
+.dev-profile-wrap[data-animation="shimmer"] .dev-panel,
+.dev-profile-wrap[data-animation="shimmer"] .dev-card {
+  position: relative;
+  overflow: hidden;
+}
+.dev-profile-wrap[data-animation="shimmer"] .dev-panel::after,
+.dev-profile-wrap[data-animation="shimmer"] .dev-card::after {
+  content: '';
+  position: absolute;
+  inset: -100%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    color-mix(in srgb, var(--dev-accent) 8%, transparent) 45%,
+    color-mix(in srgb, var(--dev-accent) 12%, transparent) 50%,
+    color-mix(in srgb, var(--dev-accent) 8%, transparent) 55%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.dev-profile-wrap[data-animation="shimmer"] .dev-panel:hover::after,
+.dev-profile-wrap[data-animation="shimmer"] .dev-card:hover::after {
+  opacity: 1;
+  animation: dev-shimmer 1.2s ease-out forwards;
+}
+@keyframes dev-shimmer {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(100%) skewX(-12deg); }
+}
+
+/* ── Animation: Float (gentle lift on scroll reveal) ── */
+.dev-profile-wrap[data-animation="float"] .reveal {
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dev-profile-wrap[data-animation="float"] .dev-panel:hover,
+.dev-profile-wrap[data-animation="float"] .dev-card:hover {
+  transform: translateY(-6px);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+  box-shadow: 0 12px 40px -12px var(--dev-glow);
+}
+.dev-profile-wrap[data-animation="float"] .dev-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -4px var(--dev-glow);
+}
+
+/* Stagger delays for list items */
+.dev-profile-wrap .dev-stagger-1 { transition-delay: 0.05s; }
+.dev-profile-wrap .dev-stagger-2 { transition-delay: 0.1s; }
+.dev-profile-wrap .dev-stagger-3 { transition-delay: 0.15s; }
+.dev-profile-wrap .dev-stagger-4 { transition-delay: 0.2s; }
+.dev-profile-wrap .dev-stagger-5 { transition-delay: 0.25s; }

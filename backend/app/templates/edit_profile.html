@@ -14,6 +14,19 @@
 
         <form method="POST" action="" class="space-y-6" enctype="multipart/form-data">
             {{ form.hidden_tag() }}
+            {% if form.errors %}
+            <div class="rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-3 text-sm flex items-start gap-2">
+                <span class="material-symbols-outlined flex-shrink-0 mt-0.5">error</span>
+                <div>
+                    <p class="font-semibold">Please fix the errors below and try again.</p>
+                    <ul class="list-disc list-inside mt-1 text-red-400/90">
+                        {% for field_name, errors in form.errors.items() %}
+                            {% for err in errors %}<li>{{ err }}</li>{% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Profile Picture Upload -->
             <div class="space-y-2">
@@ -64,22 +77,69 @@
                 </div>
             </div>
 
+            <!-- Appearance Section -->
+            <div class="space-y-4 pt-4" id="appearance">
+                <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-mint">palette</span>
+                    Appearance
+                </h3>
+                <p class="text-slate-400 text-sm">Customize how your profile looks to you and to businesses viewing your profile.</p>
+                <div>
+                    <label class="block text-slate-400 text-xs uppercase font-bold mb-3">Color theme</label>
+                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                        {% for value, label in form.profile_theme.choices %}
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="profile_theme" value="{{ value }}" class="sr-only peer" {% if form.profile_theme.data == value %}checked{% endif %}>
+                            <span class="block rounded-xl border-2 p-3 text-center text-xs font-semibold transition-all peer-checked:ring-2 peer-checked:ring-offset-2 peer-checked:ring-offset-navy-900
+                                {% if value == 'mint' %}bg-mint/20 border-mint/40 text-mint peer-checked:ring-mint
+                                {% elif value == 'ocean' %}bg-cyan-500/20 border-cyan-500/40 text-cyan-400 peer-checked:ring-cyan-400
+                                {% elif value == 'sunset' %}bg-orange-400/20 border-orange-400/40 text-orange-400 peer-checked:ring-orange-400
+                                {% elif value == 'neon' %}bg-violet-400/20 border-violet-400/40 text-violet-400 peer-checked:ring-violet-400
+                                {% elif value == 'rose' %}bg-rose-500/20 border-rose-500/40 text-rose-400 peer-checked:ring-rose-400
+                                {% else %}bg-amber-400/20 border-amber-400/40 text-amber-400 peer-checked:ring-amber-400
+                                {% endif %}">
+                                {{ label }}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs uppercase font-bold mb-2">Panel style</label>
+                    {{ form.profile_panel_style(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all appearance-none") }}
+                    <p class="text-slate-500 text-xs mt-1">Liquid glass = frosted, translucent panels (works best with a custom background).</p>
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs uppercase font-bold mb-2">Background</label>
+                    {{ form.profile_background(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all appearance-none") }}
+                    <p class="text-slate-500 text-xs mt-1">Changes the background behind your profile (gradient, mesh, dots, or soft glow).</p>
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-xs uppercase font-bold mb-2">Animations</label>
+                    {{ form.profile_animation(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all appearance-none") }}
+                    <p class="text-slate-500 text-xs mt-1">Glow = soft pulse on accents; Shimmer = gradient sweep on hover; Float = cards lift on hover.</p>
+                </div>
+            </div>
+
             <!-- Links Section -->
-            <div class="space-y-4 pt-4">
+            <div class="space-y-4 pt-4" id="social-links">
                 <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2">Social Links</h3>
-                
+                <p class="text-slate-400 text-sm">These appear on your dashboard and when businesses view your profile. You can paste full URLs or just the path (e.g. github.com/yourname).</p>
                 <div class="grid grid-cols-1 gap-4">
                     <div class="relative">
                         <span class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-lg">code</span>
-                        {{ form.github_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="GitHub URL") }}
+                        {{ form.github_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="e.g. github.com/yourname or https://...") }}
+                        {% if form.github_link.errors %}<p class="text-red-400 text-xs mt-1">{{ form.github_link.errors[0] }}</p>{% endif %}
                     </div>
                     <div class="relative">
                         <span class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-lg">work</span>
-                        {{ form.linkedin_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="LinkedIn URL") }}
+                        {{ form.linkedin_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="e.g. linkedin.com/in/yourname") }}
+                        {% if form.linkedin_link.errors %}<p class="text-red-400 text-xs mt-1">{{ form.linkedin_link.errors[0] }}</p>{% endif %}
                     </div>
                     <div class="relative">
                         <span class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-lg">link</span>
-                        {{ form.portfolio_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="Portfolio URL") }}
+                        {{ form.portfolio_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="e.g. yoursite.com or https://...") }}
+                        {% if form.portfolio_link.errors %}<p class="text-red-400 text-xs mt-1">{{ form.portfolio_link.errors[0] }}</p>{% endif %}
                     </div>
                 </div>
             </div>

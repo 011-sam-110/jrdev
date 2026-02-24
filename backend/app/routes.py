@@ -162,9 +162,24 @@ def edit_profile():
         profile.location = form.location.data
         profile.availability = form.availability.data
         profile.technologies = form.technologies.data
-        profile.github_link = form.github_link.data
-        profile.linkedin_link = form.linkedin_link.data
-        profile.portfolio_link = form.portfolio_link.data
+        def normalize_url(val):
+            if not val or not val.strip():
+                return None
+            val = val.strip()
+            if val and not val.startswith(('http://', 'https://')):
+                return 'https://' + val
+            return val
+        profile.github_link = normalize_url(form.github_link.data)
+        profile.linkedin_link = normalize_url(form.linkedin_link.data)
+        profile.portfolio_link = normalize_url(form.portfolio_link.data)
+        if form.profile_theme.data:
+            profile.profile_theme = form.profile_theme.data
+        if form.profile_animation.data:
+            profile.profile_animation = form.profile_animation.data
+        if form.profile_panel_style.data:
+            profile.profile_panel_style = form.profile_panel_style.data
+        if form.profile_background.data:
+            profile.profile_background = form.profile_background.data
 
         # Handle profile picture upload (save to app/static/profile_pics so url_for('static', ...) serves it)
         if form.picture.data:
@@ -188,6 +203,10 @@ def edit_profile():
         form.github_link.data = profile.github_link
         form.linkedin_link.data = profile.linkedin_link
         form.portfolio_link.data = profile.portfolio_link
+        form.profile_theme.data = getattr(profile, 'profile_theme', None) or 'mint'
+        form.profile_animation.data = getattr(profile, 'profile_animation', None) or 'glow'
+        form.profile_panel_style.data = getattr(profile, 'profile_panel_style', None) or 'solid'
+        form.profile_background.data = getattr(profile, 'profile_background', None) or 'default'
         
     return render_template('edit_profile.html', title='Edit Profile', form=form)
 
@@ -766,6 +785,10 @@ def developer_profile_view(user_id):
     ).all()
     avg_rating = round(sum(r.business_rating_of_developer for r in rated) / len(rated), 1) if rated else None
 
+    profile_theme = getattr(profile, 'profile_theme', None) or 'mint'
+    profile_animation = getattr(profile, 'profile_animation', None) or 'glow'
+    profile_panel_style = getattr(profile, 'profile_panel_style', None) or 'solid'
+    profile_background = getattr(profile, 'profile_background', None) or 'default'
     return render_template('developer_profile_view.html',
                            title=f'{dev_user.username} - Profile',
                            dev_user=dev_user,
@@ -774,4 +797,8 @@ def developer_profile_view(user_id):
                            stack_list=stack_list,
                            pinned_projects=pinned_projects,
                            avg_rating=avg_rating,
+                           profile_theme=profile_theme,
+                           profile_animation=profile_animation,
+                           profile_panel_style=profile_panel_style,
+                           profile_background=profile_background,
                            nav_active='listings')

@@ -3,6 +3,32 @@ from wtforms import StringField, TextAreaField, SelectField, SubmitField
 from wtforms.validators import DataRequired, URL, Optional
 from flask_wtf.file import FileField, FileAllowed
 
+THEME_CHOICES = [
+    ('mint', 'Mint'),
+    ('ocean', 'Ocean'),
+    ('sunset', 'Sunset'),
+    ('neon', 'Neon'),
+    ('rose', 'Rose'),
+    ('amber', 'Amber'),
+]
+ANIMATION_CHOICES = [
+    ('none', 'None'),
+    ('glow', 'Glow'),
+    ('shimmer', 'Shimmer'),
+    ('float', 'Float'),
+]
+PANEL_STYLE_CHOICES = [
+    ('solid', 'Solid'),
+    ('translucent', 'Liquid glass'),
+]
+BACKGROUND_CHOICES = [
+    ('default', 'Default'),
+    ('gradient', 'Gradient'),
+    ('mesh', 'Mesh'),
+    ('dots', 'Dots'),
+    ('glow', 'Glow'),
+]
+
 class EditProfileForm(FlaskForm):
     headline = StringField('Headline', validators=[DataRequired()])
     location = StringField('Location')
@@ -13,10 +39,14 @@ class EditProfileForm(FlaskForm):
         ('On Prototype', 'On Prototype')
     ])
     technologies = StringField('Tech Stack (comma separated)', validators=[Optional()])
-    github_link = StringField('GitHub URL', validators=[Optional(), URL()])
-    linkedin_link = StringField('LinkedIn URL', validators=[Optional(), URL()])
-    portfolio_link = StringField('Portfolio URL', validators=[Optional(), URL()])
+    github_link = StringField('GitHub URL', validators=[Optional()])
+    linkedin_link = StringField('LinkedIn URL', validators=[Optional()])
+    portfolio_link = StringField('Portfolio URL', validators=[Optional()])
     picture = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
+    profile_theme = SelectField('Profile theme', choices=THEME_CHOICES, validators=[Optional()])
+    profile_animation = SelectField('Profile animation', choices=ANIMATION_CHOICES, validators=[Optional()])
+    profile_panel_style = SelectField('Panel style', choices=PANEL_STYLE_CHOICES, validators=[Optional()])
+    profile_background = SelectField('Background', choices=BACKGROUND_CHOICES, validators=[Optional()])
     submit = SubmitField('Update Profile')
 
 class EditMarkdownForm(FlaskForm):

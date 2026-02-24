@@ -77,7 +77,7 @@
 </head>
 <body class="bg-navy-900 text-slate-100 font-body h-full min-h-screen flex flex-col relative">
     <div class="liquid-glass-bg" aria-hidden="true"></div>
-    <nav class="fixed top-0 w-full z-50 glass-card border-b border-white/5 bg-background-dark/80 backdrop-blur-md">
+    <nav id="business-nav" class="fixed top-0 w-full z-50 glass-card border-b border-white/5 bg-background-dark/80 backdrop-blur-md transition-shadow duration-300">
         <div class="max-w-[1600px] mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
             <div class="flex-shrink-0 flex items-center gap-2">
                 <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2">
@@ -105,12 +105,18 @@
         </div>
     </nav>
     <div class="pt-32"></div>
-    <main class="flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-6 py-10{% endblock %}">
+    <main class="app-main-in flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-6 py-10{% endblock %}">
         {% block content %}{% endblock %}
     </main>
     {% block footer %}{% endblock %}
     <script>
     (function() {
+        var nav = document.getElementById('business-nav');
+        if (nav) {
+            function onScroll() { nav.classList.toggle('nav-bar-scrolled', window.scrollY > 20); }
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+        }
         var io = new IntersectionObserver(function(entries) {
             entries.forEach(function(e) {
                 if (e.isIntersecting) { e.target.classList.add('active'); io.unobserve(e.target); }
