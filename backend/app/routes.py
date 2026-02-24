@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify
+from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify, current_app
 import os
 from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail
@@ -69,9 +69,11 @@ def review_gallery():
         })()
 
     now = datetime.utcnow()
-    # Group signups by listing (project)
+    # Group signups by listing (project). Only show in Progress & review when contract is fully signed.
     listing_to_devs = {}
     for s in signups:
+        if s.status != 'accepted' or not s.is_fully_signed:
+            continue
         listing = s.listing
         dev = make_dev(s, listing)
         if listing.id not in listing_to_devs:
@@ -164,15 +166,13 @@ def edit_profile():
         profile.linkedin_link = form.linkedin_link.data
         profile.portfolio_link = form.portfolio_link.data
 
-        # Handle profile picture upload
+        # Handle profile picture upload (save to app/static/profile_pics so url_for('static', ...) serves it)
         if form.picture.data:
             pic_file = form.picture.data
             filename = secure_filename(pic_file.filename)
-            # Ensure unique filename
             _, ext = os.path.splitext(filename)
             filename = f"user_{current_user.id}{ext}"
-            # Save to backend/static/profile_pics (not app/static/profile_pics)
-            static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static', 'profile_pics'))
+            static_dir = os.path.join(current_app.static_folder, 'profile_pics')
             os.makedirs(static_dir, exist_ok=True)
             abs_pic_path = os.path.join(static_dir, filename)
             pic_file.save(abs_pic_path)
@@ -488,6 +488,8 @@ def launch_sprint():
         pay_for_prototype=float(request.form.get('pay_for_prototype', 60)),
         technologies_required=request.form.get('technologies_required', ''),
         deliverables=(request.form.get('deliverables') or '').strip() or None,
+        essential_deliverables=(request.form.get('essential_deliverables') or '').strip() or None,
+        essential_deliverables_count=int(request.form.get('essential_deliverables_count', 0) or 0),
         sprint_timeline_days=int(request.form.get('sprint_timeline_days', 7)),
         minimum_requirements_for_pay=int(request.form.get('minimum_requirements_for_pay', 1)),
         sprint_begins_at=sprint_begins,
@@ -516,6 +518,9 @@ def join_listing(id):
 
     signup = ListingSignup(listing_id=id, user_id=current_user.id)
     db.session.add(signup)
+    profile = current_user.developer_profile
+    if profile is not None:
+        profile.contracts_attempted = (profile.contracts_attempted or 0) + 1
     db.session.commit()
     flash('You have joined the sprint! Waiting for business approval.', 'success')
     return redirect(url_for('main.developer_joined_listings'))
@@ -558,6 +563,9 @@ def signup_sign_developer(id):
     if signup.user_id != current_user.id:
         flash('Access denied.', 'danger')
         return redirect(url_for('main.developer_joined_listings'))
+    signature_data = (request.form.get('signature_data') or '').strip()
+    if signature_data and signature_data.startswith('data:image'):
+        signup.developer_signature_image = signature_data
     signup.developer_signed_at = datetime.utcnow()
     db.session.commit()
     flash('Contract signed by you. Waiting for business countersign.', 'success')
@@ -571,6 +579,9 @@ def signup_sign_business(id):
     if signup.listing.business_id != current_user.id:
         flash('Access denied.', 'danger')
         return redirect(url_for('main.review_gallery'))
+    signature_data = (request.form.get('signature_data') or '').strip()
+    if signature_data and signature_data.startswith('data:image'):
+        signup.business_signature_image = signature_data
     signup.business_signed_at = datetime.utcnow()
     db.session.commit()
     flash('Contract countersigned. Sprint is now active!', 'success')

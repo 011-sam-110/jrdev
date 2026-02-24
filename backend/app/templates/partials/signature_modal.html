@@ -1,0 +1,118 @@
+<div id="signature-modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-action="close"></div>
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md rounded-2xl bg-navy-800 border border-white/10 shadow-2xl p-6">
+        <h3 class="font-display text-xl font-bold text-white mb-2">Draw your signature</h3>
+        <p class="text-slate-400 text-sm mb-4">Sign in the box below using your mouse or finger. Both parties will see this on the contract.</p>
+        <div class="border-2 border-dashed border-white/20 rounded-xl bg-white/5 mb-4 overflow-hidden">
+            <canvas id="signature-canvas" width="400" height="160" class="block w-full touch-none cursor-crosshair" style="touch-action: none;"></canvas>
+        </div>
+        <div class="flex flex-wrap gap-2 justify-end">
+            <button type="button" id="signature-clear" class="px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 text-sm font-medium">Clear</button>
+            <button type="button" id="signature-confirm" class="liquid-glass-cta px-4 py-2 rounded-xl font-bold text-sm">Confirm & sign contract</button>
+            <button type="button" data-action="close" class="px-4 py-2 rounded-xl border border-white/20 text-slate-400 hover:bg-white/10 text-sm">Cancel</button>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var modal = document.getElementById('signature-modal');
+    var canvas = document.getElementById('signature-canvas');
+    var clearBtn = document.getElementById('signature-clear');
+    var confirmBtn = document.getElementById('signature-confirm');
+    if (!modal || !canvas) return;
+
+    var ctx = canvas.getContext('2d');
+    var drawing = false;
+    var currentFormId = null;
+
+    function getPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        if (e.touches) {
+            return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+        }
+        return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    }
+    function start(e) {
+        e.preventDefault();
+        drawing = true;
+        var p = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+    }
+    function move(e) {
+        e.preventDefault();
+        if (!drawing) return;
+        var p = getPos(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+    }
+    function end(e) {
+        e.preventDefault();
+        drawing = false;
+    }
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end, { passive: false });
+
+    clearBtn.addEventListener('click', function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    function hasDrawing() {
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < imageData.data.length; i += 4) {
+            if (imageData.data[i + 3] > 0) return true;
+        }
+        return false;
+    }
+
+    confirmBtn.addEventListener('click', function() {
+        if (!currentFormId) return;
+        var form = document.getElementById(currentFormId);
+        if (!form) { currentFormId = null; return; }
+        var input = form.querySelector('input[name="signature_data"]');
+        if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'signature_data';
+            form.appendChild(input);
+        }
+        if (hasDrawing()) {
+            input.value = canvas.toDataURL('image/png');
+        } else {
+            input.value = '';
+        }
+        modal.classList.add('hidden');
+        form.submit();
+        currentFormId = null;
+    });
+
+    modal.querySelectorAll('[data-action="close"]').forEach(function(el) {
+        el.addEventListener('click', function() {
+            modal.classList.add('hidden');
+            currentFormId = null;
+        });
+    });
+
+    document.querySelectorAll('.js-sign-open').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var formId = this.getAttribute('data-form-id');
+            if (!formId) return;
+            currentFormId = formId;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            modal.classList.remove('hidden');
+        });
+    });
+})();
+</script>

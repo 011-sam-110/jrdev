@@ -79,15 +79,7 @@
                         <span class="material-symbols-outlined text-lg text-mint">bolt</span>
                         Prototypes Attempted
                     </div>
-                    <span class="text-xl font-display font-bold text-white">{{ profile.contracts_attempted }}</span>
-                </div>
-                <div class="border-t border-white/5"></div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-sm text-slate-400">
-                        <span class="material-symbols-outlined text-lg text-mint">check_circle</span>
-                        Contracts Won
-                    </div>
-                    <span class="text-xl font-display font-bold text-white">{{ profile.contracts_won }}</span>
+                    <span class="text-xl font-display font-bold text-white">{{ profile.contracts_attempted or 0 }}</span>
                 </div>
                 <div class="border-t border-white/5"></div>
                 <div class="flex items-center justify-between">

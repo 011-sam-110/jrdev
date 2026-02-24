@@ -34,10 +34,17 @@
                         <p class="text-slate-400 text-sm">The sprint hasn't started yet. Developers will begin work when the sprint kicks off. Progress updates and videos will appear here once the sprint is underway.</p>
                     </div>
                     {% elif sprint_phase == 'during' %}
+                    {% if developers %}
                     <div class="mb-6 p-4 rounded-xl bg-mint/10 border border-mint/20">
                         <h3 class="font-display text-lg font-semibold text-mint mb-1">Development ongoing</h3>
                         <p class="text-slate-400 text-sm">The sprint is in progress. Your developers are building. Progress videos will be available here once the developer has submitted their work.</p>
                     </div>
+                    {% else %}
+                    <div class="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <h3 class="font-display text-lg font-semibold text-amber-400 mb-1">Awaiting signed contracts</h3>
+                        <p class="text-slate-400 text-sm">The sprint window has started, but no contracts have been fully signed yet. Development will begin once developers and you have e-signed. Use the status badges above to see who still needs to sign.</p>
+                    </div>
+                    {% endif %}
                     {% else %}
                     <div class="mb-6 p-4 rounded-xl bg-purple/10 border border-purple/20">
                         <h3 class="font-display text-lg font-semibold text-purple-300 mb-1">Review your solutions</h3>
@@ -57,7 +64,13 @@
                                     {% if signup.status == 'pending' %}
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">Pending</span>
                                     {% elif signup.status == 'accepted' %}
+                                    {% if not signup.developer_signed_at %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">Awaiting developer signature</span>
+                                    {% elif not signup.business_signed_at %}
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">Awaiting your signature</span>
+                                    {% else %}
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-mint/20 text-mint">Accepted</span>
+                                    {% endif %}
                                     {% elif signup.status == 'denied' %}
                                     <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">Denied</span>
                                     {% elif signup.status == 'cancelled' %}
@@ -83,11 +96,12 @@
                                     </form>
                                     {% endif %}
                                     {% if signup.status == 'accepted' %}
-                                    <a href="{{ url_for('contract.view_contract_for_signup', signup_id=signup.id) }}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View contract</a>
+                                    <a href="{{ contract_view_url(signup.id) }}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View contract</a>
                                     {% if not signup.business_signed_at %}
-                                    <form method="POST" action="{{ url_for('main.signup_sign_business', id=signup.id) }}" class="inline">
+                                    <form id="sign-form-{{ signup.id }}" method="POST" action="{{ url_for('main.signup_sign_business', id=signup.id) }}" class="inline">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
-                                        <button type="submit" class="liquid-glass-cta inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-sm">E-sign contract</button>
+                                        <input type="hidden" name="signature_data" value=""/>
+                                        <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}">E-sign contract</button>
                                     </form>
                                     {% endif %}
                                     {% endif %}
@@ -170,6 +184,7 @@
         </div>
     </aside>
 </div>
+{% include 'partials/signature_modal.html' %}
 {% endblock %}
 
 {% block footer %}

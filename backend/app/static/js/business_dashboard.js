@@ -12,6 +12,7 @@
   const DEFAULT_MIN_REQUIREMENTS = 1;
 
   const TAG_BASE_CLASS = 'tech-tag flex items-center gap-2 px-3 py-1.5 bg-navy-700/50 border border-white/10 rounded-lg text-xs font-medium text-slate-300';
+  const ESSENTIAL_TAG_CLASS = 'tech-tag flex items-center gap-2 px-3 py-1.5 bg-navy-700/50 border border-amber-500/30 rounded-lg text-xs font-medium text-slate-300';
 
   /**
    * Resolve all dashboard DOM elements once.
@@ -25,13 +26,19 @@
     const timelineSlider = document.querySelector('.sprint-timeline-slider');
     const investmentPerDevSlider = document.querySelector('.investment-per-dev-slider');
     const minReqSlider = document.querySelector('.min-requirements-slider');
+    const essentialSlider = document.querySelector('.essential-deliverables-slider');
     const postContractForm = document.getElementById('post-contract-form');
     const launchForm = document.getElementById('launch-sprint-form');
 
     return {
       reqInput,
-      reqAddBtn: reqInput?.nextElementSibling,
-      reqList: reqInput?.parentElement?.nextElementSibling,
+      reqAddBtn: reqInput?.parentElement?.querySelector('button'),
+      reqList: document.getElementById('requirement-buffet-list'),
+      essentialInput: document.getElementById('essential-deliverables-input'),
+      essentialAddBtn: document.getElementById('essential-deliverables-add-btn'),
+      essentialList: document.getElementById('essential-deliverables-list'),
+      essentialCapNum: document.querySelector('.essential-deliverables-cap-num'),
+      deliverablesCapNum: document.querySelector('.deliverables-cap-num'),
       techInput,
       techAddBtn: document.getElementById('technologies-add-btn'),
       techList,
@@ -43,6 +50,8 @@
       investmentPerDevDisplay: document.querySelector('.investment-per-dev'),
       minReqSlider,
       minReqDisplay: document.querySelector('.min-requirements-display'),
+      essentialSlider,
+      essentialDisplay: document.querySelector('.essential-deliverables-display'),
       investmentAmount: document.querySelector('.investment-amount'),
       postContractForm,
       launchForm,
@@ -55,10 +64,11 @@
    * @param {string} [baseClass] - Optional class string (default: TAG_BASE_CLASS).
    * @returns {HTMLElement} Tag span with close button.
    */
-  function createTag(text, baseClass) {
+  function createTag(text, baseClass, dotClass) {
     const span = document.createElement('span');
     span.className = baseClass || TAG_BASE_CLASS;
-    span.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-mint"></span> ${escapeHtml(text)} <button class="hover:text-white" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>`;
+    const dot = 'w-1.5 h-1.5 rounded-full ' + (dotClass || 'bg-mint');
+    span.innerHTML = `<span class="${dot}"></span> ${escapeHtml(text)} <button class="hover:text-white" type="button"><span class="material-symbols-outlined text-[14px]">close</span></button>`;
     const btn = span.querySelector('button');
     if (btn) btn.addEventListener('click', () => { span.remove(); });
     return span;
@@ -71,25 +81,25 @@
   }
 
   /**
-   * Rebuild hidden task_N inputs in the contract form from current deliverable tags.
-   * Only creates inputs for tags that have text — no empty slots.
+   * Rebuild hidden task_N inputs from essential list + optional list (in that order).
    */
-  function updateContractTasksFromList(listEl) {
-    if (!listEl) return;
+  function updateContractTasksFromDeliverables(essentialListEl, optionalListEl) {
     var form = document.getElementById('post-contract-form');
     if (!form) return;
     form.querySelectorAll('input[name^="task_"]').forEach(function(el) { el.remove(); });
-    var tags = Array.from(listEl.querySelectorAll('.tech-tag'));
-    var idx = 1;
-    tags.forEach(function(tag) {
-      var text = getTagText(tag);
-      if (!text) return;
+    var tasks = [];
+    if (essentialListEl) {
+      tasks = tasks.concat(Array.from(essentialListEl.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean));
+    }
+    if (optionalListEl) {
+      tasks = tasks.concat(Array.from(optionalListEl.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean));
+    }
+    tasks.forEach(function(text, i) {
       var input = document.createElement('input');
       input.type = 'hidden';
-      input.name = 'task_' + idx;
+      input.name = 'task_' + (i + 1);
       input.value = text;
       form.appendChild(input);
-      idx++;
     });
   }
 
@@ -102,19 +112,60 @@
     return tag?.childNodes?.[1]?.textContent?.trim() ?? '';
   }
 
+  /** Essential max = half of min deliverables for pay (total deliverables / 2). */
+  function getEssentialMax(el) {
+    const minReq = parseInt(el.minReqSlider?.value || DEFAULT_MIN_REQUIREMENTS, 10);
+    return Math.floor(minReq / 2);
+  }
+
+  function getEssentialCap(el) {
+    const maxVal = getEssentialMax(el);
+    const raw = parseInt(el.essentialSlider?.value || 0, 10);
+    return Math.min(Math.max(0, raw), maxVal);
+  }
+
+  function getOptionalCap(el) {
+    const minReq = parseInt(el.minReqSlider?.value || DEFAULT_MIN_REQUIREMENTS, 10);
+    const essential = getEssentialCap(el);
+    return Math.max(0, minReq - essential);
+  }
+
+  function updateCapHints(el) {
+    const optionalCap = getOptionalCap(el);
+    const essentialCap = getEssentialCap(el);
+    if (el.deliverablesCapNum) el.deliverablesCapNum.textContent = String(optionalCap);
+    if (el.essentialCapNum) el.essentialCapNum.textContent = String(essentialCap);
+  }
+
+  function updateEssentialMaxLabel(el) {
+    const label = document.querySelector('.essential-deliverables-max-label');
+    if (label) label.textContent = String(getEssentialMax(el));
+  }
+
+  function syncContractTasks(el) {
+    updateContractTasksFromDeliverables(el.essentialList, el.reqList);
+  }
+
   /**
-   * Bind deliverables input: add on button click and Enter, remove on tag close, sync contract tasks.
+   * Bind optional deliverables: add only up to (minReq - essential); sync contract tasks.
    */
   function bindDeliverables(el) {
     const { reqInput, reqAddBtn, reqList } = el;
     if (!reqAddBtn || !reqInput || !reqList) return;
 
+    function optionalCount() {
+      return el.reqList ? el.reqList.querySelectorAll('.tech-tag').length : 0;
+    }
+
     function addDeliverable() {
       const val = reqInput.value.trim();
       if (!val) return;
+      const cap = getOptionalCap(el);
+      if (optionalCount() >= cap) return;
       reqList.appendChild(createTag(val));
       reqInput.value = '';
-      updateContractTasksFromList(reqList);
+      syncContractTasks(el);
+      updateCapHints(el);
     }
 
     reqAddBtn.addEventListener('click', (e) => {
@@ -132,11 +183,59 @@
       const btn = e.target.closest('button');
       if (btn && btn.closest('span')) {
         btn.closest('span').remove();
-        updateContractTasksFromList(reqList);
+        syncContractTasks(el);
+        updateCapHints(el);
       }
     });
 
-    updateContractTasksFromList(reqList);
+    syncContractTasks(el);
+    updateCapHints(el);
+  }
+
+  /**
+   * Bind essential deliverables: add only up to essential slider value.
+   */
+  function bindEssentialDeliverables(el) {
+    const { essentialInput, essentialAddBtn, essentialList } = el;
+    if (!essentialInput || !essentialAddBtn || !essentialList) return;
+
+    function essentialCount() {
+      return el.essentialList ? el.essentialList.querySelectorAll('.tech-tag').length : 0;
+    }
+
+    function addEssential() {
+      const val = essentialInput.value.trim();
+      if (!val) return;
+      const cap = getEssentialCap(el);
+      if (essentialCount() >= cap) return;
+      essentialList.appendChild(createTag(val, ESSENTIAL_TAG_CLASS, 'bg-amber-400'));
+      essentialInput.value = '';
+      syncContractTasks(el);
+      updateCapHints(el);
+    }
+
+    essentialAddBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      addEssential();
+    });
+    essentialInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addEssential();
+      }
+    });
+
+    essentialList.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (btn && btn.closest('span')) {
+        btn.closest('span').remove();
+        syncContractTasks(el);
+        updateCapHints(el);
+      }
+    });
+
+    syncContractTasks(el);
+    updateCapHints(el);
   }
 
   /**
@@ -181,7 +280,7 @@
   }
 
   /**
-   * Bind all sliders and keep displays in sync.
+   * Bind all sliders and keep displays in sync. Essential slider max = minReq; cap hints updated.
    */
   function bindSliders(el) {
     const {
@@ -193,7 +292,22 @@
       investmentPerDevDisplay,
       minReqSlider,
       minReqDisplay,
+      essentialSlider,
+      essentialDisplay,
     } = el;
+
+    function clampEssentialToMinReq() {
+      if (!essentialSlider || !minReqSlider) return;
+      const maxVal = getEssentialMax(el);
+      essentialSlider.setAttribute('max', String(maxVal));
+      const current = parseInt(essentialSlider.value, 10);
+      if (current > maxVal) {
+        essentialSlider.value = String(maxVal);
+        if (essentialDisplay) essentialDisplay.innerHTML = `${maxVal} <span class="text-xs uppercase text-slate-500">required</span>`;
+      }
+      updateEssentialMaxLabel(el);
+      updateCapHints(el);
+    }
 
     if (devSlider) {
       devSlider.addEventListener('input', () => updateInvestmentDisplay(el));
@@ -212,10 +326,22 @@
     if (minReqSlider && minReqDisplay) {
       minReqSlider.addEventListener('input', () => {
         minReqDisplay.innerHTML = `${minReqSlider.value} <span class="text-xs uppercase text-slate-500">tasks</span>`;
+        clampEssentialToMinReq();
+      });
+    }
+    if (essentialSlider && essentialDisplay) {
+      essentialSlider.addEventListener('input', () => {
+        const maxVal = getEssentialMax(el);
+        const val = Math.min(Math.max(0, parseInt(essentialSlider.value, 10)), maxVal);
+        essentialSlider.value = String(val);
+        essentialDisplay.innerHTML = `${val} <span class="text-xs uppercase text-slate-500">required</span>`;
+        updateEssentialMaxLabel(el);
+        updateCapHints(el);
       });
     }
 
     updateInvestmentDisplay(el);
+    clampEssentialToMinReq();
   }
 
   /**
@@ -254,6 +380,11 @@
     setLaunch('launch-pay_for_prototype', String(perDev));
     setLaunch('launch-sprint_timeline_days', el.timelineSlider?.value ?? DEFAULT_TIMELINE_DAYS);
     setLaunch('launch-minimum_requirements_for_pay', el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS);
+    setLaunch('launch-essential_deliverables_count', el.essentialSlider?.value ?? '0');
+    const essentialTags = el.essentialList
+      ? Array.from(el.essentialList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
+      : [];
+    setLaunch('launch-essential_deliverables', essentialTags.join('\n'));
 
     const techTags = el.techList
       ? Array.from(el.techList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
@@ -279,9 +410,10 @@
    */
   function init() {
     const el = getDOMElements();
-    bindDeliverables(el);
-    bindTechnologies(el);
     bindSliders(el);
+    bindDeliverables(el);
+    bindEssentialDeliverables(el);
+    bindTechnologies(el);
     bindHelpToggles();
     bindLaunchForm(el);
   }

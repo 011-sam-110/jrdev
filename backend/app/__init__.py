@@ -36,8 +36,9 @@ def create_app():
     from app.routes import main
     app.register_blueprint(main)
 
-    from app.contract_pdf import contract
+    from app.contract_pdf import contract, contract_view_url
     app.register_blueprint(contract)
+    app.add_template_global(contract_view_url, 'contract_view_url')
 
     @app.context_processor
     def inject_csrf_token():

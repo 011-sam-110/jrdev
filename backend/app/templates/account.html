@@ -35,12 +35,6 @@
                 <span class="text-slate-400 text-sm">Two-Factor Auth</span>
                 <span class="flex items-center gap-1 text-mint text-sm font-medium"><span class="material-symbols-outlined text-sm">shield</span> Enabled</span>
             </div>
-            {% if current_user.role == 'DEVELOPER' and current_user.developer_profile %}
-            <div class="flex items-center justify-between py-3 border-b border-white/5">
-                <span class="text-slate-400 text-sm">Contracts Won</span>
-                <span class="text-white font-display font-bold">{{ current_user.developer_profile.contracts_won }}</span>
-            </div>
-            {% endif %}
         </div>
 
         <div class="mt-8 flex gap-3">

@@ -33,14 +33,10 @@
         </div>
         <div class="flex-1 space-y-8">
             {% if profile %}
-            <div class="grid grid-cols-3 gap-4 mb-2">
+            <div class="grid grid-cols-2 gap-4 mb-2">
                 <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
                     <p class="text-2xl font-display font-bold text-white">{{ profile.prototypes_completed or 0 }}</p>
                     <p class="text-slate-500 text-xs mt-1 uppercase tracking-wider font-bold">Completed</p>
-                </div>
-                <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
-                    <p class="text-2xl font-display font-bold text-white">{{ profile.contracts_won or 0 }}</p>
-                    <p class="text-slate-500 text-xs mt-1 uppercase tracking-wider font-bold">Won</p>
                 </div>
                 <div class="text-center p-4 rounded-xl bg-white/5 border border-white/10">
                     <p class="text-2xl font-display font-bold text-white">{{ avg_rating if avg_rating is not none else '—' }}</p>

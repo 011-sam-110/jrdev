@@ -78,11 +78,12 @@
                             </form>
                             {% endif %}
                             {% if signup.status == 'accepted' %}
-                            <a href="{{ url_for('contract.view_contract_for_signup', signup_id=signup.id) }}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View contract</a>
+                            <a href="{{ contract_view_url(signup.id) }}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View contract</a>
                             {% if not signup.business_signed_at %}
-                            <form method="POST" action="{{ url_for('main.signup_sign_business', id=signup.id) }}" class="inline">
+                            <form id="sign-form-{{ signup.id }}" method="POST" action="{{ url_for('main.signup_sign_business', id=signup.id) }}" class="inline">
                                 {{ form.hidden_tag() }}
-                                <button type="submit" class="liquid-glass-cta inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-sm">E-sign contract</button>
+                                <input type="hidden" name="signature_data" value=""/>
+                                <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}">E-sign contract</button>
                             </form>
                             {% endif %}
                             {% endif %}
@@ -98,6 +99,7 @@
     </div>
     {% endfor %}
 </div>
+{% include 'partials/signature_modal.html' %}
 <script>
 (function() {
     document.querySelectorAll('.js-listing-toggle').forEach(function(btn) {

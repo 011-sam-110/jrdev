@@ -108,7 +108,9 @@ class SprintListing(db.Model):
     pay_for_prototype = db.Column(db.Float, nullable=False, default=20.0)
     business_rating = db.Column(db.Float, nullable=True)
     technologies_required = db.Column(db.String(500), nullable=True)
-    deliverables = db.Column(db.Text, nullable=True)  # Newline-separated list of contract deliverables
+    deliverables = db.Column(db.Text, nullable=True)  # Newline-separated optional contract deliverables
+    essential_deliverables = db.Column(db.Text, nullable=True)  # Newline-separated required deliverables (must complete)
+    essential_deliverables_count = db.Column(db.Integer, nullable=False, default=0)  # Number of essential (for validation)
     sprint_timeline_days = db.Column(db.Integer, nullable=False, default=7)
     signup_ends_at = db.Column(db.DateTime, nullable=False)
     sprint_begins_at = db.Column(db.DateTime, nullable=False)
@@ -129,23 +131,40 @@ class SprintListing(db.Model):
         return self.joined_count >= self.max_talent_pool
 
     @property
-    def deliverables_list(self):
-        """List of deliverable strings for the contract (from deliverables or fallback technologies)."""
+    def essential_deliverables_list(self):
+        """List of essential (required) deliverable strings."""
+        if self.essential_deliverables:
+            return [t.strip() for t in self.essential_deliverables.split('\n') if t.strip()]
+        return []
+
+    @property
+    def optional_deliverables_list(self):
+        """List of optional deliverable strings."""
         if self.deliverables:
             return [t.strip() for t in self.deliverables.split('\n') if t.strip()]
+        return []
+
+    @property
+    def deliverables_list(self):
+        """Full list for contract: essential first, then optional. Fallback to technologies if none."""
+        essential = self.essential_deliverables_list
+        optional = self.optional_deliverables_list
+        if essential or optional:
+            return essential + optional
         return [t.strip() for t in (self.technologies_required or '').split(',') if t.strip()]
 
     @property
     def has_deliverables(self):
         """True if this listing has actual deliverables (not just technologies)."""
-        return bool(self.deliverables and self.deliverables.strip())
+        return bool(
+            (self.essential_deliverables and self.essential_deliverables.strip())
+            or (self.deliverables and self.deliverables.strip())
+        )
 
     @property
     def deliverables_only_list(self):
-        """Only the deliverables from the Deliverables field (empty if none). Use for checkboxes."""
-        if self.deliverables:
-            return [t.strip() for t in self.deliverables.split('\n') if t.strip()]
-        return []
+        """Full deliverables list for checkboxes (essential + optional)."""
+        return self.essential_deliverables_list + self.optional_deliverables_list
 
 
 class ListingSignup(db.Model):
@@ -157,6 +176,8 @@ class ListingSignup(db.Model):
     status = db.Column(db.String(20), nullable=False, default='pending')
     developer_signed_at = db.Column(db.DateTime, nullable=True)
     business_signed_at = db.Column(db.DateTime, nullable=True)
+    developer_signature_image = db.Column(db.Text, nullable=True)  # base64 PNG data URL
+    business_signature_image = db.Column(db.Text, nullable=True)  # base64 PNG data URL
     github_submission_url = db.Column(db.String(500), nullable=True)
     demo_video_url = db.Column(db.String(500), nullable=True)
     prototype_submitted_at = db.Column(db.DateTime, nullable=True)

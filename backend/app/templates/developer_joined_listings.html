@@ -56,14 +56,15 @@
             </div>
 
             <div class="flex flex-wrap gap-3 items-center">
-                <a href="{{ url_for('contract.view_contract_for_signup', signup_id=signup.id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
+                <a href="{{ contract_view_url(signup.id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
                     <span class="material-symbols-outlined text-lg">description</span>
                     View contract
                 </a>
                 {% if signup.status == 'accepted' and not signup.developer_signed_at %}
-                <form method="POST" action="{{ url_for('main.signup_sign_developer', id=signup.id) }}" class="inline">
+                <form id="sign-form-{{ signup.id }}" method="POST" action="{{ url_for('main.signup_sign_developer', id=signup.id) }}" class="inline">
                     {{ form.hidden_tag() }}
-                    <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
+                    <input type="hidden" name="signature_data" value=""/>
+                    <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}">
                         <span class="material-symbols-outlined text-lg">edit_document</span>
                         E-sign contract
                     </button>
@@ -231,6 +232,7 @@
     {% endfor %}
 </div>
 {% endif %}
+{% include 'partials/signature_modal.html' %}
 <script>
 (function() {
     document.querySelectorAll('.js-contact-toggle').forEach(function(btn) {

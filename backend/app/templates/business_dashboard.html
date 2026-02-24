@@ -26,7 +26,31 @@
             </div>
         </section>
 
-        <!-- ── Deliverables ── -->
+        <!-- ── Essential Deliverables (required) ── -->
+        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-1 rounded-2xl p-8" style="opacity:0">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-amber-400">priority_high</span>
+                    <h2 class="font-display text-xl font-semibold">Essential Deliverables</h2>
+                </div>
+                <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-essential-deliverables" title="More info">?</button>
+            </div>
+            <div id="help-essential-deliverables" class="hidden mb-4 p-3 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Tasks that must be completed (non-optional). Set the number in the Sprint Summary sidebar, then add that many items here. These appear first on the contract.</div>
+            <div class="space-y-4">
+                <div class="relative">
+                    <input id="essential-deliverables-input" class="w-full liquid-glass-input rounded-xl px-4 py-3 pr-12 text-slate-200 focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all" placeholder="Add required deliverable (max from sidebar)..." type="text"/>
+                    <button type="button" id="essential-deliverables-add-btn" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-amber-500 text-navy-900 rounded-lg hover:bg-white transition-colors">
+                        <span class="material-symbols-outlined">add</span>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 essential-deliverables-cap-hint">You can add up to <span class="essential-deliverables-cap-num font-medium text-slate-400">0</span> essential deliverables (set in Sprint Summary).</p>
+                <div id="essential-deliverables-list" class="flex flex-wrap gap-2">
+                    <!-- Essential deliverable tags -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ── Deliverables (optional) ── -->
         <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-1 rounded-2xl p-8" style="opacity:0">
             <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-3">
@@ -35,7 +59,7 @@
                 </div>
                 <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-deliverables" title="More info">?</button>
             </div>
-            <div id="help-deliverables" class="hidden mb-4 p-3 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Add the specific tasks or features you want built during the sprint. These become the contract deliverables — developers must complete a minimum number to receive payment. Add as many or as few as you like.</div>
+            <div id="help-deliverables" class="hidden mb-4 p-3 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Optional tasks. Total deliverables (essential + optional) is limited by "Min Deliverables for Pay" in the sidebar. Developers must complete at least that many to receive payment.</div>
             <div class="space-y-4">
                 <div class="relative">
                     <input id="requirement-buffet-input" class="w-full liquid-glass-input rounded-xl px-4 py-3 pr-12 text-slate-200 focus:ring-2 focus:ring-mint focus:border-transparent transition-all" placeholder="Add a deliverable (e.g. Stripe integration, User Auth...)" type="text"/>
@@ -43,7 +67,8 @@
                         <span class="material-symbols-outlined">add</span>
                     </button>
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <p class="text-xs text-slate-500 deliverables-cap-hint">You can add up to <span class="deliverables-cap-num font-medium text-slate-400">1</span> optional deliverables (Min for Pay − Essential).</p>
+                <div id="requirement-buffet-list" class="flex flex-wrap gap-2">
                     <!-- Deliverables tags will appear here -->
                 </div>
             </div>
@@ -120,6 +145,8 @@
                     <input type="hidden" id="launch-pay_for_prototype" name="pay_for_prototype">
                     <input type="hidden" id="launch-sprint_timeline_days" name="sprint_timeline_days">
                     <input type="hidden" id="launch-minimum_requirements_for_pay" name="minimum_requirements_for_pay">
+                    <input type="hidden" id="launch-essential_deliverables_count" name="essential_deliverables_count">
+                    <input type="hidden" id="launch-essential_deliverables" name="essential_deliverables">
                     <input type="hidden" id="launch-technologies_required" name="technologies_required">
                     <input type="hidden" id="launch-deliverables" name="deliverables">
                     <button type="submit" class="w-full py-4 rounded-xl liquid-glass-cta liquid-glass-pulse text-navy-900 font-bold text-lg transition-all flex items-center justify-center gap-2 group">
@@ -217,13 +244,26 @@
             <!-- Min Requirements for Pay -->
             <div class="mb-8">
                 <div class="flex justify-between items-end mb-4">
-                    <label class="text-sm font-medium text-slate-400">Min Deliverables for Pay</label>
+                    <label class="text-sm font-medium text-slate-400">Total Deliverables</label>
                     <span class="text-2xl font-display font-bold text-mint min-requirements-display">1 <span class="text-xs uppercase text-slate-500">tasks</span></span>
                 </div>
                 <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint min-requirements-slider" max="8" min="1" type="range" value="1"/>
                 <div class="flex justify-between mt-2 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
                     <span>1 Task</span>
                     <span>8 Tasks</span>
+                </div>
+            </div>
+
+            <!-- Essential Deliverables (required count) -->
+            <div class="mb-8">
+                <div class="flex justify-between items-end mb-4">
+                    <label class="text-sm font-medium text-slate-400">Essential Deliverables</label>
+                    <span class="text-2xl font-display font-bold text-mint essential-deliverables-display">0 <span class="text-xs uppercase text-slate-500">required</span></span>
+                </div>
+                <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint essential-deliverables-slider" max="8" min="0" type="range" value="0"/>
+                <div class="flex justify-between mt-2 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
+                    <span>0</span>
+                    <span class="essential-deliverables-max-label">0</span>
                 </div>
             </div>
 

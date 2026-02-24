@@ -94,8 +94,12 @@
                 <button class="p-2 text-slate-400 hover:text-white transition-colors" type="button">
                     <span class="material-symbols-outlined">notifications</span>
                 </button>
-                <a href="{{ url_for('main.logout') }}" class="w-8 h-8 rounded-full bg-navy-700 border border-white/10 overflow-hidden block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50" title="Log out">
-                    <img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkwmaRf6UNiYue79ps4z0LXuQ6rVhTF1IDqNKPWHR98vumtYAS9CZLfF5TlVekRYBEXZ2_ltdi4v6zZeBI1sNqoufnpfPRShwg0AzTUpQ-njT7LeqdF7kfkln_Qyeglw516htw9GO4xYL_vVxzXqH_nDUlkiz4N48Na_L-u6gOC3M-d47p08hMQ5yV4PEaNWaZYk6YD_rB_1BJ1jGD6tfwsQXI0REMZj_oI3xxk5UjxAvLFp9zUX5bWvMhXrHQVh_qWCWBrnO_w9Q"/>
+                <a href="{{ url_for('main.logout') }}" class="w-8 h-8 rounded-full bg-navy-700 border border-white/10 overflow-hidden flex items-center justify-center block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50" title="Log out">
+                    {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
+                    <img alt="Profile" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
+                    {% else %}
+                    <span class="material-symbols-outlined text-slate-400 text-xl">person</span>
+                    {% endif %}
                 </a>
             </div>
         </div>
