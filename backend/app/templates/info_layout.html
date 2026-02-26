@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}"/>
     <title>{% block title %}JrDev{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -16,10 +17,10 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: "#14F195",
-                        mint: "#14F195",
-                        purple: "#8B5CF6",
-                        secondary: "#8B5CF6",
+                        primary: "#4f46e5",
+                        mint: "#4f46e5",
+                        purple: "#0d9488",
+                        secondary: "#0d9488",
                         navy: { 900: "#0F172A", 800: "#1E293B", 700: "#334155" },
                         "background-dark": "#0F172A",
                         "surface-dark": "#1E293B",
@@ -33,16 +34,13 @@
         };
     </script>
     <style>
-        .text-glow { text-shadow: 0 0 20px rgba(20, 241, 149, 0.3); }
+        .text-glow { text-shadow: 0 0 20px rgba(79, 70, 229, 0.3); }
         .btn-gradient {
-            background: linear-gradient(90deg, #14F195, #8B5CF6, #14F195);
-            background-size: 200% 200%;
-            animation: gradientShift 5s ease infinite;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            transition: all 0.3s ease;
         }
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        .btn-gradient:hover {
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.35);
         }
     </style>
 </head>
@@ -66,6 +64,24 @@
                     <a class="btn-gradient text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all" href="{{ url_for('main.register') }}">Get Started</a>
                 {% endif %}
                 </div>
+                <div class="flex md:hidden items-center">
+                    <button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
+                        <span class="material-icons-round nav-menu-icon-open">menu</span>
+                        <span class="material-icons-round nav-menu-icon-close hidden">close</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="nav-mobile-menu" class="nav-mobile-menu md:hidden" aria-hidden="true">
+            <div class="px-4 pb-4 pt-2 space-y-1 border-t border-white/10">
+                {% if current_user.is_authenticated %}
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.account') }}">My Account</a>
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.login') }}">Login</a>
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium mt-2 bg-primary text-white text-center" href="{{ url_for('main.register') }}">Get Started</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -94,5 +110,40 @@
             </filter>
         </defs>
     </svg>
+    <script>
+    (function() {
+        var btn = document.getElementById('nav-menu-btn');
+        var menu = document.getElementById('nav-mobile-menu');
+        var iconOpen = btn ? btn.querySelector('.nav-menu-icon-open') : null;
+        var iconClose = btn ? btn.querySelector('.nav-menu-icon-close') : null;
+        function closeMenu() {
+            if (!menu) return;
+            menu.classList.remove('open');
+            menu.setAttribute('aria-hidden', 'true');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            if (iconOpen) iconOpen.classList.remove('hidden');
+            if (iconClose) iconClose.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        function toggleMenu() {
+            if (!menu) return;
+            if (menu.classList.contains('open')) { closeMenu(); return; }
+            menu.classList.add('open');
+            menu.setAttribute('aria-hidden', 'false');
+            if (btn) btn.setAttribute('aria-expanded', 'true');
+            if (iconOpen) iconOpen.classList.add('hidden');
+            if (iconClose) iconClose.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        if (btn && menu) {
+            btn.addEventListener('click', toggleMenu);
+            var links = menu.querySelectorAll('.nav-mobile-link');
+            for (var i = 0; i < links.length; i++) links[i].addEventListener('click', closeMenu);
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && menu && menu.classList.contains('open')) closeMenu();
+        });
+    })();
+    </script>
 </body>
 </html>

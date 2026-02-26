@@ -7,7 +7,9 @@
   'use strict';
 
   const DEFAULT_DEVS = 3;
-  const DEFAULT_PER_DEV = 20;
+  const DEFAULT_PER_DEV = 50;
+  const MIN_PER_DEV = 50;
+  const MAX_PER_DEV = 300;
   const DEFAULT_TIMELINE_DAYS = 7;
   const DEFAULT_MIN_REQUIREMENTS = 1;
 
@@ -22,7 +24,7 @@
     const reqInput = document.getElementById('requirement-buffet-input');
     const techInput = document.getElementById('technologies-required-input');
     const techList = document.getElementById('technologies-tags-list');
-    const devSlider = document.querySelector('input[type="range"][max="5"]');
+    const devSlider = document.querySelector('.dev-allocation-slider') || document.querySelector('input[type="range"][max="5"]');
     const timelineSlider = document.querySelector('.sprint-timeline-slider');
     const investmentPerDevSlider = document.querySelector('.investment-per-dev-slider');
     const minReqSlider = document.querySelector('.min-requirements-slider');
@@ -43,15 +45,21 @@
       techAddBtn: document.getElementById('technologies-add-btn'),
       techList,
       devSlider,
-      devCount: devSlider?.previousElementSibling?.querySelector('span.text-2xl'),
+      devCount: document.querySelector('.dev-count'),
+      devCountValue: document.querySelector('.dev-count-value'),
       timelineSlider,
       timelineDays: document.querySelector('.timeline-days'),
+      timelineDaysValue: document.querySelector('.timeline-days-value'),
       investmentPerDevSlider,
       investmentPerDevDisplay: document.querySelector('.investment-per-dev'),
+      investmentPerDevValue: document.querySelector('.investment-per-dev-value'),
       minReqSlider,
       minReqDisplay: document.querySelector('.min-requirements-display'),
+      minRequirementsValue: document.querySelector('.min-requirements-value'),
+      minRequirementsLabel: document.querySelector('.min-requirements-label'),
       essentialSlider,
       essentialDisplay: document.querySelector('.essential-deliverables-display'),
+      essentialDeliverablesValue: document.querySelector('.essential-deliverables-value'),
       investmentAmount: document.querySelector('.investment-amount'),
       postContractForm,
       launchForm,
@@ -272,11 +280,15 @@
     if (!investEl) return;
     const devs = parseInt(el.devSlider?.value || DEFAULT_DEVS, 10);
     const perDev = parseInt(el.investmentPerDevSlider?.value || DEFAULT_PER_DEV, 10);
-    investEl.textContent = `£${devs * perDev}`;
-    if (el.devCount) {
-      const devVal = el.devSlider?.value ?? DEFAULT_DEVS;
-      el.devCount.innerHTML = `${devVal} <span class="text-xs uppercase text-slate-500">Devs</span>`;
-    }
+    investEl.textContent = '£' + (devs * perDev);
+    if (el.devCountValue) el.devCountValue.textContent = String(devs);
+    if (el.timelineDaysValue) el.timelineDaysValue.textContent = el.timelineSlider?.value ?? DEFAULT_TIMELINE_DAYS;
+    if (el.investmentPerDevValue) el.investmentPerDevValue.textContent = String(perDev);
+    var minVal = el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS;
+    if (el.minRequirementsValue) el.minRequirementsValue.textContent = String(minVal);
+    if (el.minRequirementsLabel) el.minRequirementsLabel.textContent = parseInt(minVal, 10) === 1 ? 'task' : 'tasks';
+    var essVal = el.essentialSlider ? Math.min(parseInt(el.essentialSlider.value, 10), getEssentialMax(el)) : 0;
+    if (el.essentialDeliverablesValue) el.essentialDeliverablesValue.textContent = String(essVal);
   }
 
   /**
@@ -309,24 +321,25 @@
       updateCapHints(el);
     }
 
+    function clampPerDev(val) { return Math.min(MAX_PER_DEV, Math.max(MIN_PER_DEV, parseInt(val, 10) || DEFAULT_PER_DEV)); }
+
     if (devSlider) {
       devSlider.addEventListener('input', () => updateInvestmentDisplay(el));
     }
-    if (timelineSlider && timelineDays) {
-      timelineSlider.addEventListener('input', () => {
-        timelineDays.innerHTML = `${timelineSlider.value} <span class="text-xs uppercase text-slate-500">Days</span>`;
-      });
+    if (timelineSlider) {
+      timelineSlider.addEventListener('input', () => updateInvestmentDisplay(el));
     }
-    if (investmentPerDevSlider && investmentPerDevDisplay) {
+    if (investmentPerDevSlider) {
       investmentPerDevSlider.addEventListener('input', () => {
-        investmentPerDevDisplay.innerHTML = `£${investmentPerDevSlider.value} <span class="text-xs uppercase text-slate-500">/ dev</span>`;
+        var v = clampPerDev(investmentPerDevSlider.value);
+        investmentPerDevSlider.value = String(v);
         updateInvestmentDisplay(el);
       });
     }
     if (minReqSlider && minReqDisplay) {
       minReqSlider.addEventListener('input', () => {
-        minReqDisplay.innerHTML = `${minReqSlider.value} <span class="text-xs uppercase text-slate-500">tasks</span>`;
         clampEssentialToMinReq();
+        updateInvestmentDisplay(el);
       });
     }
     if (essentialSlider && essentialDisplay) {
@@ -334,9 +347,9 @@
         const maxVal = getEssentialMax(el);
         const val = Math.min(Math.max(0, parseInt(essentialSlider.value, 10)), maxVal);
         essentialSlider.value = String(val);
-        essentialDisplay.innerHTML = `${val} <span class="text-xs uppercase text-slate-500">required</span>`;
         updateEssentialMaxLabel(el);
         updateCapHints(el);
+        updateInvestmentDisplay(el);
       });
     }
 

@@ -38,7 +38,7 @@
                     {% elif signup.status == 'denied' %}
                     <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/40">Denied</span>
                     {% elif signup.status == 'cancelled' %}
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-400 border border-slate-500/40">Cancelled</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-900/40 text-red-200 border border-red-500/30">Cancelled</span>
                     {% elif signup.is_fully_signed and signup.prototype_submitted_at %}
                     <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Prototype uploaded · Under review</span>
                     {% elif signup.is_fully_signed %}
@@ -113,7 +113,7 @@
                     {% endfor %}
                 </form>
                 {% else %}
-                <p class="text-slate-500 text-sm">Your rating: {{ signup.developer_rating_of_business }}/5</p>
+                <p class="text-slate-500 text-sm">Your rating: {{ signup.developer_rating_of_business|format_rating }}</p>
                 {% endif %}
             </div>
             {% elif signup.flagged_for_review %}
@@ -141,7 +141,7 @@
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-mint text-lg">task_alt</span>
                         <span class="text-slate-400">Minimum requirements for pay:</span>
-                        <span class="text-white font-medium">{{ listing.minimum_requirements_for_pay }} task(s)</span>
+                        <span class="text-white font-medium">{{ listing.minimum_requirements_for_pay }} task{{ 's' if listing.minimum_requirements_for_pay != 1 else '' }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-mint text-lg">payments</span>
@@ -151,11 +151,11 @@
                 </div>
                 {% if listing.deliverables_only_list %}
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Deliverables (from contract)</p>
-                <ol class="list-none space-y-1.5 ml-1">
+                <ol class="list-none space-y-3 ml-1">
                     {% for item in listing.deliverables_only_list %}
-                    <li class="flex items-baseline gap-2 text-sm text-slate-300">
+                    <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
                         <span class="text-mint font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
-                        {{ item }}
+                        <span class="min-w-0">{{ item }}</span>
                     </li>
                     {% endfor %}
                 </ol>
@@ -174,6 +174,9 @@
                 <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider mt-6 mb-2">Submit your work</h4>
                 {% if signup.prototype_submitted_at %}
                 <p class="text-slate-400 text-sm mb-3">Your prototype has been uploaded and delivered to the client. It is now under review.</p>
+                {% if signup_review_deadlines.get(signup.id) %}
+                <p class="text-slate-500 text-xs mb-3">Business has until <strong>{{ signup_review_deadlines[signup.id].strftime('%d %b %Y, %H:%M') }} UTC</strong> to review; then payment auto-releases to you.</p>
+                {% endif %}
                 {% if signup.requirements_met %}
                 <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Requirements you marked as met</p>
                 <p class="text-slate-400 text-sm mb-3">{{ signup.requirements_met }}</p>

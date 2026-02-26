@@ -12,12 +12,20 @@
 {% block content %}
 <div class="dev-profile-wrap min-h-[60vh]" data-theme="{{ profile_theme }}" data-animation="{{ profile_animation }}" data-panel-style="{{ profile_panel_style }}" data-background="{{ profile_background }}">
 <div class="grid lg:grid-cols-12 gap-8">
-    <!-- Sidebar -->
-    <aside class="lg:col-span-4 space-y-6">
+    <div class="lg:col-span-4">
+        <button type="button" id="dashboard-sidebar-toggle" class="lg:hidden w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/15 text-slate-400 hover:text-white hover:bg-white/5 text-sm font-medium transition-colors mb-4" aria-expanded="false" aria-controls="dashboard-sidebar-content">
+            <span class="material-symbols-outlined text-lg">person</span>
+            <span id="dashboard-sidebar-toggle-label">Show profile & stats</span>
+        </button>
+        <aside id="dashboard-sidebar-content" class="hidden lg:!block space-y-6" aria-hidden="true">
         <!-- Profile Card -->
         <div class="dev-panel rounded-2xl p-8 text-center reveal">
             <div class="w-24 h-24 mx-auto rounded-full border-2 dev-avatar-ring overflow-hidden mb-4">
+                {% if current_user.image_file and current_user.image_file != 'default.jpg' %}
                 <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="Profile" class="w-full h-full object-cover">
+                {% else %}
+                {% set size = 'card' %}{% include 'partials/avatar_fallback.html' with context %}
+                {% endif %}
             </div>
             <h2 class="font-display text-xl font-bold text-white">{{ current_user.username }}</h2>
             <p class="text-slate-400 text-sm mt-1">{{ profile.headline if profile.headline else 'Aspiring Developer' }}</p>
@@ -98,7 +106,7 @@
                         <span class="material-symbols-outlined dev-accent-text text-lg">bolt</span>
                         Prototypes Attempted
                     </div>
-                    <span class="text-xl font-display font-bold text-white">{{ profile.contracts_attempted or 0 }}</span>
+                    <span class="dev-stat-value font-display">{{ profile.contracts_attempted or 0 }}</span>
                 </div>
                 <div class="border-t border-white/5"></div>
                 <div class="flex items-center justify-between">
@@ -106,7 +114,7 @@
                         <span class="material-symbols-outlined dev-accent-text text-lg">verified</span>
                         Prototypes Completed
                     </div>
-                    <span class="text-xl font-display font-bold text-white">{{ profile.prototypes_completed or 0 }}</span>
+                    <span class="dev-stat-value font-display">{{ profile.prototypes_completed or 0 }}</span>
                 </div>
                 <div class="border-t border-white/5"></div>
                 <div class="flex items-center justify-between">
@@ -114,7 +122,7 @@
                         <span class="material-symbols-outlined text-amber-400 text-lg">star</span>
                         Avg Rating
                     </div>
-                    <span class="text-xl font-display font-bold text-white">{{ avg_rating if avg_rating is not none else '—' }}</span>
+                    <span class="dev-stat-value font-display">{{ avg_rating|format_rating }}</span>
                 </div>
             </div>
         </div>
@@ -124,7 +132,8 @@
             <span class="material-symbols-outlined text-lg">palette</span>
             Customize profile
         </a>
-    </aside>
+        </aside>
+    </div>
 
     <!-- Main Content -->
     <section class="lg:col-span-8 space-y-8">
@@ -155,7 +164,7 @@
             <div id="markdown-edit" class="hidden">
                 <form method="POST" action="{{ url_for('main.update_markdown') }}">
                     <textarea name="content" rows="8"
-                        class="w-full bg-navy-900/60 border border-white/10 rounded-xl p-4 text-slate-200 text-sm font-mono dev-input-focus focus:ring-2 focus:border-transparent transition-all placeholder:text-slate-600"
+                        class="liquid-glass-input w-full rounded-xl p-4 text-sm font-mono"
                         placeholder="Write in Markdown...">{{ profile.custom_markdown if profile.custom_markdown else '' }}</textarea>
                     <div class="flex gap-3 mt-4">
                         <button type="submit" class="px-5 py-2 rounded-lg dev-cta font-bold text-sm transition-all">Save</button>
@@ -183,26 +192,26 @@
                     <div>
                         <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Project Title</label>
                         <input type="text" name="title" required
-                            class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                            class="liquid-glass-input w-full rounded-lg px-4 py-2.5 text-sm"
                             placeholder="My Awesome Project">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Description</label>
                         <input type="text" name="description" required
-                            class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                            class="liquid-glass-input w-full rounded-lg px-4 py-2.5 text-sm"
                             placeholder="A brief description of the project">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Tags</label>
                             <input type="text" name="tags"
-                                class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                                class="liquid-glass-input w-full rounded-lg px-4 py-2.5 text-sm"
                                 placeholder="Python, Flask">
                         </div>
                         <div>
                             <label class="block text-xs text-slate-400 uppercase tracking-wider font-bold mb-1">Link</label>
                             <input type="text" name="link"
-                                class="w-full bg-navy-900/60 border border-white/10 rounded-lg px-4 py-2.5 text-slate-200 text-sm focus:ring-2 focus:ring-mint focus:border-transparent transition-all"
+                                class="liquid-glass-input w-full rounded-lg px-4 py-2.5 text-sm"
                                 placeholder="https://github.com/...">
                         </div>
                     </div>
@@ -240,9 +249,14 @@
                 {% endfor %}
 
                 {% if not profile.pinned_projects %}
-                <div class="sm:col-span-2 dev-card rounded-xl p-8 text-center">
-                    <span class="material-symbols-outlined text-4xl text-slate-600 mb-3">folder_open</span>
-                    <p class="text-slate-500 text-sm">Showcase your best work here. Click "Add Project" to get started.</p>
+                <div class="sm:col-span-2 dev-card rounded-xl p-12 text-center">
+                    <span class="material-symbols-outlined text-6xl text-slate-500 mb-4 block">folder_special</span>
+                    <h4 class="font-display text-lg font-semibold text-white mb-2">No projects pinned yet</h4>
+                    <p class="text-slate-400 text-sm mb-6 max-w-sm mx-auto">Showcase your best work to businesses. Add a project to get started.</p>
+                    <button type="button" class="js-open-add-project inline-flex items-center gap-2 px-6 py-3 rounded-xl dev-cta font-bold text-sm transition-all" id="empty-state-add-project">
+                        <span class="material-symbols-outlined text-lg">add</span>
+                        Add your first project
+                    </button>
                 </div>
                 {% endif %}
             </div>

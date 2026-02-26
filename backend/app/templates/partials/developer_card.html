@@ -43,7 +43,7 @@
                         Progress video due: {{ developer.video_due.strftime('%d %b %Y, %H:%M') if developer.video_due else '—' }}
                     </p>
                     <p class="text-slate-400 text-sm mt-1">
-                        Rating: {{ developer.rating if developer.rating is not none else '—' }}
+                        Rating: {{ developer.rating|format_rating }}
                     </p>
                     <p class="text-slate-400 text-sm mt-1">
                         <a href="mailto:{{ developer.user.email }}" class="text-mint hover:underline">{{ developer.user.email }}</a>
@@ -72,6 +72,16 @@
             <p class="font-semibold mb-1">Flagged for review – what happens next</p>
             <p>Our team will contact you and the developer to resolve the issue. No charge will be made until the sprint is marked complete. If the work is adjusted and accepted, you can then mark as reviewed.</p>
         </div>
+        {% endif %}
+        {% if not developer.reviewed_at and developer.review_deadline_at %}
+        <p class="text-amber-200/90 text-xs mb-2">Review within 48 hours or payment auto-releases to the developer.</p>
+        {% if developer.hours_left_to_review is not none %}
+        {% if developer.hours_left_to_review > 0 %}
+        <p class="text-slate-400 text-xs mb-2"><span class="font-medium text-white">{{ developer.hours_left_to_review|int }} hours left</span> · Due by {{ developer.review_deadline_at.strftime('%d %b %Y, %H:%M') }} UTC</p>
+        {% else %}
+        <p class="text-amber-400 text-xs mb-2">Deadline passed — payment will auto-release on next page load.</p>
+        {% endif %}
+        {% endif %}
         {% endif %}
         {% if not developer.reviewed_at %}
         <div class="flex flex-wrap gap-2 mb-4">
@@ -112,7 +122,7 @@
             {% endfor %}
         </form>
         {% elif developer.reviewed_at and developer.business_rating_of_developer is not none %}
-        <p class="text-slate-500 text-xs mb-4">Your rating: {{ developer.business_rating_of_developer }}/5</p>
+        <p class="text-slate-500 text-xs mb-4">Your rating: {{ developer.business_rating_of_developer|format_rating }}</p>
         {% endif %}
         {% endif %}
         <a href="{{ url_for('main.developer_profile_view', user_id=developer.user.id) }}" class="block w-full py-3 rounded-2xl border border-white/20 text-center text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">

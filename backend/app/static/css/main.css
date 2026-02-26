@@ -1,18 +1,24 @@
+/**
+ * main.css
+ * Base layout and content styles for the app (navbar offset, sections, articles, account).
+ * Theme-specific and dashboard styles live in developer_themes.css, liquid-glass.css, home.css.
+ */
 body {
     background: #fafafa;
     color: #1a1a1a;
     padding-top: 5rem;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     color: #1a1a1a;
     font-weight: 700;
   }
   
+  /* Legacy navbar / header (some layouts use .site-header) */
   .bg-steel {
     background-color: #5f788a;
   }
-  
+
   .site-header .navbar-nav .nav-link {
     color: #cbd5db;
   }
@@ -25,6 +31,7 @@ body {
     font-weight: 500;
   }
   
+  /* Content cards and article styling */
   .content-section {
     background: #ffffff;
     padding: 24px 32px;

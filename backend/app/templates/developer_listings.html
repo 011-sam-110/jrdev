@@ -37,7 +37,7 @@
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-slate-400 text-lg">star</span>
                         <span class="text-slate-400">Business rating:</span>
-                        <span class="text-white font-medium">{{ listing.business_rating or 0 }}/5</span>
+                        <span class="text-white font-medium">{{ (listing.business_rating or 0)|format_rating }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-slate-400 text-lg">schedule</span>

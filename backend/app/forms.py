@@ -1,9 +1,14 @@
+"""
+Authentication forms: registration and login.
+
+Shared EMAIL_VALIDATORS keep email validation DRY across forms.
+"""
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Regexp
 from app.models import User
 
-# Shared email validation: single source of truth
+# Single source of truth for email validation (used by RegistrationForm and LoginForm)
 EMAIL_VALIDATORS = [
     DataRequired(),
     Regexp(r'^.+@.+\..+$', message='Invalid email address.'),
@@ -11,6 +16,7 @@ EMAIL_VALIDATORS = [
 
 
 class RegistrationForm(FlaskForm):
+    """Register a new user (developer or business) with email/password and optional 2FA."""
     username = StringField('Username',
                            validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=EMAIL_VALIDATORS)
@@ -34,6 +40,7 @@ class RegistrationForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
+    """Login with email and password; optional remember-me."""
     email = StringField('Email', validators=EMAIL_VALIDATORS)
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remember Me')

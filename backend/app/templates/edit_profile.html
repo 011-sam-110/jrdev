@@ -31,8 +31,12 @@
             <!-- Profile Picture Upload -->
             <div class="space-y-2">
                 <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2">Profile Picture</h3>
-                {% if current_user.image_file %}
-                    <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="Profile" class="w-24 h-24 rounded-full border-2 border-mint/30 shadow-xl object-cover mb-2">
+                {% if current_user.image_file and current_user.image_file != 'default.jpg' %}
+                <img src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}" alt="Profile" class="w-24 h-24 rounded-full border-2 border-mint/30 shadow-xl object-cover mb-2">
+                {% else %}
+                <div class="w-24 h-24 rounded-full border-2 border-mint/30 overflow-hidden mb-2">
+                    {% set size = 'card' %}{% include 'partials/avatar_fallback.html' with context %}
+                </div>
                 {% endif %}
                 {{ form.picture.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
                 {{ form.picture(class="w-full text-slate-300 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-mint/20 file:text-mint hover:file:bg-mint/30 file:cursor-pointer", accept=".png,.jpg,.jpeg") }}
@@ -45,24 +49,24 @@
                 <div>
                     {{ form.headline.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
                     {% if form.headline.errors %}
-                        {{ form.headline(class="w-full bg-navy-900/60 border border-red-500/60 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30") }}
+                        {{ form.headline(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm border-red-500/60 focus:border-red-500/70") }}
                         <div class="text-red-400 text-xs mt-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-sm">error</span>
                             {% for error in form.headline.errors %}{{ error }}{% endfor %}
                         </div>
                     {% else %}
-                        {{ form.headline(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all") }}
+                        {{ form.headline(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm") }}
                     {% endif %}
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         {{ form.location.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
-                        {{ form.location(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all") }}
+                        {{ form.location(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm") }}
                     </div>
                     <div>
                         {{ form.availability.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
-                        {{ form.availability(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all appearance-none") }}
+                        {{ form.availability(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm appearance-none") }}
                     </div>
                 </div>
             </div>
@@ -72,8 +76,8 @@
                 <h3 class="text-lg font-semibold text-white border-b border-white/5 pb-2">Skills</h3>
                 <div>
                     {{ form.technologies.label(class="block text-slate-400 text-xs uppercase font-bold mb-1") }}
-                    {{ form.technologies(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="Python, React, Flask...") }}
-                    <p class="text-slate-500 text-xs mt-1">Comma separated list of your top skills.</p>
+                    {{ form.technologies(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm", placeholder="Python, React, Flask...") }}
+                    <p class="text-slate-500 text-xs mt-1 break-words">Comma separated list of your top skills.</p>
                 </div>
             </div>
 
@@ -106,18 +110,18 @@
                 </div>
                 <div>
                     <label class="block text-slate-400 text-xs uppercase font-bold mb-2">Panel style</label>
-                    {{ form.profile_panel_style(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all appearance-none") }}
+                    {{ form.profile_panel_style(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm appearance-none") }}
                     <p class="text-slate-500 text-xs mt-1">Liquid glass = frosted, translucent panels (works best with a custom background).</p>
                 </div>
                 <div>
                     <label class="block text-slate-400 text-xs uppercase font-bold mb-2">Background</label>
-                    {{ form.profile_background(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all appearance-none") }}
+                    {{ form.profile_background(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm appearance-none") }}
                     <p class="text-slate-500 text-xs mt-1">Changes the background behind your profile (gradient, mesh, dots, or soft glow).</p>
                 </div>
                 <div>
                     <label class="block text-slate-400 text-xs uppercase font-bold mb-2">Animations</label>
-                    {{ form.profile_animation(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all appearance-none") }}
-                    <p class="text-slate-500 text-xs mt-1">Glow = soft pulse on accents; Shimmer = gradient sweep on hover; Float = cards lift on hover.</p>
+                    {{ form.profile_animation(class="liquid-glass-input w-full rounded-lg px-3 py-2.5 text-sm appearance-none") }}
+                    <p class="text-slate-500 text-xs mt-1">Glow: soft pulse on accents. Shimmer: gradient sweep on hover. Float: cards lift on hover.</p>
                 </div>
             </div>
 
@@ -128,24 +132,24 @@
                 <div class="grid grid-cols-1 gap-4">
                     <div class="relative">
                         <span class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-lg">code</span>
-                        {{ form.github_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="e.g. github.com/yourname or https://...") }}
+                        {{ form.github_link(class="liquid-glass-input w-full rounded-lg pl-10 pr-3 py-2.5 text-sm", placeholder="e.g. github.com/yourname or https://...") }}
                         {% if form.github_link.errors %}<p class="text-red-400 text-xs mt-1">{{ form.github_link.errors[0] }}</p>{% endif %}
                     </div>
                     <div class="relative">
                         <span class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-lg">work</span>
-                        {{ form.linkedin_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="e.g. linkedin.com/in/yourname") }}
+                        {{ form.linkedin_link(class="liquid-glass-input w-full rounded-lg pl-10 pr-3 py-2.5 text-sm", placeholder="e.g. linkedin.com/in/yourname") }}
                         {% if form.linkedin_link.errors %}<p class="text-red-400 text-xs mt-1">{{ form.linkedin_link.errors[0] }}</p>{% endif %}
                     </div>
                     <div class="relative">
                         <span class="material-icons-round absolute left-3 top-2.5 text-slate-500 text-lg">link</span>
-                        {{ form.portfolio_link(class="w-full bg-navy-900/60 border border-white/10 rounded-lg text-white pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-mint/30 focus:border-transparent transition-all", placeholder="e.g. yoursite.com or https://...") }}
+                        {{ form.portfolio_link(class="liquid-glass-input w-full rounded-lg pl-10 pr-3 py-2.5 text-sm", placeholder="e.g. yoursite.com or https://...") }}
                         {% if form.portfolio_link.errors %}<p class="text-red-400 text-xs mt-1">{{ form.portfolio_link.errors[0] }}</p>{% endif %}
                     </div>
                 </div>
             </div>
 
             <div class="pt-6 border-t border-white/5 flex justify-end gap-3">
-                <a href="{{ url_for('main.dashboard') }}" class="px-6 py-2.5 rounded-lg text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</a>
+                <a href="{{ url_for('main.dashboard') }}" class="px-6 py-2.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white text-sm font-medium transition-colors">Cancel</a>
                 {{ form.submit(class="px-6 py-2.5 rounded-lg gradient-cta text-navy-900 font-bold text-sm transition-all cursor-pointer hover:shadow-[0_0_15px_rgba(20,241,149,0.3)]") }}
             </div>
         </form>

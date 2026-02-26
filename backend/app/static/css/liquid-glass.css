@@ -10,8 +10,9 @@
 	--distortion-strength: 77;
 	--outer-shadow-blur: 24px;
 
-	--primary-mint: #14F195;
-	--secondary-purple: #8B5CF6;
+	/* Primary: indigo (CTAs, links). Secondary: teal (accent, success). */
+	--primary-mint: #4f46e5;
+	--secondary-purple: #0d9488;
 	--bg-navy: #0F172A;
 	--surface-navy: #1E293B;
 }
@@ -88,19 +89,26 @@ h1, h2, h3 {
 	to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ── Glass inputs (auth forms) ── */
+/* ── Glass inputs (auth + developer forms) ── */
 .liquid-glass-input {
-	background: rgba(0, 0, 0, 0.25);
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	transition: all 0.25s ease;
+	background: rgba(15, 23, 42, 0.6);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	color: #e2e8f0;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .liquid-glass-input:focus {
-	border-color: var(--primary-mint);
-	box-shadow: 0 0 0 3px rgba(20, 241, 149, 0.15);
-	background: rgba(0, 0, 0, 0.35);
+	border-color: rgba(79, 70, 229, 0.7);
+	box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+	background: rgba(15, 23, 42, 0.8);
+	outline: none;
 }
 .liquid-glass-input::placeholder {
 	color: #64748b;
+}
+@media (prefers-contrast: high) {
+	.liquid-glass-input::placeholder {
+		color: #94a3b8;
+	}
 }
 
 /* Auth layout: ensure typed text is visible */
@@ -194,7 +202,7 @@ h1, h2, h3 {
 	transition: all 0.3s ease;
 }
 .liquid-glass-cta:hover {
-	box-shadow: 0 0 25px rgba(20, 241, 149, 0.35);
+	box-shadow: 0 0 25px rgba(79, 70, 229, 0.35);
 	transform: translateY(-1px);
 }
 
@@ -238,8 +246,8 @@ h1, h2, h3 {
 	animation: glassPulse 3s ease-in-out infinite;
 }
 @keyframes glassPulse {
-	0%, 100% { box-shadow: 0 0 0 0 rgba(20, 241, 149, 0); }
-	50%      { box-shadow: 0 0 20px 4px rgba(20, 241, 149, 0.2); }
+	0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+	50%      { box-shadow: 0 0 20px 4px rgba(79, 70, 229, 0.25); }
 }
 
 /* ── Float (sidebar icon) ── */
@@ -310,6 +318,43 @@ h1, h2, h3 {
 	left: 0;
 }
 
+/* ── Mobile nav menu (hamburger dropdown) ── */
+.nav-mobile-menu {
+	max-height: 0;
+	overflow: hidden;
+	opacity: 0;
+	background: rgba(15, 23, 42, 0.98);
+	backdrop-filter: blur(12px);
+	transition: max-height 0.3s ease, opacity 0.2s ease;
+}
+.nav-mobile-menu.open {
+	max-height: 85vh;
+	opacity: 1;
+	overflow-y: auto;
+}
+.nav-mobile-link {
+	display: block;
+	padding: 0.75rem 1rem;
+	border-radius: 0.5rem;
+	font-size: 1rem;
+	font-weight: 500;
+	color: #e2e8f0;
+	transition: background 0.2s, color 0.2s;
+	min-height: 44px;
+	box-sizing: border-box;
+}
+.nav-mobile-link:hover {
+	background: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+@media (min-width: 768px) {
+	.nav-mobile-menu.open {
+		max-height: 0;
+		opacity: 0;
+		overflow: hidden;
+	}
+}
+
 /* ── Button micro-interactions ── */
 .gradient-cta:hover,
 .liquid-glass-btn-ghost:hover {
@@ -329,7 +374,7 @@ button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-	outline: 2px solid rgba(20, 241, 149, 0.5);
+	outline: 2px solid rgba(79, 70, 229, 0.5);
 	outline-offset: 2px;
 }
 
@@ -416,6 +461,81 @@ select {
 	box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.25);
 }
 
+/* ── Business dashboard: developer row hover ── */
+.developer-row {
+	transition: background-color 0.15s ease;
+}
+.developer-row:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Status pills (developer list) ── */
+.status-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.25rem 0.5rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+.status-pill__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+.status-pill--active {
+	background: rgba(79, 70, 229, 0.2);
+	color: #818cf8;
+}
+.status-pill--active .status-pill__dot {
+	background: #4f46e5;
+}
+.status-pill--onboarding {
+	background: rgba(245, 158, 11, 0.2);
+	color: #fbbf24;
+}
+.status-pill--onboarding .status-pill__dot {
+	background: #f59e0b;
+}
+.status-pill--offboarding {
+	background: rgba(239, 68, 68, 0.15);
+	color: #f87171;
+}
+.status-pill--offboarding .status-pill__dot {
+	background: #ef4444;
+}
+
+/* ── Billing: card brand badge ── */
+.card-brand-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.25rem 0.5rem;
+	border-radius: 4px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+.card-brand-badge--visa {
+	background: #1a1f71;
+	color: #fff;
+}
+.card-brand-badge--mastercard {
+	background: #eb001b;
+	color: #fff;
+}
+.card-brand-badge--amex {
+	background: #006fcf;
+	color: #fff;
+}
+.card-brand-badge:not(.card-brand-badge--visa):not(.card-brand-badge--mastercard):not(.card-brand-badge--amex) {
+	background: rgba(255, 255, 255, 0.1);
+	color: #e2e8f0;
+}
+
 /* ── Reduced motion preference ── */
 @media (prefers-reduced-motion: reduce) {
 	.reveal,
@@ -424,8 +544,12 @@ select {
 	.glass-card,
 	.glass-panel,
 	.home-reveal,
-	.home-glass-card {
+	.home-glass-card,
+	.nav-mobile-menu {
 		animation: none !important;
 		transition-duration: 0.01ms !important;
+	}
+	.developer-row {
+		transition: none;
 	}
 }

@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}"/>
     <title>{% block title %}JrDev | Developer Dashboard{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -13,8 +14,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}"/>
     <style type="text/tailwindcss">
         :root {
-            --primary-mint: #14F195;
-            --secondary-purple: #8B5CF6;
+            --primary-mint: #4f46e5;
+            --secondary-purple: #0d9488;
             --bg-navy: #0F172A;
             --surface-navy: #1E293B;
         }
@@ -44,17 +45,17 @@
         .markdown-body p { margin-bottom: 0.75rem; }
         .markdown-body ul, .markdown-body ol { margin-left: 1.25rem; margin-bottom: 0.75rem; }
         .markdown-body code { background: rgba(255,255,255,0.1); padding: 0.125rem 0.375rem; border-radius: 4px; font-size: 0.875em; }
-        .markdown-body a { color: #14F195; text-decoration: underline; }
+        .markdown-body a { color: #4f46e5; text-decoration: underline; }
     </style>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: "#14F195",
-                        mint: "#14F195",
-                        purple: "#8B5CF6",
-                        secondary: "#8B5CF6",
+                        primary: "#4f46e5",
+                        mint: "#4f46e5",
+                        purple: "#0d9488",
+                        secondary: "#0d9488",
                         navy: {
                             900: "#0F172A",
                             800: "#1E293B",
@@ -76,43 +77,70 @@
 <body class="bg-navy-900 text-slate-100 font-body h-full min-h-screen flex flex-col relative">
     <div class="liquid-glass-bg" aria-hidden="true"></div>
     <nav id="dev-nav" class="fixed top-0 w-full z-50 glass-card border-b border-white/5 bg-background-dark/80 backdrop-blur-md transition-shadow duration-300">
-        <div class="max-w-[1600px] mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+        <div class="max-w-[1600px] mx-auto px-6 lg:px-12 h-24 flex items-center justify-between">
             <div class="flex-shrink-0 flex items-center gap-2">
                 <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2">
-                    <span class="font-bold text-2xl" style="color: #14F195;">&lt;&gt;</span>
-                    <span class="font-display font-bold text-xl tracking-tight"><span class="text-slate-900 dark:text-white">Jr</span><span class="text-primary text-glow">Dev</span></span>
+                    <span class="font-bold text-3xl" style="color: #4f46e5;">&lt;&gt;</span>
+                    <span class="font-display font-bold text-2xl tracking-tight"><span class="text-slate-900 dark:text-white">Jr</span><span class="text-primary text-glow">Dev</span></span>
                 </a>
             </div>
-            <div class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-400">
+            <div class="hidden md:flex items-center space-x-8 text-base font-medium text-slate-400">
                 <a class="nav-link-animated {% if nav_active == 'dashboard' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 <a class="nav-link-animated {% if nav_active == 'listings' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_listings') }}">Listings</a>
                 <a class="nav-link-animated {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">Joined Listings</a>
-            </div>  
+            </div>
             <div class="flex items-center gap-4">
-                <a href="{{ url_for('main.logout') }}" class="w-8 h-8 rounded-full bg-navy-700 border border-white/10 overflow-hidden block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50" title="Log out">
-                    {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
-                    <img alt="Profile" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
-                    {% else %}
-                    <div class="w-full h-full flex items-center justify-center bg-navy-700 text-mint"><span class="material-symbols-outlined text-lg">person</span></div>
-                    {% endif %}
-                </a>
+                <div class="hidden md:block relative">
+                    <button type="button" id="dev-profile-menu-btn" class="w-14 h-14 rounded-full bg-navy-700 border border-white/10 overflow-hidden flex items-center justify-center block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50 cursor-pointer" aria-expanded="false" aria-haspopup="true" aria-label="Profile menu" title="Profile">
+                        {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
+                        <img alt="Profile" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
+                        {% else %}
+                        {% set size = 'nav-lg' %}{% include 'partials/avatar_fallback.html' with context %}
+                        {% endif %}
+                    </button>
+                    <div id="dev-profile-dropdown" class="nav-profile-dropdown absolute right-0 mt-2 py-2 w-48 rounded-xl bg-navy-800 border border-white/10 shadow-xl shadow-black/30 hidden z-50" role="menu" aria-orientation="vertical">
+                        <a href="{{ url_for('main.logout') }}" class="block px-4 py-3 text-base font-medium text-slate-300 hover:bg-white/10 hover:text-white rounded-lg mx-2 transition-colors flex items-center gap-2" role="menuitem">
+                            <span class="material-symbols-outlined text-lg">logout</span>
+                            Log out
+                        </a>
+                    </div>
+                </div>
+                <div class="flex md:hidden items-center">
+                    <button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
+                        <span class="material-symbols-outlined nav-menu-icon-open">menu</span>
+                        <span class="material-symbols-outlined nav-menu-icon-close hidden">close</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="nav-mobile-menu" class="nav-mobile-menu md:hidden" aria-hidden="true">
+            <div class="px-4 pb-4 pt-2 space-y-1 border-t border-white/10">
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_listings') }}">Listings</a>
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_joined_listings') }}">Joined Listings</a>
+                <div class="pt-2 mt-2 border-t border-white/10">
+                    <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.logout') }}">Log out</a>
+                </div>
             </div>
         </div>
     </nav>
     {% block flash %}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <div id="flash-messages" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 space-y-2 max-w-md w-full px-4 flash-dismiss">
+    <div id="flash-messages" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 space-y-2 max-w-md w-full px-4 flash-dismiss">
         {% for category, message in messages %}
-        <div class="flash-item rounded-xl px-4 py-3 text-sm font-medium border transition-opacity duration-500 {% if category == 'success' %}bg-mint/20 border-mint/40 text-mint{% else %}bg-red-500/20 border-red-500/40 text-red-300{% endif %}">
-            {{ message }}
+        <div class="flash-item rounded-xl px-4 py-3 text-sm font-medium border transition-opacity duration-500 flex items-center gap-3 {% if category == 'success' %}bg-mint/20 border-mint/40 text-mint py-4 shadow-lg shadow-mint/10{% elif category == 'danger' %}bg-red-500/20 border-red-500/40 text-red-300{% else %}bg-slate-500/20 border-slate-400/40 text-slate-200{% endif %}">
+            {% if category == 'success' %}
+            <span class="material-symbols-outlined text-2xl flex-shrink-0">check_circle</span>
+            {% endif %}
+            <span>{{ message }}</span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
     {% endwith %}
     {% endblock %}
-    <div class="pt-24"></div>
+    <div class="pt-28"></div>
     <main class="app-main-in flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12{% endblock %}">
         {% block content %}{% endblock %}
     </main>
@@ -133,6 +161,65 @@
                 window.addEventListener('scroll', onScroll, { passive: true });
                 onScroll();
             }
+            var btn = document.getElementById('nav-menu-btn');
+            var menu = document.getElementById('nav-mobile-menu');
+            var iconOpen = btn ? btn.querySelector('.nav-menu-icon-open') : null;
+            var iconClose = btn ? btn.querySelector('.nav-menu-icon-close') : null;
+            function closeMenu() {
+                if (!menu) return;
+                menu.classList.remove('open');
+                menu.setAttribute('aria-hidden', 'true');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+                if (iconOpen) iconOpen.classList.remove('hidden');
+                if (iconClose) iconClose.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+            function toggleMenu() {
+                if (!menu) return;
+                if (menu.classList.contains('open')) { closeMenu(); return; }
+                menu.classList.add('open');
+                menu.setAttribute('aria-hidden', 'false');
+                if (btn) btn.setAttribute('aria-expanded', 'true');
+                if (iconOpen) iconOpen.classList.add('hidden');
+                if (iconClose) iconClose.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+            if (btn && menu) {
+                btn.addEventListener('click', toggleMenu);
+                var links = menu.querySelectorAll('.nav-mobile-link');
+                for (var i = 0; i < links.length; i++) links[i].addEventListener('click', closeMenu);
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && menu && menu.classList.contains('open')) closeMenu();
+            });
+            var profileBtn = document.getElementById('dev-profile-menu-btn');
+            var profileDropdown = document.getElementById('dev-profile-dropdown');
+            function closeProfileDropdown() {
+                if (profileDropdown) {
+                    profileDropdown.classList.add('hidden');
+                    if (profileBtn) profileBtn.setAttribute('aria-expanded', 'false');
+                }
+            }
+            if (profileBtn && profileDropdown) {
+                profileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var isOpen = !profileDropdown.classList.contains('hidden');
+                    if (isOpen) {
+                        closeProfileDropdown();
+                    } else {
+                        profileDropdown.classList.remove('hidden');
+                        profileBtn.setAttribute('aria-expanded', 'true');
+                    }
+                });
+                document.addEventListener('click', function(e) {
+                    if (e.target.closest('#dev-profile-menu-btn') || e.target.closest('#dev-profile-dropdown')) return;
+                    closeProfileDropdown();
+                });
+                profileDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && profileDropdown && !profileDropdown.classList.contains('hidden')) closeProfileDropdown();
+            });
             var io = new IntersectionObserver(function(entries) {
                 entries.forEach(function(e) {
                     if (e.isIntersecting) { e.target.classList.add('active'); io.unobserve(e.target); }

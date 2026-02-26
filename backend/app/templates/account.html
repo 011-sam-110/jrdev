@@ -33,7 +33,11 @@
             </div>
             <div class="flex items-center justify-between py-3 border-b border-white/5">
                 <span class="text-slate-400 text-sm">Two-Factor Auth</span>
+                {% if current_user.two_factor_secret %}
                 <span class="flex items-center gap-1 text-mint text-sm font-medium"><span class="material-symbols-outlined text-sm">shield</span> Enabled</span>
+                {% else %}
+                <a href="{{ url_for('main.setup_2fa') }}" class="text-primary hover:text-white text-sm font-medium">Set up 2FA (optional)</a>
+                {% endif %}
             </div>
         </div>
 

@@ -10,8 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style type="text/tailwindcss">
         :root {
-            --mint: #14F195;
-            --purple: #8B5CF6;
+            --mint: #4f46e5;
+            --purple: #0d9488;
             --bg-dark: #0F172A;
             --surface-dark: #1E293B;
         }
@@ -34,7 +34,7 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.12) 0%, transparent 70%);
         }
     </style>
 <script>
@@ -43,8 +43,8 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: "#14F195",
-                        secondary: "#8B5CF6",
+                        primary: "#4f46e5",
+                        secondary: "#0d9488",
                         "background-dark": "#0F172A",
                     },
                     fontFamily: {
@@ -252,8 +252,8 @@
 <span class="material-symbols-outlined text-secondary text-sm">support_agent</span>
 <span class="text-xs font-bold uppercase tracking-widest text-secondary">Need Help?</span>
 </div>
-<p class="text-xs text-slate-400 mb-4">Our sprint managers are available 24/7 for technical mediation.</p>
-<button class="text-xs font-bold text-white border-b border-white/30 hover:border-white transition-all pb-0.5">Contact Support</button>
+<p class="text-xs text-slate-400 mb-4">Our sprint managers are available for technical mediation.</p>
+<a href="{{ url_for('main.support') }}" class="text-xs font-bold text-white border-b border-white/30 hover:border-white transition-all pb-0.5">Contact Support</a>
 </div>
 </div>
 </aside>
@@ -269,9 +269,9 @@
                 © 2026 JrDev Prototyping Platform. Secure Sprint Review.
             </div>
 <div class="flex gap-6">
-<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Dashboard</a>
-<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Support</a>
-<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="#">Log Out</a>
+<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.support') }}">Support</a>
+<a class="text-slate-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-widest" href="{{ url_for('main.logout') }}">Log Out</a>
 </div>
 </div>
 </footer>

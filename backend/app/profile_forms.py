@@ -1,8 +1,14 @@
+"""
+Profile and dashboard forms: edit profile, markdown, pinned projects.
+
+Theme/panel/background choices are defined here for consistency with models and templates.
+"""
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, SubmitField
 from wtforms.validators import DataRequired, URL, Optional
 from flask_wtf.file import FileField, FileAllowed
 
+# Choices for developer profile appearance (must match model defaults / utils.PROFILE_*_DEFAULT)
 THEME_CHOICES = [
     ('mint', 'Mint'),
     ('ocean', 'Ocean'),
@@ -30,6 +36,7 @@ BACKGROUND_CHOICES = [
 ]
 
 class EditProfileForm(FlaskForm):
+    """Edit developer profile: headline, location, tech stack, links, picture, theme options."""
     headline = StringField('Headline', validators=[DataRequired()])
     location = StringField('Location')
     availability = SelectField('Status', choices=[
@@ -50,10 +57,12 @@ class EditProfileForm(FlaskForm):
     submit = SubmitField('Update Profile')
 
 class EditMarkdownForm(FlaskForm):
+    """Edit the custom markdown bio/content on the developer dashboard."""
     markdown_content = TextAreaField('Content', validators=[DataRequired()]) 
     submit = SubmitField('Save Content')
 
 class AddPinnedProjectForm(FlaskForm):
+    """Add a pinned project to the developer profile (title, description, link, tags)."""
     title = StringField('Project Title', validators=[DataRequired()])
     description = StringField('Short Description', validators=[DataRequired()])
     link = StringField('Link (Repo/Demo)', validators=[Optional(), URL()])

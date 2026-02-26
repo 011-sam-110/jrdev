@@ -1,3 +1,9 @@
+"""
+SQLAlchemy models: User, DeveloperProfile, PinnedProject, Project, SprintListing, ListingSignup.
+
+User supports roles (DEVELOPER/BUSINESS), 2FA, and Stripe customer id.
+SprintListing and ListingSignup implement the sprint/contract/signup flow.
+"""
 from datetime import datetime
 from itsdangerous import URLSafeTimedSerializer as Serializer
 from flask import current_app
@@ -5,11 +11,15 @@ from . import db, login_manager
 from flask_login import UserMixin
 import pyotp
 
+
 @login_manager.user_loader
 def load_user(user_id):
+    """Flask-Login: load user by id from session."""
     return User.query.get(int(user_id))
 
+
 class User(db.Model, UserMixin):
+    """Platform user: developer or business; auth, 2FA, optional Stripe customer."""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -34,10 +44,11 @@ class User(db.Model, UserMixin):
 
     @staticmethod
     def verify_token(token, expires_sec=1800):
+        """Verify email verification token; return User or None if invalid/expired."""
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
             user_id = s.loads(token, salt='verification-salt', max_age=expires_sec)['user_id']
-        except:
+        except Exception:
             return None
         return User.query.get(user_id)
 
@@ -54,6 +65,7 @@ class User(db.Model, UserMixin):
         return f"User('{self.username}', '{self.email}', '{self.role}')"
 
 class DeveloperProfile(db.Model):
+    """Developer-specific profile: headline, tech stack, links, markdown, theme options, stats."""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
@@ -87,6 +99,7 @@ class DeveloperProfile(db.Model):
     pinned_projects = db.relationship('PinnedProject', backref='profile', lazy=True)
 
 class PinnedProject(db.Model):
+    """Pinned project shown on developer profile (title, description, link, tags)."""
     id = db.Column(db.Integer, primary_key=True)
     profile_id = db.Column(db.Integer, db.ForeignKey('developer_profile.id'), nullable=False)
     title = db.Column(db.String(100), nullable=False)
@@ -95,6 +108,7 @@ class PinnedProject(db.Model):
     tags = db.Column(db.String(100), nullable=True) # e.g. "Python,Flask"
 
 class Project(db.Model):
+    """Legacy project post (title, content, author)."""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

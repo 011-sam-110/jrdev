@@ -1,3 +1,8 @@
+"""
+Contract PDF blueprint: secure view URL (signed token), PDF generation from signup or form data.
+
+Routes: view_contract_for_signup (token + party check), generate_contract (business preview).
+"""
 import base64
 from flask import Blueprint, request, send_file, url_for, current_app, abort
 from io import BytesIO
@@ -8,7 +13,7 @@ from datetime import datetime
 from flask_login import current_user, login_required
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 
-from app.decorators import require_role
+from app.decorators import require_role, require_verified
 
 contract = Blueprint('contract', __name__)
 
@@ -101,7 +106,12 @@ def _build_pdf_from_data(data):
     draw_line(f'This Agreement, hereinafter known as the "Agreement", is created on {agreement_date} between {data.get("company_name", "[Company Name]")}, hereinafter known as the "1st Party", and {data.get("contractor_name", "[Contractor Name]")}, hereinafter known as the "2nd Party", and collectively known as the "Parties".')
     draw_line("")
     draw_line("II. THE SPRINT & COMPENSATION", "Helvetica-Bold", 11, 20)
-    pay = data.get("pay", "20")
+    pay_raw = data.get("pay", "20")
+    try:
+        pay_val = float(pay_raw)
+        pay = f"{pay_val:.2f}" if pay_val != int(pay_val) else f"{int(pay_val):.2f}"
+    except (TypeError, ValueError):
+        pay = str(pay_raw)
     draw_line(f'Sprint Timeframe: One (1) week, commencing on {data.get("start_date", "[Start Date]")} and ending on {data.get("end_date", "[End Date]")}.')
     draw_line(f"Payment Amount: £{pay} (GBP).")
     draw_line("Payment Condition: Payment is triggered only upon the successful completion of the deliverables defined in Section III (see Payment Trigger below).")
@@ -129,20 +139,26 @@ def _build_pdf_from_data(data):
                 draw_line(f"  {chr(65 + len(mandatory_tasks) + idx)}. {task}")
             draw_line("")
         total_count = len(mandatory_tasks) + len(optional_tasks)
-        min_tasks = data.get("min_tasks", "1")
+        min_tasks_raw = data.get("min_tasks", "1")
+        min_tasks_val = int(min_tasks_raw) if str(min_tasks_raw).isdigit() else 1
+        min_tasks_val = min(min_tasks_val, total_count)
         if mandatory_tasks and optional_tasks:
-            draw_line(f'Payment Trigger: To receive the £{pay} payment at the end of the week, the 2nd Party must complete all Mandatory deliverables listed above and at least {min_tasks} task(s) in total (Mandatory + Optional) out of {total_count}.')
+            draw_line(f'Payment Trigger: To receive the £{pay} payment at the end of the week, the 2nd Party must complete all Mandatory deliverables listed above and at least {min_tasks_val} task(s) in total (Mandatory + Optional) out of {total_count}.')
         elif mandatory_tasks:
             draw_line(f'Payment Trigger: To receive the £{pay} payment at the end of the week, the 2nd Party must complete all Mandatory deliverables listed above ({len(mandatory_tasks)} task(s)).')
         else:
-            draw_line(f'Payment Trigger: To receive the £{pay} payment at the end of the week, the 2nd Party must complete at least {min_tasks} of the {total_count} Optional tasks listed above.')
+            min_val = min_tasks_val
+            draw_line(f'Payment Trigger: To receive the £{pay} payment at the end of the week, the 2nd Party must complete at least {min_val} of the {total_count} Optional tasks listed above.')
     else:
         draw_line('The 2nd Party agrees to work toward the following list of tasks regarding the "Software":')
         if not tasks:
             tasks = ["[No deliverables specified]"]
         for idx, task in enumerate(tasks):
             draw_line(f"Task {chr(65 + idx)}: {task}")
-        draw_line(f'Payment Trigger: To receive the £{pay} payment at the end of the week, the 2nd Party must complete at least {data.get("min_tasks", "1")} of the {len(tasks)} tasks listed above.')
+        min_t = data.get("min_tasks", "1")
+        min_val = int(min_t) if str(min_t).isdigit() else 1
+        min_val = min(min_val, len(tasks))
+        draw_line(f'Payment Trigger: To receive the £{pay} payment at the end of the week, the 2nd Party must complete at least {min_val} of the {len(tasks)} tasks listed above.')
     draw_line("")
     draw_line("IV. INTELLECTUAL PROPERTY (IP) & TERMINATION", "Helvetica-Bold", 11, 20)
     draw_line("Conditional Ownership: The 1st Party shall have sole ownership of the Software and related source code only upon full payment to the 2nd Party.")
@@ -207,6 +223,7 @@ def _build_pdf_from_data(data):
 
 @contract.route('/contract/signup/<int:signup_id>/view')
 @login_required
+@require_verified
 def view_contract_for_signup(signup_id):
     """View contract PDF for a signup. Access only with a valid signed link (token) and only for the developer or business."""
     from app.models import ListingSignup
@@ -254,14 +271,17 @@ def view_contract_for_signup(signup_id):
 
 @contract.route('/generate_contract', methods=['POST'])
 @login_required
+@require_verified
 @require_role('BUSINESS')
 def generate_contract():
-    """Generate contract PDF from form data (business dashboard). Protected and CSRF via form.hidden_tag()."""
+    """Generate contract PDF from form data (business dashboard). Company/contractor from session when not in form."""
     form_data = request.form
     tasks = [v.strip() for k, v in sorted(form_data.items()) if k.startswith('task_') and v.strip()]
+    company_name = form_data.get('company_name', '').strip() or (current_user.username if current_user.is_authenticated else '[Company Name]')
+    contractor_name = form_data.get('contractor_name', '').strip() or '[To be assigned]'
     data = {
-        'company_name': form_data.get('company_name', '[Company Name]'),
-        'contractor_name': form_data.get('contractor_name', '[Contractor Name]'),
+        'company_name': company_name,
+        'contractor_name': contractor_name,
         'start_date': form_data.get('start_date', '[Start Date]'),
         'end_date': form_data.get('end_date', '[End Date]'),
         'pay': form_data.get('pay', '20'),

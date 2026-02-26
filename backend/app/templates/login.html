@@ -5,7 +5,6 @@
 {% block card_title %}Welcome Back{% endblock %}
 
 {% block nav_links %}
-    <a class="text-sm font-medium hover:text-primary transition-colors text-primary" href="{{ url_for('main.login') }}">Login</a>
     <a class="btn-gradient text-slate-900 hover:text-black px-5 py-2.5 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all duration-300" href="{{ url_for('main.register') }}">Get Started</a>
 {% endblock %}
 
@@ -18,12 +17,12 @@
             {{ render_field(form.email) }}
             {{ render_field(form.password) }}
 
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    {{ form.remember(class="rounded border-slate-600 bg-black/20 text-primary focus:ring-primary") }}
-                    {{ form.remember.label(class="text-sm text-slate-400") }}
-                </div>
-                <a href="#" class="text-sm text-primary hover:text-white transition-colors">Forgot Password?</a>
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    {{ form.remember(class="rounded border-slate-600 bg-black/20 text-primary focus:ring-primary flex-shrink-0") }}
+                    <span class="text-sm text-slate-400">Remember Me</span>
+                </label>
+                <a href="#" class="text-sm text-primary hover:text-white transition-colors inline-flex items-center">Forgot Password?</a>
             </div>
 
             {{ form.submit(class="w-full mt-8 btn-gradient py-4 rounded-xl text-slate-900 font-bold text-lg cursor-pointer hover:scale-[1.02] transform transition-all shadow-lg hover:shadow-primary/25") }}

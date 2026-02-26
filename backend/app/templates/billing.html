@@ -9,7 +9,16 @@
     <p class="text-slate-400 text-lg">Add a secure card for sprint fees and developer payments. Card details are handled by Stripe and never stored on our servers.</p>
 </div>
 
-<div class="space-y-8">
+<div class="space-y-6">
+    <!-- When you're charged -->
+    <section class="liquid-glass-panel rounded-2xl p-6 border border-mint/20 bg-mint/5">
+        <h2 class="font-display text-lg font-semibold mb-2 flex items-center gap-2 text-mint">
+            <span class="material-symbols-outlined">schedule</span>
+            When you're charged
+        </h2>
+        <p class="text-slate-300 text-sm">Your card is charged when you launch a sprint. No recurring fees.</p>
+    </section>
+
     <!-- Current card on file -->
     {% if card_last4 %}
     <section class="liquid-glass-panel rounded-2xl p-8">
@@ -17,8 +26,9 @@
             <span class="material-symbols-outlined text-primary">credit_card</span>
             Card on file
         </h2>
-        <p class="text-slate-300">
-            <span class="font-medium">{{ card_brand }}</span> ending in <span class="font-mono font-medium">**** {{ card_last4 }}</span>
+        <p class="text-slate-300 flex items-center gap-3 flex-wrap">
+            <span class="card-brand-badge card-brand-badge--{{ (card_brand or '')|lower }}">{{ card_brand }}</span>
+            <span>ending in <span class="font-mono font-medium">**** {{ card_last4 }}</span></span>
         </p>
         <p class="text-slate-500 text-sm mt-2">Add a new card below to replace this one.</p>
     </section>
@@ -40,8 +50,8 @@
                 Save card securely
             </button>
         </form>
-        <p class="text-slate-500 text-xs mt-4 flex items-center gap-2">
-            <span class="material-symbols-outlined text-[14px]">verified_user</span>
+        <p class="text-slate-400 text-sm mt-4 flex items-center gap-2 font-medium">
+            <span class="material-symbols-outlined text-primary text-lg">verified_user</span>
             Secured by Stripe. We never see or store your full card number.
         </p>
         {% else %}
@@ -50,6 +60,32 @@
             <p>Set <code class="bg-black/30 px-1 rounded">STRIPE_SECRET_KEY</code> and <code class="bg-black/30 px-1 rounded">STRIPE_PUBLISHABLE_KEY</code> in your environment to enable card payments.</p>
         </div>
         {% endif %}
+    </section>
+
+    <!-- Invoice history -->
+    <section class="liquid-glass-panel rounded-2xl p-8 border border-white/5">
+        <h3 class="font-display text-lg font-semibold mb-4">Invoice history</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-slate-300">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th class="py-3 pr-4 font-semibold text-slate-400">Date</th>
+                        <th class="py-3 pr-4 font-semibold text-slate-400">Description</th>
+                        <th class="py-3 pr-4 font-semibold text-slate-400">Amount</th>
+                        <th class="py-3 font-semibold text-slate-400 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="4" class="py-12 text-center text-slate-500">
+                            <span class="material-symbols-outlined text-4xl mb-2 block opacity-50">receipt_long</span>
+                            <p>No invoices yet.</p>
+                            <p class="text-sm mt-1">Invoices will appear here after you complete sprints.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 
     <!-- Info -->
@@ -78,7 +114,7 @@
                 fontSize: '16px',
                 color: '#e2e8f0',
                 '::placeholder': { color: '#64748b' },
-                iconColor: '#14F195'
+                iconColor: '#4f46e5'
             },
             invalid: { color: '#f87171' }
         }

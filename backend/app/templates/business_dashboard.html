@@ -3,40 +3,79 @@
 {% block title %}JrDev | Dashboard{% endblock %}
 
 {% block content %}
-<div class="mb-12 liquid-glass-in" style="opacity:0">
-    <h1 class="font-display text-4xl font-bold mb-3">Kickstart Your Innovation</h1>
-    <p class="text-slate-400 text-lg max-w-2xl">Define your vision and deploy a hand-picked squad of student developers for a high-speed prototyping sprint.</p>
+{% set attention_items = attention_items or [] %}
+{% set stats = stats or { 'active_developers': 0, 'total_listings': 0, 'open_listings': 0 } %}
+{% if attention_items %}
+<section class="liquid-glass-panel rounded-xl p-4 mb-6 liquid-glass-in" style="opacity:0">
+    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined text-amber-400 text-lg">notifications</span>
+        Attention required
+    </h2>
+    <ul class="space-y-2">
+        {% for item in attention_items %}
+        <li>
+            <a href="{{ item.url }}" class="flex items-center justify-between gap-4 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm text-slate-200 group">
+                <span><span class="font-semibold text-white">{{ item.count }}</span> {{ item.text }}</span>
+                <span class="text-mint group-hover:translate-x-0.5 transition-transform">Review &rarr;</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div class="liquid-glass-panel liquid-glass-accent rounded-xl p-6 liquid-glass-in" style="opacity:0">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Active developers</p>
+        <p class="text-4xl lg:text-5xl font-display font-bold text-mint">{{ stats.active_developers }}</p>
+        {% if stats.active_developers == 0 %}
+        <p class="text-slate-500 text-xs mt-2">Developers will appear here once they join and sign.</p>
+        {% endif %}
+    </div>
+    <div class="liquid-glass-panel rounded-xl p-6 liquid-glass-in liquid-glass-in-delay-1" style="opacity:0">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Open listings</p>
+        <p class="text-2xl font-display font-bold text-white">{{ stats.open_listings }}</p>
+    </div>
+    <div class="liquid-glass-panel rounded-xl p-6 liquid-glass-in liquid-glass-in-delay-1" style="opacity:0">
+        <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total listings</p>
+        <p class="text-2xl font-display font-bold text-white">{{ stats.total_listings }}</p>
+    </div>
 </div>
-<div class="grid lg:grid-cols-12 gap-8 items-start">
-    <div class="lg:col-span-8 space-y-8">
+
+<div class="mb-6 liquid-glass-in" style="opacity:0">
+    <h1 class="font-display text-3xl font-bold mb-2">Kickstart Your Innovation</h1>
+    <p class="text-slate-400 text-sm max-w-2xl">Define your vision and deploy a hand-picked squad of student developers for a high-speed prototyping sprint.</p>
+</div>
+<div class="grid lg:grid-cols-12 gap-6 items-start">
+    <div class="lg:col-span-8 space-y-6">
         <!-- ── Idea Box ── -->
-        <section class="liquid-glass-panel liquid-glass-in rounded-2xl p-8" style="opacity:0">
-            <div class="flex items-center justify-between mb-6">
+        <section class="liquid-glass-panel liquid-glass-in rounded-xl p-4" style="opacity:0">
+            <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-purple">lightbulb</span>
                     <h2 class="font-display text-xl font-semibold">The Idea Box</h2>
                 </div>
                 <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-idea-box" title="More info">?</button>
             </div>
-            <div id="help-idea-box" class="hidden mb-4 p-3 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Describe the core problem you want solved. Be as specific as possible — what does the prototype need to do? The more detail you give, the better prototypes you'll receive.</div>
-            <label class="block text-sm text-slate-400 mb-2">Describe the core concept of your sprint</label>
-            <textarea class="w-full h-48 liquid-glass-input rounded-xl p-4 text-slate-200 focus:ring-2 focus:ring-purple focus:border-transparent transition-all placeholder:text-slate-600" placeholder="e.g. A decentralized marketplace for university textbooks with real-time bidding..."></textarea>
-            <div class="mt-4 flex gap-4 text-xs text-slate-500">
-                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">info</span> Minimum 50 words recommended</span>
+            <div id="help-idea-box" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Describe the core problem you want solved. Be as specific as possible — what does the prototype need to do? The more detail you give, the better prototypes you'll receive.</div>
+            <label class="block text-xs text-slate-400 mb-1">Describe the core concept of your sprint</label>
+            <textarea class="w-full h-28 liquid-glass-input rounded-lg p-3 text-slate-200 text-sm focus:ring-2 focus:ring-purple focus:border-transparent transition-all placeholder:text-slate-600" placeholder="e.g. A decentralized marketplace for university textbooks with real-time bidding..."></textarea>
+            <div class="mt-2 flex gap-2 text-xs text-slate-500">
+                <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">info</span> At least 50 words recommended</span>
             </div>
         </section>
 
         <!-- ── Essential Deliverables (required) ── -->
-        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-1 rounded-2xl p-8" style="opacity:0">
-            <div class="flex items-center justify-between mb-6">
+        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-1 rounded-xl p-4" style="opacity:0">
+            <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-amber-400">priority_high</span>
                     <h2 class="font-display text-xl font-semibold">Essential Deliverables</h2>
                 </div>
                 <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-essential-deliverables" title="More info">?</button>
             </div>
-            <div id="help-essential-deliverables" class="hidden mb-4 p-3 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Tasks that must be completed (non-optional). Set the number in the Sprint Summary sidebar, then add that many items here. These appear first on the contract.</div>
-            <div class="space-y-4">
+            <div id="help-essential-deliverables" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Tasks that must be completed (non-optional). Set the number in the Sprint Summary sidebar, then add that many items here. These appear first on the contract.</div>
+            <div class="space-y-2">
                 <div class="relative">
                     <input id="essential-deliverables-input" class="w-full liquid-glass-input rounded-xl px-4 py-3 pr-12 text-slate-200 focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all" placeholder="Add required deliverable (max from sidebar)..." type="text"/>
                     <button type="button" id="essential-deliverables-add-btn" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-amber-500 text-navy-900 rounded-lg hover:bg-white transition-colors">
@@ -51,16 +90,16 @@
         </section>
 
         <!-- ── Deliverables (optional) ── -->
-        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-1 rounded-2xl p-8" style="opacity:0">
-            <div class="flex items-center justify-between mb-6">
+        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-1 rounded-xl p-4" style="opacity:0">
+            <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-mint">checklist</span>
                     <h2 class="font-display text-xl font-semibold">Deliverables</h2>
                 </div>
                 <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-deliverables" title="More info">?</button>
             </div>
-            <div id="help-deliverables" class="hidden mb-4 p-3 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Optional tasks. Total deliverables (essential + optional) is limited by "Min Deliverables for Pay" in the sidebar. Developers must complete at least that many to receive payment.</div>
-            <div class="space-y-4">
+            <div id="help-deliverables" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Optional tasks. Total deliverables (essential + optional) is limited by "Min Deliverables for Pay" in the sidebar. Developers must complete at least that many to receive payment.</div>
+            <div class="space-y-2">
                 <div class="relative">
                     <input id="requirement-buffet-input" class="w-full liquid-glass-input rounded-xl px-4 py-3 pr-12 text-slate-200 focus:ring-2 focus:ring-mint focus:border-transparent transition-all" placeholder="Add a deliverable (e.g. Stripe integration, User Auth...)" type="text"/>
                     <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-mint text-navy-900 rounded-lg hover:bg-white transition-colors">
@@ -75,16 +114,16 @@
         </section>
 
         <!-- ── Technologies Required ── -->
-        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-2 rounded-2xl p-8" style="opacity:0">
-            <div class="flex items-center justify-between mb-6">
+        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-2 rounded-xl p-4" style="opacity:0">
+            <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-purple">memory</span>
                     <h2 class="font-display text-xl font-semibold">Technologies Required</h2>
                 </div>
                 <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-technologies" title="More info">?</button>
             </div>
-            <div id="help-technologies" class="hidden mb-4 p-3 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Specify the technologies or frameworks you'd like the prototype built with (e.g. React, Python, Flask). This helps match you with developers who have the right skills. Leave blank if you're flexible.</div>
-            <div class="space-y-4">
+            <div id="help-technologies" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Specify the technologies or frameworks you'd like the prototype built with (e.g. React, Python, Flask). This helps match you with developers who have the right skills. Leave blank if you're flexible.</div>
+            <div class="space-y-2">
                 <div class="relative">
                     <input id="technologies-required-input" class="w-full liquid-glass-input rounded-xl px-4 py-3 pr-12 text-slate-200 focus:ring-2 focus:ring-purple focus:border-transparent transition-all" placeholder="Add a technology (e.g. React, Python, Flask...)" type="text"/>
                     <button id="technologies-add-btn" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-purple text-white rounded-lg hover:bg-white hover:text-navy-900 transition-colors">
@@ -98,39 +137,33 @@
         </section>
 
         <!-- ── Post Contract & Generate PDF ── -->
-        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-3 rounded-2xl p-8" style="opacity:0">
-            <div class="flex items-center justify-between mb-6">
+        <section class="liquid-glass-panel liquid-glass-in liquid-glass-in-delay-3 rounded-xl p-4" style="opacity:0">
+            <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-mint">description</span>
-                    <h2 class="font-display text-xl font-semibold">Post Contract & Generate PDF</h2>
+                    <h2 class="font-display text-lg font-semibold">Post Contract & Generate PDF</h2>
                 </div>
                 <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-contract" title="More info">?</button>
             </div>
-            <div id="help-contract" class="hidden mb-4 p-4 rounded-lg bg-white/5 text-sm text-slate-400 leading-relaxed">
-                <p>Fill in the company and contractor details, then click "Generate PDF" to preview the NDA & Sprint Agreement. Once you're happy, hit "Launch Sprint" to publish the listing for developers to join.</p>
+            <div id="help-contract" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">
+                <p>Company and contractor are filled from your account. Set dates and click "Generate PDF" to preview, then "Launch Sprint" to publish.</p>
             </div>
-            <form id="post-contract-form" class="mt-4 space-y-3" method="POST" action="{{ url_for('contract.generate_contract') }}" target="_blank">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Company Name (1st Party)</label>
-                        <input name="company_name" type="text" class="w-full liquid-glass-input rounded-xl px-4 py-3 text-slate-200" placeholder="Your Company" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Contractor Name (2nd Party)</label>
-                        <input name="contractor_name" type="text" class="w-full liquid-glass-input rounded-xl px-4 py-3 text-slate-200" placeholder="Developer Name" required>
-                    </div>
+            <form id="post-contract-form" class="mt-3 space-y-2" method="POST" action="{{ url_for('contract.generate_contract') }}" target="_blank">
+                <input type="hidden" name="company_name" value="{{ current_user.username }}">
+                <input type="hidden" name="contractor_name" value="To be assigned">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Sprint Start Date</label>
-                        <input name="start_date" type="date" class="w-full liquid-glass-input rounded-xl px-4 py-3 text-slate-200" required>
+                        <input name="start_date" type="date" class="w-full liquid-glass-input rounded-lg px-3 py-2 text-slate-200 text-sm" required>
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Sprint End Date</label>
-                        <input name="end_date" type="date" class="w-full liquid-glass-input rounded-xl px-4 py-3 text-slate-200" required>
+                        <input name="end_date" type="date" class="w-full liquid-glass-input rounded-lg px-3 py-2 text-slate-200 text-sm" required>
                     </div>
                 </div>
                 <!-- Hidden task inputs are dynamically created by JS from deliverables -->
-                <p class="text-xs text-slate-500 mt-2">Deliverables are automatically included from the list above.</p>
-                <button type="submit" class="mt-4 px-6 py-3 rounded-xl liquid-glass-btn-ghost text-sm hover:bg-white/10 transition-colors flex items-center gap-2">
+                <p class="text-xs text-slate-500 mt-1">Deliverables are automatically included from the list above. Company: <strong class="text-slate-300">{{ current_user.username }}</strong></p>
+                <button type="submit" class="mt-3 px-4 py-2 rounded-lg liquid-glass-btn-ghost text-sm hover:bg-white/10 transition-colors flex items-center gap-2">
                     <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                     Generate PDF
                 </button>
@@ -161,15 +194,17 @@
         </section>
 
         <!-- ── Your Listings ── -->
-        {% if my_listings %}
-        <section class="liquid-glass-panel liquid-glass-in rounded-2xl p-8" style="opacity:0">
-            <div class="flex items-center justify-between mb-6">
+        <section class="liquid-glass-panel liquid-glass-in rounded-xl p-4" style="opacity:0">
+            <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <span class="material-symbols-outlined text-mint">list_alt</span>
                     <h2 class="font-display text-xl font-semibold">Your Listings</h2>
                 </div>
+                {% if my_listings %}
                 <a href="{{ url_for('main.business_my_listings') }}" class="text-xs text-mint hover:text-white transition-colors">View all &rarr;</a>
+                {% endif %}
             </div>
+            {% if my_listings %}
             <div class="space-y-3">
                 {% for listing in my_listings[:3] %}
                 <div class="flex items-center justify-between liquid-glass-input rounded-xl px-4 py-3 hover:bg-white/5 transition-colors">
@@ -190,89 +225,95 @@
                 </div>
                 {% endfor %}
             </div>
+            {% else %}
+            <div class="py-10 text-center rounded-xl bg-white/5 border border-white/5">
+                <span class="material-symbols-outlined text-4xl text-slate-500 mb-3 block">rocket_launch</span>
+                <p class="text-slate-400 mb-4">No sprints yet. Launch your first sprint to get started.</p>
+                <p class="text-slate-500 text-sm">Fill in the form above and click Launch Sprint when you're ready.</p>
+            </div>
+            {% endif %}
         </section>
-        {% endif %}
     </div>
 
     <!-- ── Sprint Summary Sidebar ── -->
     <aside class="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
-        <div class="liquid-glass-panel liquid-glass-accent liquid-glass-in rounded-2xl p-8 relative overflow-hidden" style="opacity:0">
+        <div class="liquid-glass-panel liquid-glass-accent liquid-glass-in rounded-xl p-5 relative overflow-hidden" style="opacity:0">
             <div class="absolute top-0 right-0 p-4 opacity-10 liquid-glass-float">
                 <span class="material-symbols-outlined text-6xl">rocket_launch</span>
             </div>
-            <h3 class="font-display text-xl font-bold mb-6">Sprint Summary</h3>
+            <h3 class="font-display text-lg font-bold mb-4">Sprint Summary</h3>
 
             <!-- Developer Allocation -->
-            <div class="mb-8">
-                <div class="flex justify-between items-end mb-4">
+            <div class="mb-6">
+                <div class="flex justify-between items-end mb-2">
                     <label class="text-sm font-medium text-slate-400">Developer Allocation</label>
-                    <span class="text-2xl font-display font-bold text-mint">3 <span class="text-xs uppercase text-slate-500">Devs</span></span>
+                    <span class="text-2xl font-display font-bold text-mint dev-count"><span class="dev-count-value">3</span> <span class="text-xs uppercase text-slate-500">Devs</span></span>
                 </div>
-                <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint" max="5" min="1" type="range" value="3"/>
-                <div class="flex justify-between mt-2 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
+                <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint dev-allocation-slider" max="5" min="1" type="range" value="3"/>
+                <div class="flex justify-between mt-1 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
                     <span>Solo</span>
                     <span>Squad</span>
                 </div>
             </div>
 
             <!-- Sprint Timeline -->
-            <div class="mb-8">
-                <div class="flex justify-between items-end mb-4">
+            <div class="mb-6">
+                <div class="flex justify-between items-end mb-2">
                     <label class="text-sm font-medium text-slate-400">Sprint Timeline</label>
-                    <span class="text-2xl font-display font-bold text-mint timeline-days">7 <span class="text-xs uppercase text-slate-500">Days</span></span>
+                    <span class="text-2xl font-display font-bold text-mint timeline-days"><span class="timeline-days-value">7</span> <span class="text-xs uppercase text-slate-500">Days</span></span>
                 </div>
                 <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint sprint-timeline-slider" max="7" min="1" type="range" value="7"/>
-                <div class="flex justify-between mt-2 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
+                <div class="flex justify-between mt-1 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
                     <span>1 Day</span>
                     <span>7 Days</span>
                 </div>
             </div>
 
             <!-- Investment Per Dev -->
-            <div class="mb-8">
-                <div class="flex justify-between items-end mb-4">
+            <div class="mb-6">
+                <div class="flex justify-between items-end mb-2">
                     <label class="text-sm font-medium text-slate-400">Investment Per Dev</label>
-                    <span class="text-2xl font-display font-bold text-mint investment-per-dev">£20 <span class="text-xs uppercase text-slate-500">/ dev</span></span>
+                    <span class="text-2xl font-display font-bold text-mint investment-per-dev"><span class="investment-per-dev-value">50</span> <span class="text-xs uppercase text-slate-500">/ dev</span></span>
                 </div>
-                <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint investment-per-dev-slider" max="100" min="20" step="5" type="range" value="20"/>
-                <div class="flex justify-between mt-2 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
-                    <span>£20</span>
-                    <span>£100</span>
+                <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint investment-per-dev-slider" max="300" min="50" step="5" type="range" value="50"/>
+                <div class="flex justify-between mt-1 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
+                    <span>£50</span>
+                    <span>£300</span>
                 </div>
             </div>
 
             <!-- Min Requirements for Pay -->
-            <div class="mb-8">
-                <div class="flex justify-between items-end mb-4">
+            <div class="mb-6">
+                <div class="flex justify-between items-end mb-2">
                     <label class="text-sm font-medium text-slate-400">Total Deliverables</label>
-                    <span class="text-2xl font-display font-bold text-mint min-requirements-display">1 <span class="text-xs uppercase text-slate-500">tasks</span></span>
+                    <span class="text-2xl font-display font-bold text-mint min-requirements-display"><span class="min-requirements-value">1</span> <span class="text-xs uppercase text-slate-500 min-requirements-label">task</span></span>
                 </div>
                 <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint min-requirements-slider" max="8" min="1" type="range" value="1"/>
-                <div class="flex justify-between mt-2 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
+                <div class="flex justify-between mt-1 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
                     <span>1 Task</span>
                     <span>8 Tasks</span>
                 </div>
             </div>
 
             <!-- Essential Deliverables (required count) -->
-            <div class="mb-8">
-                <div class="flex justify-between items-end mb-4">
+            <div class="mb-6">
+                <div class="flex justify-between items-end mb-2">
                     <label class="text-sm font-medium text-slate-400">Essential Deliverables</label>
-                    <span class="text-2xl font-display font-bold text-mint essential-deliverables-display">0 <span class="text-xs uppercase text-slate-500">required</span></span>
+                    <span class="text-2xl font-display font-bold text-mint essential-deliverables-display"><span class="essential-deliverables-value">0</span> <span class="text-xs uppercase text-slate-500">required</span></span>
                 </div>
                 <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint essential-deliverables-slider" max="8" min="0" type="range" value="0"/>
-                <div class="flex justify-between mt-2 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
+                <div class="flex justify-between mt-1 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
                     <span>0</span>
                     <span class="essential-deliverables-max-label">0</span>
                 </div>
             </div>
 
             <!-- Total Investment -->
-            <div class="pt-6 border-t border-white/5 mb-8">
+            <div class="pt-4 border-t border-white/5 mb-4">
                 <div class="flex flex-col gap-1">
                     <span class="text-slate-500 text-xs uppercase tracking-tighter">Total Investment</span>
                     <div class="flex items-baseline gap-2">
-                        <span class="text-4xl font-display font-bold text-white tracking-tight investment-amount">£60</span>
+                        <span class="text-4xl font-display font-bold text-white tracking-tight investment-amount">£150</span>
                     </div>
                     <span class="inline-flex items-center gap-1.5 text-[10px] font-bold text-mint uppercase tracking-widest mt-2 bg-mint/5 px-2 py-1 rounded w-fit">
                         <span class="material-symbols-outlined text-[12px]">verified_user</span> No-Risk Investment

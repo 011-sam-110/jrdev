@@ -5,9 +5,9 @@
 
 /* ── Theme: Mint (default) ── */
 .dev-profile-wrap[data-theme="mint"] {
-  --dev-accent: #14F195;
+  --dev-accent: #4f46e5;
   --dev-accent-rgb: 20, 241, 149;
-  --dev-secondary: #8B5CF6;
+  --dev-secondary: #0d9488;
   --dev-secondary-rgb: 139, 92, 246;
   --dev-panel-bg: rgba(30, 41, 59, 0.7);
   --dev-card-bg: rgba(255, 255, 255, 0.03);
@@ -100,7 +100,12 @@
 .dev-profile-wrap .dev-tag-dot { background-color: var(--dev-accent); }
 .dev-profile-wrap .dev-link-hover:hover { color: var(--dev-accent); border-color: color-mix(in srgb, var(--dev-accent) 40%, transparent); }
 .dev-profile-wrap .dev-input-focus:focus { --tw-ring-color: color-mix(in srgb, var(--dev-accent) 50%, transparent); }
-.dev-profile-wrap .dev-avatar-ring { border-color: color-mix(in srgb, var(--dev-accent) 40%, transparent); box-shadow: 0 0 24px var(--dev-glow); }
+.dev-profile-wrap .dev-avatar-ring { border-color: color-mix(in srgb, var(--dev-accent) 40%, transparent); box-shadow: 0 0 16px color-mix(in srgb, var(--dev-glow) 60%, transparent); }
+.dev-profile-wrap .dev-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--dev-accent);
+}
 .dev-profile-wrap .markdown-body a { color: var(--dev-accent); }
 .dev-profile-wrap .markdown-body a:hover { color: var(--dev-secondary); }
 
@@ -191,14 +196,14 @@
 /* ── Animation: None (no extra effects) ── */
 .dev-profile-wrap[data-animation="none"] .dev-avatar-ring { animation: none; }
 
-/* ── Animation: Glow (subtle pulse on accent elements) ── */
+/* ── Animation: Glow (subtle, consistent across panels and CTA) ── */
 .dev-profile-wrap[data-animation="glow"] .dev-panel:hover,
 .dev-profile-wrap[data-animation="glow"] .dev-card:hover {
-  box-shadow: 0 0 30px var(--dev-glow);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--dev-glow) 70%, transparent);
   transition: box-shadow 0.4s ease, transform 0.3s ease;
 }
 .dev-profile-wrap[data-animation="glow"] .dev-cta:hover {
-  box-shadow: 0 0 28px var(--dev-glow);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--dev-glow) 70%, transparent);
   transform: translateY(-1px);
   transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
@@ -206,8 +211,8 @@
   animation: dev-glow-pulse 3s ease-in-out infinite;
 }
 @keyframes dev-glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px var(--dev-glow); }
-  50% { box-shadow: 0 0 32px var(--dev-glow); }
+  0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--dev-glow) 60%, transparent); }
+  50% { box-shadow: 0 0 20px color-mix(in srgb, var(--dev-glow) 70%, transparent); }
 }
 
 /* ── Animation: Shimmer (gradient sweep on cards) ── */
