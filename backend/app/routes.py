@@ -3,8 +3,9 @@ Main application routes: auth, dashboards, listings, signups, billing, ratings.
 
 Uses shared helpers from app.utils and app.signup_helpers to keep handlers thin and DRY.
 """
-from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify, current_app
+import logging
 import os
+from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify, current_app
 from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail
 from app.forms import RegistrationForm, LoginForm
@@ -28,6 +29,8 @@ from app.signup_helpers import (
     get_signup_for_developer,
     apply_rating_and_redirect,
 )
+
+logger = logging.getLogger(__name__)
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 
@@ -296,14 +299,19 @@ def delete_pinned(id):
     return redirect(url_for('main.dashboard'))
 
 def _send_verification_email(user):
-    """Send verification email to user. Returns True if sent, False if mail not configured."""
-    if not current_app.config.get('MAIL_USERNAME') or not current_app.config.get('MAIL_PASSWORD'):
+    """Send verification email to user. Returns True if sent, False if mail not configured or send failed."""
+    username = current_app.config.get('MAIL_USERNAME')
+    password = current_app.config.get('MAIL_PASSWORD')
+    if not username or not password:
+        logger.warning(
+            'Email verification skipped: MAIL_USERNAME or MAIL_PASSWORD not set (check .env EMAIL_USER and EMAIL_PASS).'
+        )
         return False
     token = user.get_verification_token()
     verify_url = url_for('main.verify_email', token=token, _external=True)
     msg = Message(
         subject='Verify your JrDev account',
-        sender=current_app.config.get('MAIL_USERNAME'),
+        sender=username,
         recipients=[user.email],
         body=f'''Welcome to JrDev. Please verify your email by clicking the link below.
 
@@ -315,8 +323,10 @@ This link expires in 30 minutes. If you did not create an account, you can ignor
     )
     try:
         mail.send(msg)
+        logger.info('Verification email sent to %s', user.email)
         return True
-    except Exception:
+    except Exception as e:
+        logger.exception('Verification email failed for %s: %s', user.email, e)
         return False
 
 

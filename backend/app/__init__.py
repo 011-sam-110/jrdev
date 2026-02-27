@@ -5,6 +5,7 @@ Creates the app, binds SQLAlchemy, Bcrypt, LoginManager, Mail, Migrate;
 registers blueprints (main, contract), injects CSRF and contract_view_url,
 registers 404 handler, and creates DB tables in context.
 """
+import logging
 import os
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
@@ -41,6 +42,13 @@ def create_app():
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
     app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS')
+    _log = logging.getLogger(__name__)
+    if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+        _log.info('Mail configured (sender: %s). Email verification enabled.', app.config['MAIL_USERNAME'])
+    else:
+        _log.warning(
+            'Mail not configured: set EMAIL_USER and EMAIL_PASS in .env for verification emails.'
+        )
 
     db.init_app(app)
     bcrypt.init_app(app)

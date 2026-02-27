@@ -433,6 +433,12 @@ a:hover .home-link-arrow {
   }
 }
 
+/* Step 4 Review: align left content with right card (same as Step 3), not vertically centered */
+@media (min-width: 1024px) {
+  #sprint-panel-4.sprint-panel {
+    align-items: flex-start;
+  }
+}
 /* Step 4 Review card: natural width, no stretched padding */
 #sprint-panel-4 .sprint-step__visual {
   align-items: flex-start;

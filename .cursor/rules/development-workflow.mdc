@@ -1,0 +1,27 @@
+---
+description: Default development workflow for all JrDev feature requests and changes
+globs:
+alwaysApply: true
+---
+
+# JrDev Development Workflow
+
+When the user asks you to **build, change, fix, or improve** anything on the JrDev platform, follow the **sprint-workflow** skill at `.cursor/skills/sprint-workflow/SKILL.md`.
+
+**When NOT to run the full pipeline:**
+- If the user **only** asks for an explanation, search, or reading (no code change) — answer directly; do not run Vision Capture or Architect.
+- If the user attaches **screenshots** and asks for a **visual review only** — use the **visual-review** skill; do not run the full sprint-workflow unless they then ask to implement fixes.
+
+This pipeline enforces:
+
+1. **Vision Capture** — Chat with the user to understand what to build; create or update `.cursor/skills/vision.md` (read `.cursor/skills/vision-capture/SKILL.md`)
+2. **Architect** — Plan the changes (read `.cursor/skills/architect/SKILL.md`)
+3. **Programmer** — Write the code (read `.cursor/skills/programmer/SKILL.md`)
+4. **Feedback** — Review and auto-fix issues (read `.cursor/skills/feedback/SKILL.md`)
+5. **Polish** — Copy, trust signals, visual consistency, production readiness (read `.cursor/skills/polish/SKILL.md`) — runs when changes touch public-facing pages
+6. **Report** — Summarize what changed, ask 2–4 questions, wait for user input
+7. **Iterate** — Repeat based on user feedback
+
+The product vision is documented in `.cursor/skills/vision.md`. Vision Capture updates it; read it at the start of every task to understand the current state of the platform.
+
+Never skip the Feedback phase. Never write code without a plan first. When switching phases, output **→ [PHASE NAME]** and one sentence on what that phase does (see sprint-workflow). 
