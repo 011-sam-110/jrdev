@@ -133,6 +133,7 @@
     </nav>
     <div class="pt-32"></div>
     <main class="app-main-in flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-6 py-10{% endblock %}">
+        {% include 'partials/flash_messages.html' %}
         {% block content %}{% endblock %}
     </main>
     {% block footer %}{% endblock %}
