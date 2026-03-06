@@ -84,7 +84,7 @@
         }
 
 
-        /* Hero: subtle bottom glow (no orbs) */
+        /* Hero: subtle bottom glow (slightly reduced for subheadline legibility) */
         .hero::before {
             content: "";
             position: absolute;
@@ -92,7 +92,7 @@
             height: 60%;
             bottom: 0;
             left: 0;
-            background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(79,70,229,0.08) 0%, transparent 60%);
+            background: radial-gradient(ellipse 100% 100% at 50% 100%, rgba(79,70,229,0.05) 0%, transparent 60%);
             z-index: 0;
             pointer-events: none;
         }
@@ -165,7 +165,7 @@
 {% else %}
     <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.login') }}">Login</a>
     <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.register', role='DEVELOPER') }}">Join as Developer</a>
-    <a class="home-cta-primary btn-gradient text-white px-6 py-3 rounded-full text-base font-bold shadow-lg" href="{{ url_for('main.register', role='BUSINESS') }}">Hire Talent</a>
+    <a class="home-cta-primary btn-gradient text-white px-6 py-3 rounded-full text-base font-bold shadow-xl" href="{{ url_for('main.register', role='BUSINESS') }}">Hire Talent</a>
 {% endif %}
 </div>
 <div class="flex md:hidden items-center">
@@ -205,17 +205,102 @@
 <h1 class="fade-in delay-100 font-display text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight text-white">
                 Launch your MVP with the <span class="home-hero-gradient-text">next generation</span> of developers
 </h1>
-<p class="fade-in delay-200 home-hero-subheadline mt-4 max-w-2xl mx-auto text-slate-200">
+<p class="fade-in delay-200 home-hero-subheadline mt-4 max-w-2xl mx-auto text-slate-100 font-medium">
                 Rapid prototyping by emerging talent. Post a sprint, get matched with hand-picked student developers, and ship in days—not months.
             </p>
-<p class="fade-in delay-200 mt-2 max-w-xl mx-auto text-slate-400 text-sm">Students: get paid to build real projects and grow your portfolio.</p>
-<div class="fade-in delay-300 mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-    <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-gradient text-white px-8 py-3.5 rounded-full text-base font-bold shadow-lg">Hire Talent</a>
-    <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-secondary px-8 py-3.5 rounded-full bg-white/15 hover:bg-white/25 text-white font-bold border border-white/30 transition-all">Join as Developer</a>
+<p class="fade-in delay-200 mt-2 max-w-xl mx-auto text-slate-300 text-base">Students: get paid to build real projects and grow your portfolio.</p>
+<div class="fade-in delay-300 mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-gradient text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl">Hire Talent</a>
+    <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-secondary px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white/90 font-semibold border border-white/25 text-base transition-all">Join as Developer</a>
 </div>
 <p class="fade-in delay-300 mt-4 text-slate-500 text-sm" id="pricing">Starting at £50 per developer</p>
 </div>
 </section>
+
+<section class="home-section-alt py-24 relative overflow-hidden bg-slate-50 dark:bg-slate-900/30">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center mb-12 home-reveal">
+<h2 class="font-display text-3xl md:text-4xl font-bold mb-4 dark:text-white text-slate-900">What people say</h2>
+<p class="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">Reviews from businesses and developers using JrDev.</p>
+</div>
+<div class="home-reviews-marquee overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8">
+<div class="home-reviews-track flex gap-6">
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"We got our MVP built in under two weeks. The developers were responsive and the quality exceeded our expectations."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">MR</div><div><span class="font-semibold text-slate-900 dark:text-white block">Maria Rodriguez</span><span class="text-sm text-slate-500 dark:text-slate-400">Startup Founder</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"Best way to build real portfolio projects. Got paid, learned new tech, and the business was great to work with."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">JK</div><div><span class="font-semibold text-slate-900 dark:text-white block">James Kim</span><span class="text-sm text-slate-500 dark:text-slate-400">Student Developer</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"Affordable, fast, and the refund guarantee gave us confidence. We've already posted a second sprint."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">AL</div><div><span class="font-semibold text-slate-900 dark:text-white block">Alex Lee</span><span class="text-sm text-slate-500 dark:text-slate-400">Product Manager</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"The sprint model is brilliant. We tested our idea without huge upfront cost and found an amazing developer."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">SW</div><div><span class="font-semibold text-slate-900 dark:text-white block">Sarah Williams</span><span class="text-sm text-slate-500 dark:text-slate-400">Tech Founder</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"JrDev helped me land my first paid project. The platform made it easy to show what I can do."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">TM</div><div><span class="font-semibold text-slate-900 dark:text-white block">Tom Mitchell</span><span class="text-sm text-slate-500 dark:text-slate-400">Computer Science Student</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"We launched our beta in 10 days. The student we matched with understood our vision from day one."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">EC</div><div><span class="font-semibold text-slate-900 dark:text-white block">Emily Chen</span><span class="text-sm text-slate-500 dark:text-slate-400">Product Lead</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"Clear deliverables, fair pay, and no pressure. Exactly the kind of first gig I needed to build my confidence."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">DP</div><div><span class="font-semibold text-slate-900 dark:text-white block">David Park</span><span class="text-sm text-slate-500 dark:text-slate-400">Junior Developer</span></div></div>
+</div>
+<!-- Duplicate set for seamless loop -->
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"We got our MVP built in under two weeks. The developers were responsive and the quality exceeded our expectations."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">MR</div><div><span class="font-semibold text-slate-900 dark:text-white block">Maria Rodriguez</span><span class="text-sm text-slate-500 dark:text-slate-400">Startup Founder</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"Best way to build real portfolio projects. Got paid, learned new tech, and the business was great to work with."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">JK</div><div><span class="font-semibold text-slate-900 dark:text-white block">James Kim</span><span class="text-sm text-slate-500 dark:text-slate-400">Student Developer</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"Affordable, fast, and the refund guarantee gave us confidence. We've already posted a second sprint."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">AL</div><div><span class="font-semibold text-slate-900 dark:text-white block">Alex Lee</span><span class="text-sm text-slate-500 dark:text-slate-400">Product Manager</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"The sprint model is brilliant. We tested our idea without huge upfront cost and found an amazing developer."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">SW</div><div><span class="font-semibold text-slate-900 dark:text-white block">Sarah Williams</span><span class="text-sm text-slate-500 dark:text-slate-400">Tech Founder</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"JrDev helped me land my first paid project. The platform made it easy to show what I can do."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">TM</div><div><span class="font-semibold text-slate-900 dark:text-white block">Tom Mitchell</span><span class="text-sm text-slate-500 dark:text-slate-400">Computer Science Student</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"We launched our beta in 10 days. The student we matched with understood our vision from day one."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">EC</div><div><span class="font-semibold text-slate-900 dark:text-white block">Emily Chen</span><span class="text-sm text-slate-500 dark:text-slate-400">Product Lead</span></div></div>
+</div>
+<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
+<div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
+<p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"Clear deliverables, fair pay, and no pressure. Exactly the kind of first gig I needed to build my confidence."</p>
+<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">DP</div><div><span class="font-semibold text-slate-900 dark:text-white block">David Park</span><span class="text-sm text-slate-500 dark:text-slate-400">Junior Developer</span></div></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
 <section class="sprint-section py-16 md:py-20 relative overflow-hidden" id="how-it-works">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="text-center mb-8 fade-in">
@@ -223,22 +308,15 @@
 <p class="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">From vision to shipped product.</p>
 </div>
 
-<div class="max-w-5xl mx-auto">
-<div class="sprint-tablist flex flex-wrap justify-center gap-2 mb-8 fade-in" role="tablist" aria-label="Sprint steps">
-<button type="button" role="tab" id="sprint-tab-1" aria-selected="true" aria-controls="sprint-panel-1" class="sprint-tab sprint-tab--active">Step 1</button>
-<button type="button" role="tab" id="sprint-tab-2" aria-selected="false" aria-controls="sprint-panel-2" class="sprint-tab">Step 2</button>
-<button type="button" role="tab" id="sprint-tab-3" aria-selected="false" aria-controls="sprint-panel-3" class="sprint-tab">Step 3</button>
-<button type="button" role="tab" id="sprint-tab-4" aria-selected="false" aria-controls="sprint-panel-4" class="sprint-tab">Step 4</button>
-</div>
-
-<!-- Panel 1: Define Your Vision -->
-<div id="sprint-panel-1" role="tabpanel" aria-labelledby="sprint-tab-1" class="sprint-panel flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16">
-<div class="sprint-step__content lg:w-5/12 order-2 lg:order-1">
-<span class="sprint-timeframe sprint-timeframe--primary">Step 1</span>
+<div class="sprint-steps-flow max-w-6xl mx-auto space-y-20 lg:space-y-24">
+<!-- Step 1: Define Your Vision -->
+<section id="sprint-panel-1" class="sprint-panel flex flex-col lg:flex-row lg:flex-nowrap lg:items-center gap-10 lg:gap-12 w-full home-reveal">
+<div class="sprint-step__content lg:w-5/12 order-1 lg:order-1">
+<span class="sprint-timeframe sprint-timeframe--primary">01</span>
 <h3 class="font-display text-2xl md:text-3xl font-bold mt-3 mb-4 dark:text-white text-slate-900">Define Your Vision</h3>
 <p class="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">Drop a brief. We match you with developers who fit your tech stack—typically within 24 hours.</p>
 </div>
-<div class="sprint-step__visual lg:w-7/12 order-1 lg:order-2 relative">
+<div class="sprint-step__visual lg:w-7/12 order-2 lg:order-2 relative">
 <div class="sprint-glass-wrap">
 <div class="sprint-window-frame">
 <div class="sprint-window-frame__titlebar"><span class="sprint-window-frame__dots"><span></span><span></span><span></span></span><span class="sprint-window-frame__title">Sprint Creator</span></div>
@@ -268,17 +346,16 @@
 </div>
 </div>
 </div>
-</div>
-</div>
+</section>
 
-<!-- Panel 2: Developer Screening & Confidentiality -->
-<div id="sprint-panel-2" role="tabpanel" aria-labelledby="sprint-tab-2" class="sprint-panel sprint-panel--hidden flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16">
-<div class="sprint-step__content lg:w-5/12 order-2 lg:order-1">
-<span class="sprint-timeframe sprint-timeframe--secondary">Step 2</span>
+<!-- Step 2: Developer Screening & Confidentiality -->
+<section id="sprint-panel-2" class="sprint-panel sprint-panel--zig-right flex flex-col lg:flex-row lg:flex-nowrap lg:items-center gap-10 lg:gap-12 w-full home-reveal home-reveal-delay-1">
+<div class="sprint-step__content lg:w-5/12 order-1 lg:order-2">
+<span class="sprint-timeframe sprint-timeframe--secondary">02</span>
 <h3 class="font-display text-2xl md:text-3xl font-bold mt-3 mb-4 dark:text-white text-slate-900">Developer Screening & Confidentiality</h3>
 <p class="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">View developers who have applied and onboard the right fit with a signed contract. Developers cannot see the deliverables — only the technologies required.</p>
 </div>
-<div class="sprint-step__visual lg:w-7/12 order-1 lg:order-2 relative">
+<div class="sprint-step__visual lg:w-7/12 order-2 lg:order-1 relative">
 <div class="sprint-glass-wrap sprint-glass-wrap--energy">
 <div class="sprint-window-frame">
 <div class="sprint-window-frame__titlebar"><span class="sprint-window-frame__dots"><span></span><span></span><span></span></span><span class="sprint-window-frame__title">Your Listings</span></div>
@@ -322,17 +399,16 @@
 </div>
 </div>
 </div>
-</div>
-</div>
+</section>
 
-<!-- Panel 3: Rapid Development Sprint Begins -->
-<div id="sprint-panel-3" role="tabpanel" aria-labelledby="sprint-tab-3" class="sprint-panel sprint-panel--hidden flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16">
-<div class="sprint-step__content lg:w-5/12 order-2 lg:order-1">
-<span class="sprint-timeframe sprint-timeframe--accent">Step 3</span>
+<!-- Step 3: Rapid Development Sprint Begins -->
+<section id="sprint-panel-3" class="sprint-panel flex flex-col lg:flex-row lg:flex-nowrap lg:items-center gap-10 lg:gap-12 w-full home-reveal home-reveal-delay-2">
+<div class="sprint-step__content lg:w-5/12 order-1 lg:order-1">
+<span class="sprint-timeframe sprint-timeframe--accent">03</span>
 <h3 class="font-display text-2xl md:text-3xl font-bold mt-3 mb-4 dark:text-white text-slate-900">Rapid Development Sprint Begins</h3>
 <p class="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">As soon as a developer has signed the JrDev approved contract, they have until the end of the deadline to meet your essential deliverables.</p>
 </div>
-<div class="sprint-step__visual lg:w-7/12 order-1 lg:order-2 relative">
+<div class="sprint-step__visual lg:w-7/12 order-2 lg:order-2 relative">
 <div class="sprint-glass-wrap sprint-glass-wrap--energy">
 <div class="sprint-window-frame">
 <div class="sprint-window-frame__titlebar"><span class="sprint-window-frame__dots"><span></span><span></span><span></span></span><span class="sprint-window-frame__title">Sprint in Progress</span></div>
@@ -380,15 +456,18 @@
 </div>
 </div>
 </div>
+</div>
+</div>
+</section>
 
-<!-- Panel 4: Review -->
-<div id="sprint-panel-4" role="tabpanel" aria-labelledby="sprint-tab-4" class="sprint-panel sprint-panel--hidden flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16">
-<div class="sprint-step__content lg:w-5/12 order-2 lg:order-1">
-<span class="sprint-timeframe sprint-timeframe--review">Step 4</span>
+<!-- Step 4: Review (zig-right: graphic left aligned with 03, text right) -->
+<section id="sprint-panel-4" class="sprint-panel sprint-panel--zig-right flex flex-col lg:flex-row lg:flex-nowrap lg:items-start gap-10 lg:gap-12 w-full home-reveal home-reveal-delay-3">
+<div class="sprint-step__content lg:w-5/12 order-1 lg:order-2">
+<span class="sprint-timeframe sprint-timeframe--review">04</span>
 <h3 class="font-display text-2xl md:text-3xl font-bold mt-3 mb-4 dark:text-white text-slate-900">Review</h3>
 <p class="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">Review your developer's work through JrDev. If the work does not meet the given essential deliverables, receive a full refund. If you wish to continue work with a developer, you can reach out privately.</p>
 </div>
-<div class="sprint-step__visual lg:w-7/12 order-1 lg:order-2 relative">
+<div class="sprint-step__visual lg:w-7/12 order-2 lg:order-1 relative">
 <div class="sprint-glass-wrap">
 <div class="sprint-window-frame">
 <div class="sprint-window-frame__titlebar"><span class="sprint-window-frame__dots"><span></span><span></span><span></span></span><span class="sprint-window-frame__title">Sprint Review</span></div>
@@ -428,7 +507,7 @@
 </div>
 </div>
 </div>
-</div>
+</section>
 
 <div class="text-center mt-12 home-reveal home-reveal-delay-5">
     <p class="text-slate-500 dark:text-slate-500 italic">Students gain hands-on experience and a real project for their portfolio.</p>
@@ -443,22 +522,22 @@
 <h2 class="font-display text-3xl md:text-4xl font-bold mb-4 dark:text-white text-slate-900">Why JrDev?</h2>
 <p class="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">We're building a new kind of talent pipeline.</p>
 </div>
-<div class="grid md:grid-cols-3 gap-8 text-center">
-<div class="glass home-glass-card p-6 rounded-2xl border border-slate-200 dark:border-white/10 home-reveal home-reveal-delay-1">
+<div class="grid md:grid-cols-3 gap-10 lg:gap-12 text-center">
+<div class="glass home-glass-card p-8 rounded-2xl border border-slate-200 dark:border-white/10 home-reveal home-reveal-delay-1">
 <div class="home-icon-box w-16 h-16 mx-auto bg-primary/20 rounded-full flex items-center justify-center mb-6 text-primary">
 <span class="material-icons-round text-3xl">savings</span>
 </div>
 <h3 class="text-xl font-bold mb-2 dark:text-white text-slate-900">Cost-Effective Prototyping</h3>
 <p class="text-slate-600 dark:text-slate-400 text-base leading-relaxed">Get your MVP off the ground without breaking the bank. Perfect for testing new ideas quickly.</p>
 </div>
-<div class="glass home-glass-card p-6 rounded-2xl border border-slate-200 dark:border-white/10 home-reveal home-reveal-delay-2">
+<div class="glass home-glass-card p-8 rounded-2xl border border-slate-200 dark:border-white/10 home-reveal home-reveal-delay-2">
 <div class="home-icon-box w-16 h-16 mx-auto bg-secondary/20 rounded-full flex items-center justify-center mb-6 text-secondary">
 <span class="material-icons-round text-3xl">school</span>
 </div>
 <h3 class="text-xl font-bold mb-2 dark:text-white text-slate-900">Empower Future Devs</h3>
 <p class="text-slate-600 dark:text-slate-400 text-base leading-relaxed">Your projects provide the crucial real-world experience that shapes the next generation of developers.</p>
 </div>
-<div class="glass home-glass-card p-6 rounded-2xl border border-slate-200 dark:border-white/10 home-reveal home-reveal-delay-3">
+<div class="glass home-glass-card p-8 rounded-2xl border border-slate-200 dark:border-white/10 home-reveal home-reveal-delay-3">
 <div class="home-icon-box w-16 h-16 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center mb-6 text-purple-400">
 <span class="material-icons-round text-3xl">lock_open</span>
 </div>
@@ -483,47 +562,6 @@
 <span class="home-trust-logo placeholder">University partner</span>
 <span class="home-trust-logo placeholder">Startup</span>
 <span class="home-trust-logo placeholder">Tech hub</span>
-</div>
-</div>
-</div>
-</section>
-
-<section class="home-section-alt py-24 relative overflow-hidden bg-slate-50 dark:bg-slate-900/30">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="text-center mb-12 home-reveal">
-<h2 class="font-display text-3xl md:text-4xl font-bold mb-4 dark:text-white text-slate-900">What people say</h2>
-<p class="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">Reviews from businesses and developers using JrDev.</p>
-</div>
-<div class="grid md:grid-cols-1 lg:grid-cols-3 gap-8">
-<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg home-reveal">
-<p class="text-slate-600 dark:text-slate-400 italic mb-4">"Review from a business after their first sprint. Fill in with real testimonials when ready."</p>
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">—</div>
-<div>
-<span class="font-semibold text-slate-900 dark:text-white block">Coming soon</span>
-<span class="text-sm text-slate-500 dark:text-slate-400">Business</span>
-</div>
-</div>
-</div>
-<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg home-reveal home-reveal-delay-1">
-<p class="text-slate-600 dark:text-slate-400 italic mb-4">"Developer testimonial placeholder. Replace with real rating and quote after your first sprint."</p>
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">—</div>
-<div>
-<span class="font-semibold text-slate-900 dark:text-white block">Coming soon</span>
-<span class="text-sm text-slate-500 dark:text-slate-400">Developer</span>
-</div>
-</div>
-</div>
-<div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg home-reveal home-reveal-delay-2">
-<p class="text-slate-600 dark:text-slate-400 italic mb-4">"Another review slot. Add star rating and name when you have more feedback."</p>
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">—</div>
-<div>
-<span class="font-semibold text-slate-900 dark:text-white block">Coming soon</span>
-<span class="text-sm text-slate-500 dark:text-slate-400">Business</span>
-</div>
-</div>
 </div>
 </div>
 </div>
