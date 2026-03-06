@@ -38,7 +38,7 @@ body {
     border: none;
     border-radius: 12px;
     margin-bottom: 24px;
-    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 24px -4px #0000000f;
   }
   
   .article-title {

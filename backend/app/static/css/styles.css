@@ -1,0 +1,40 @@
+body, html {
+    background: gray;
+    font-family: "Space Grotesk";
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    background-color: transparent;
+    width: 96%;
+    padding: 2%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    font-weight: 500;
+}
+
+.navbar a {
+    text-decoration: none;
+    color: white;
+    margin: 2%;
+    white-space: nowrap;
+}
+
+.navLeft {
+    font-size: 150%;
+    flex: 1;
+}
+
+navCode, dev {
+    color: #4f46e5;
+}
+
+.navMiddle, .navRight {
+    width: 40%;
+    white-space: nowrap;
+    margin-top: 0;
+    padding: 0;
+    border: solid;
+}
