@@ -1,6 +1,5 @@
 body, html {
     background: gray;
-    font-family: "Space Grotesk";
 }
 
 .navbar {
@@ -20,11 +19,13 @@ body, html {
     color: white;
     margin: 2%;
     white-space: nowrap;
+    font-size: 105%;
 }
 
 .navLeft {
     font-size: 150%;
     flex: 1;
+    font-family: "Space Grotesk";
 }
 
 navCode, dev {
@@ -32,9 +33,25 @@ navCode, dev {
 }
 
 .navMiddle, .navRight {
-    width: 40%;
     white-space: nowrap;
     margin-top: 0;
     padding: 0;
-    border: solid;
+    font-family: "To Be Confirmed"; /* ------------------------------------------------------ */
+}
+
+.navMiddle {
+    width: 37%;
+}
+
+.navRight {
+    width: 25%;
+    margin-left: 10%;
+}
+
+#hire {
+    border: 2px solid #4f46e5;
+    padding: 8px 14px;
+    border-radius: 50px;
+    font-weight: 600;
+    background: linear-gradient(/*------------------------------------------------------------*/)
 }
