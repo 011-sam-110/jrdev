@@ -1,5 +1,6 @@
 body, html {
     background: gray;
+    margin: 0px;
 }
 
 .navbar {
@@ -12,14 +13,16 @@ body, html {
     top: 0;
     left: 0;
     font-weight: 500;
+    height: 6%;
+
 }
 
 .navbar a {
     text-decoration: none;
     color: white;
-    margin: 2%;
     white-space: nowrap;
     font-size: 105%;
+    padding: 5%;
 }
 
 .navLeft {
@@ -34,24 +37,74 @@ navCode, dev {
 
 .navMiddle, .navRight {
     white-space: nowrap;
-    margin-top: 0;
+    margin-top: 0.8%;
     padding: 0;
     font-family: "To Be Confirmed"; /* ------------------------------------------------------ */
 }
 
 .navMiddle {
-    width: 37%;
+    width: 40%;
 }
 
 .navRight {
-    width: 25%;
+    width: 30%;
     margin-left: 10%;
 }
 
 #hire {
     border: 2px solid #4f46e5;
-    padding: 8px 14px;
     border-radius: 50px;
     font-weight: 600;
-    background: linear-gradient(/*------------------------------------------------------------*/)
+    background: linear-gradient(to right, #524ae7, #6162f0)
+}
+
+.homeLaunch {
+    background-image: 
+        radial-gradient(#ffffff08 1px, transparent 0),
+        linear-gradient(to bottom, #1e1b4b, #030617);
+    background-size: 30px 30px, 100% 100%;
+    background-position: -19px -19px, 0 0;
+    width: 100%;
+    height: max-content;
+    padding-top: 10%;
+    text-align: center;
+    color: white;
+}
+
+.tag {
+    border: solid #ffffff55 0.1px;
+    border-radius: 200px;;
+    width: max-content;
+    padding-right: 1.5%;
+    margin: auto;
+    text-transform: uppercase;
+    font-family: "To Be Confirmed"; /* ------------------------------------------------------ */
+    font-weight: 500;
+    font-size: 90%;
+    background-color: #ffffff22;
+}
+
+li::marker {
+    color: #108b83;
+    font-size: 130%;
+}
+
+.homeLaunch h1 {
+    font-size: 400%;
+    font-family: "Space Grotesk";
+    margin-top: 3%;
+}
+
+.nextGen {
+    background-image: linear-gradient(to right, #564fe7, #32bcab);
+    color: transparent;
+    background-clip: text;
+}
+
+.homeLaunch h2 {
+    width: 50%;
+    margin: auto;
+    font-size: 200%;
+    font-weight: 400;
+    font-family: "To Be Confirmed"; /* ------------------------------------------------------ */
 }
