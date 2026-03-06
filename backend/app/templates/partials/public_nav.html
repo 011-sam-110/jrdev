@@ -13,7 +13,7 @@
             <div class="hidden md:flex items-center gap-4">
                 <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#how-it-works">How it works</a>
                 <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#students">For Students</a>
-                <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _anchor }}#business">For Businesses</a>
+                <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#business">For Businesses</a>
                 <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#pricing">Pricing</a>
             </div>
             <div class="hidden md:flex items-center gap-4">
@@ -43,11 +43,11 @@
         </div>
     </div>
     <div id="nav-mobile-menu" class="nav-mobile-menu md:hidden" aria-hidden="true">
-        <div class="px-4 pb-4 pt-2 space-y-1 border-t border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950/95 public-nav-mobile-inner">
+        <div class="px-4 pb-4 pt-2 space-y-1 border-t {% if nav_variant == 'home' %}border-white/10{% else %}border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950/95{% endif %} public-nav-mobile-inner">
             <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ url_for('main.home') }}">Home</a>
             <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#how-it-works">How it works</a>
             <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#students">For Students</a>
-            <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _anchor }}#business">For Businesses</a>
+            <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#business">For Businesses</a>
             <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#pricing">Pricing</a>
             <div class="pt-2 mt-2 border-t border-neutral-200 dark:border-white/10">
                 <button id="dark-mode-toggle-mobile" type="button" class="nav-mobile-link flex items-center gap-3 w-full px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">

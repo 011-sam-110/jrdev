@@ -106,7 +106,21 @@ html, body {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Mobile menu: home-specific (scrolled = light panel) ── */
+/* ── Mobile menu: home-specific (hero = dark, scrolled = light panel) ── */
+.home-nav:not(.nav-scrolled) .public-nav-mobile-hero .nav-mobile-link {
+  color: #e2e8f0;
+}
+.home-nav:not(.nav-scrolled) .public-nav-mobile-hero .nav-mobile-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.home-nav:not(.nav-scrolled) .public-nav-mobile-hero {
+  background: transparent;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+.home-nav:not(.nav-scrolled) .public-nav-mobile-hero .pt-2 {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
 .home-nav.nav-scrolled .nav-mobile-menu {
   background: rgba(255, 255, 255, 0.98);
   border-top-color: rgba(0, 0, 0, 0.06);
