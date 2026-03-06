@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="scroll-smooth" lang="en"><head>
+<html lang="en"><head>
 <meta charset="utf-8"/>
 <script>
 (function(){var s=localStorage.getItem('theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');})();
@@ -157,67 +157,8 @@
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-body transition-colors duration-300">
-<nav id="navbar" class="home-nav home-nav-in-hero fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="flex items-center justify-between h-20">
-<div class="flex-shrink-0 flex items-center gap-2">
-<span class="material-icons-round text-primary text-4xl nav-logo-icon">code</span>
-<span class="font-display font-bold text-2xl tracking-tight nav-logo-text">Jr<span class="text-primary text-glow">Dev</span></span>
-</div>
-<div class="hidden md:block">
-<div class="ml-10 flex items-baseline space-x-8">
-<a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#how-it-works">How it works</a>
-<a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#students">For Students</a>
-<a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#business">For Businesses</a>
-<a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#pricing">Pricing</a>
-</div>
-</div>
-<div class="hidden md:flex items-center gap-4">
-<button id="dark-mode-toggle" type="button" class="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Toggle dark mode">
-<span class="material-icons-round text-xl dark-mode-icon-light">light_mode</span>
-<span class="material-icons-round text-xl dark-mode-icon-dark hidden">dark_mode</span>
-</button>
-{% if current_user.is_authenticated %}
-    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.account') }}">My Account</a>
-    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
-{% else %}
-    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.login') }}">Login</a>
-    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.register', role='DEVELOPER') }}">Join as Developer</a>
-    <a class="home-cta-primary btn-gradient text-white px-6 py-3 rounded-full text-base font-bold shadow-xl" href="{{ url_for('main.register', role='BUSINESS') }}">Hire Talent</a>
-{% endif %}
-</div>
-<div class="flex md:hidden items-center">
-<button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
-<span class="material-icons-round nav-menu-icon-open">menu</span>
-<span class="material-icons-round nav-menu-icon-close hidden">close</span>
-</button>
-</div>
-</div>
-</div>
-<div id="nav-mobile-menu" class="nav-mobile-menu md:hidden" aria-hidden="true">
-<div class="px-4 pb-4 pt-2 space-y-1 border-t border-white/10">
-<a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="#how-it-works">How it works</a>
-<a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="#students">For Students</a>
-<a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="#business">For Businesses</a>
-<a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="#pricing">Pricing</a>
-<div class="pt-2 mt-2 border-t border-white/10">
-<button id="dark-mode-toggle-mobile" type="button" class="nav-mobile-link flex items-center gap-3 w-full px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors">
-<span class="material-icons-round text-xl dark-mode-icon-light">light_mode</span>
-<span class="material-icons-round text-xl dark-mode-icon-dark hidden">dark_mode</span>
-<span class="dark-mode-label">Toggle Dark Mode</span>
-</button>
-{% if current_user.is_authenticated %}
-    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="{{ url_for('main.account') }}">My Account</a>
-    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
-{% else %}
-    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="{{ url_for('main.login') }}">Login</a>
-    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-slate-200 hover:bg-white/10 hover:text-white transition-colors" href="{{ url_for('main.register', role='DEVELOPER') }}">Join as Developer</a>
-    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-white bg-primary hover:opacity-90 transition-opacity mt-2" href="{{ url_for('main.register', role='BUSINESS') }}">Hire Talent</a>
-{% endif %}
-</div>
-</div>
-</div>
-</nav>
+{% set nav_variant = 'home' %}
+{% include 'partials/public_nav.html' with context %}
 <section class="hero home-hero relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-b from-[#1e1b4b] via-[#0f172a] to-[#020617]">
 <div class="home-hero-pattern absolute inset-0 z-0 pointer-events-none" aria-hidden="true"></div>
 <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -233,17 +174,15 @@
             </p>
 <p class="fade-in delay-200 mt-2 max-w-xl mx-auto text-slate-300 text-base">Students: get paid to build real projects and grow your portfolio.</p>
 <div class="fade-in delay-300 mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
-    <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-gradient text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl">Hire Talent</a>
+    <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-colorful inline-flex items-center gap-2 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl">Hire Talent <span class="btn-colorful-arrow material-icons-round text-xl">arrow_forward</span></a>
     <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-secondary px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white/90 font-semibold border border-white/25 text-base transition-all">Join as Developer</a>
 </div>
 <p class="fade-in delay-300 mt-4 text-slate-500 text-sm" id="pricing">Starting at £50 per developer</p>
 </div>
 </section>
 
-<section class="aurora-section py-24 relative overflow-hidden bg-slate-100 dark:bg-neutral-950">
-<div class="aurora-bg absolute inset-0 z-0"></div>
-<div class="aurora-overlay pointer-events-none absolute inset-0 z-0 opacity-80"></div>
-<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section id="testimonials-section" class="py-24 relative overflow-hidden">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="text-center mb-12 home-reveal">
 <div class="faq-intro" id="testimonials-intro">
     <span class="faq-intro__beam" aria-hidden="true"></span>
@@ -333,10 +272,8 @@
 </div>
 </section>
 
-<section class="sprint-section aurora-section aurora-section--right py-16 md:py-20 relative overflow-hidden bg-white dark:bg-neutral-900" id="how-it-works">
-<div class="aurora-bg absolute inset-0 z-0"></div>
-<div class="aurora-overlay pointer-events-none absolute inset-0 z-0 opacity-80"></div>
-<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section class="sprint-section py-16 md:py-20 relative overflow-hidden" id="how-it-works">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="text-center mb-8 fade-in">
 <div class="faq-intro" id="process-intro">
     <span class="faq-intro__beam" aria-hidden="true"></span>
@@ -555,10 +492,8 @@
 </div>
 </div>
 </section>
-<section class="aurora-section aurora-section--center py-24 relative overflow-hidden bg-slate-100 dark:bg-neutral-950">
-<div class="aurora-bg absolute inset-0 z-0"></div>
-<div class="aurora-overlay pointer-events-none absolute inset-0 z-0 opacity-80"></div>
-<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section class="py-24 relative overflow-hidden">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="text-center mb-16 home-reveal">
 <div class="faq-intro" id="benefits-intro">
     <span class="faq-intro__beam" aria-hidden="true"></span>
@@ -605,10 +540,8 @@
 </div>
 </section>
 
-<section class="home-trust aurora-section aurora-section--right py-24 relative overflow-hidden bg-white dark:bg-neutral-900">
-<div class="aurora-bg absolute inset-0 z-0"></div>
-<div class="aurora-overlay pointer-events-none absolute inset-0 z-0 opacity-80"></div>
-<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section class="home-trust py-24 relative overflow-hidden">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="text-center mb-16 home-reveal">
 <div class="faq-intro" id="demo-intro">
     <span class="faq-intro__beam" aria-hidden="true"></span>
@@ -619,24 +552,15 @@
 </div>
 <h2 class="font-display text-4xl font-semibold leading-tight md:text-5xl text-neutral-900 dark:text-white">See JrDev in action.</h2>
 <p class="text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto mt-4 mb-10">From posting a sprint to shipping your prototype—in one place.</p>
-<div class="home-reveal home-reveal-delay-1 mx-auto rounded-3xl overflow-hidden border border-neutral-200 dark:border-white/10 shadow-2xl max-w-3xl aspect-video bg-neutral-900" style="box-shadow: 0 36px 120px -70px rgba(15,15,15,0.18);">
-<iframe class="w-full h-full" src="https://www.youtube.com/embed/ujdFPoCeFM4?rel=0" title="JrDev in action" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
-<div class="mt-14 home-trust-bar home-reveal home-reveal-delay-2">
-<p class="text-xs font-semibold uppercase tracking-[0.35em] text-neutral-500 dark:text-neutral-500 mb-6">Trusted by universities and startups building with JrDev</p>
-<div class="flex flex-wrap justify-center items-center gap-10 md:gap-14">
-<span class="home-trust-logo placeholder">University partner</span>
-<span class="home-trust-logo placeholder">Startup</span>
-<span class="home-trust-logo placeholder">Tech hub</span>
-</div>
+<div class="mx-auto rounded-2xl overflow-hidden border border-neutral-200 dark:border-white/10 shadow-2xl max-w-4xl aspect-video bg-neutral-900">
+<iframe class="w-full h-full" src="https://www.youtube.com/embed/ujdFPoCeFM4?rel=0" title="JrDev in action" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen width="560" height="315"></iframe>
 </div>
 </div>
 </section>
 
-<section class="aurora-section py-24 relative overflow-hidden bg-slate-100 dark:bg-neutral-950">
-<div class="aurora-bg absolute inset-0 z-0"></div>
-<div class="aurora-overlay pointer-events-none absolute inset-0 z-0 opacity-80"></div>
-<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section class="py-24 relative overflow-hidden">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="grid lg:grid-cols-2 gap-12 lg:gap-24">
 <div class="home-comparison-card relative group rounded-3xl p-8 border border-neutral-200 dark:border-white/10" id="students"
      onmousemove="this.style.setProperty('--glow-x',event.clientX-this.getBoundingClientRect().left+'px');this.style.setProperty('--glow-y',event.clientY-this.getBoundingClientRect().top+'px')"
@@ -714,11 +638,7 @@
 </section>
 
 
-<section class="faq-section relative py-24 overflow-hidden transition-colors duration-700 bg-slate-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
-<!-- Aurora background -->
-<div class="faq-aurora absolute inset-0 z-0"></div>
-<div class="faq-overlay pointer-events-none absolute inset-0 z-0 opacity-80"></div>
-
+<section class="faq-section relative py-24 overflow-hidden transition-colors duration-700 text-neutral-900 dark:text-neutral-100">
 <div class="relative z-10 mx-auto flex max-w-5xl flex-col gap-12 px-6 lg:px-12">
 <!-- Animated intro pill -->
 <div class="faq-intro" id="faq-intro">
@@ -852,20 +772,20 @@
 </div>
 </section>
 
-<section class="aurora-section aurora-section--center py-24 relative overflow-hidden bg-white dark:bg-neutral-900">
-<div class="aurora-bg absolute inset-0 z-0"></div>
-<div class="aurora-overlay pointer-events-none absolute inset-0 z-0 opacity-80"></div>
-<div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-<div class="home-cta-strip relative rounded-3xl p-10 md:p-16 text-center overflow-hidden bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border border-white/10" style="box-shadow: 0 36px 120px -70px rgba(15,15,15,0.35);">
-<div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_50%,rgba(79,70,229,0.08),transparent)] z-0"></div>
+<section class="py-24 relative overflow-hidden">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="faq-card group relative rounded-3xl p-10 md:p-16 text-center overflow-hidden backdrop-blur-xl border transition-all duration-500 hover:-translate-y-0.5 border-neutral-200 dark:border-white/10 bg-white/70 dark:bg-neutral-900/50"
+     onmousemove="this.style.setProperty('--faq-x',event.clientX-this.getBoundingClientRect().left+'px');this.style.setProperty('--faq-y',event.clientY-this.getBoundingClientRect().top+'px')"
+     onmouseleave="this.style.removeProperty('--faq-x');this.style.removeProperty('--faq-y')">
+<div class="faq-glow pointer-events-none absolute inset-0 transition-opacity duration-500 opacity-0 group-hover:opacity-100"></div>
 <div class="relative z-10">
-<h2 class="font-display text-3xl md:text-5xl font-bold text-white mb-6">Ready to build something amazing?</h2>
-<p class="text-neutral-300 text-lg mb-10 max-w-2xl mx-auto">Join the platform that connects businesses with emerging developers. Whether you're hiring or building, you belong here.</p>
+<h2 class="font-display text-3xl md:text-5xl font-bold text-neutral-900 dark:text-white mb-6">Ready to build something amazing?</h2>
+<p class="text-neutral-600 dark:text-neutral-400 text-lg mb-10 max-w-2xl mx-auto">Join the platform that connects businesses with emerging developers. Whether you're hiring or building, you belong here.</p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-gradient px-8 py-3.5 rounded-full text-white font-bold shadow-lg">
-                            Post a Sprint
+                        <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-colorful inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-white font-bold shadow-lg">
+                            Post a Sprint <span class="btn-colorful-arrow material-icons-round text-lg">arrow_forward</span>
                         </a>
-                        <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-secondary px-8 py-3.5 rounded-full bg-white/15 hover:bg-white/25 text-white font-bold border border-white/30 transition-all">
+                        <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-secondary px-8 py-3.5 rounded-full border border-neutral-300 dark:border-white/20 bg-neutral-900/5 dark:bg-white/10 hover:bg-neutral-900/10 dark:hover:bg-white/20 text-neutral-900 dark:text-white font-bold transition-all">
                             Join as Developer
                         </a>
                     </div>
@@ -874,7 +794,7 @@
 </div>
 </section>
 
-<footer class="border-t border-neutral-200 dark:border-white/5 py-12 bg-white/80 dark:bg-neutral-950 backdrop-blur-xl">
+<footer class="border-t border-neutral-200 dark:border-white/5 py-12 bg-slate-100 dark:bg-neutral-950">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
 <div class="flex items-center gap-2">
 <span class="material-icons-round text-primary">code</span>
@@ -1039,6 +959,21 @@
             pillObserver.observe(pill);
         }
     });
+
+    // Testimonials marquee: speed up when section is in view
+    (function() {
+        var section = document.getElementById('testimonials-section');
+        var track = document.querySelector('.home-reviews-track');
+        if (!section || !track) return;
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                var duration = entry.isIntersecting ? '18s' : '45s';
+                track.style.setProperty('--marquee-duration', duration);
+            });
+        }, { threshold: 0.15, rootMargin: '0px' });
+        observer.observe(section);
+    })();
+
 </script>
 <script src="{{ url_for('static', filename='js/home.js') }}"></script>
     <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" xmlns="http://www.w3.org/2000/svg">

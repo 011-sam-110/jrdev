@@ -7,37 +7,52 @@
             <p class="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">We're building the bridge between ambitious student developers and local businesses needing modern digital solutions.</p>
         </div>
 
-        <div class="space-y-8">
-            <div class="glass p-8 rounded-2xl border border-slate-200 dark:border-white/10 reveal">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                        <span class="material-icons-round text-primary">rocket_launch</span>
+        <ul class="space-y-4">
+            <li class="faq-card group relative overflow-hidden rounded-3xl border backdrop-blur-xl transition-all duration-500 hover:-translate-y-0.5 border-neutral-200 dark:border-white/10 bg-white/70 dark:bg-neutral-900/50 reveal"
+                onmousemove="this.style.setProperty('--faq-x',event.clientX-this.getBoundingClientRect().left+'px');this.style.setProperty('--faq-y',event.clientY-this.getBoundingClientRect().top+'px')"
+                onmouseleave="this.style.removeProperty('--faq-x');this.style.removeProperty('--faq-y')">
+                <div class="faq-glow pointer-events-none absolute inset-0 transition-opacity duration-500 opacity-0 group-hover:opacity-100"></div>
+                <div class="relative px-8 py-7">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-full border border-neutral-300 dark:border-white/20 bg-neutral-900/5 dark:bg-white/5 flex items-center justify-center">
+                            <span class="material-icons-round text-primary">rocket_launch</span>
+                        </div>
+                        <h2 class="font-display text-xl font-bold text-neutral-900 dark:text-white">Our Mission</h2>
                     </div>
-                    <h2 class="font-display text-xl font-bold dark:text-white text-slate-900">Our Mission</h2>
+                    <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed">JrDev connects student developers with real business projects. Students gain invaluable hands-on experience, build their portfolios, and earn while learning. Businesses get cost-effective, innovative digital solutions built by hungry young talent.</p>
                 </div>
-                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">JrDev connects student developers with real business projects. Students gain invaluable hands-on experience, build their portfolios, and earn while learning. Businesses get cost-effective, innovative digital solutions built by hungry young talent.</p>
-            </div>
+            </li>
 
-            <div class="glass p-8 rounded-2xl border border-slate-200 dark:border-white/10 reveal reveal-delay-1">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-secondary/20 rounded-lg flex items-center justify-center">
-                        <span class="material-icons-round text-secondary">groups</span>
+            <li class="faq-card group relative overflow-hidden rounded-3xl border backdrop-blur-xl transition-all duration-500 hover:-translate-y-0.5 border-neutral-200 dark:border-white/10 bg-white/70 dark:bg-neutral-900/50 reveal reveal-delay-1"
+                onmousemove="this.style.setProperty('--faq-x',event.clientX-this.getBoundingClientRect().left+'px');this.style.setProperty('--faq-y',event.clientY-this.getBoundingClientRect().top+'px')"
+                onmouseleave="this.style.removeProperty('--faq-x');this.style.removeProperty('--faq-y')">
+                <div class="faq-glow pointer-events-none absolute inset-0 transition-opacity duration-500 opacity-0 group-hover:opacity-100"></div>
+                <div class="relative px-8 py-7">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-full border border-neutral-300 dark:border-white/20 bg-neutral-900/5 dark:bg-white/5 flex items-center justify-center">
+                            <span class="material-icons-round text-secondary">groups</span>
+                        </div>
+                        <h2 class="font-display text-xl font-bold text-neutral-900 dark:text-white">How It Works</h2>
                     </div>
-                    <h2 class="font-display text-xl font-bold dark:text-white text-slate-900">How It Works</h2>
+                    <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed">Businesses post project ideas as "sprints" — short, focused prototyping challenges. Student developers sign up to build proof-of-concepts. At the end of the sprint, businesses review the prototypes and can choose to hire developers for continued work.</p>
                 </div>
-                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Businesses post project ideas as "sprints" — short, focused prototyping challenges. Student developers sign up to build proof-of-concepts. At the end of the sprint, businesses review the prototypes and can choose to hire developers for continued work.</p>
-            </div>
+            </li>
 
-            <div class="glass p-8 rounded-2xl border border-slate-200 dark:border-white/10 reveal reveal-delay-2">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                        <span class="material-icons-round text-purple-400">shield</span>
+            <li class="faq-card group relative overflow-hidden rounded-3xl border backdrop-blur-xl transition-all duration-500 hover:-translate-y-0.5 border-neutral-200 dark:border-white/10 bg-white/70 dark:bg-neutral-900/50 reveal reveal-delay-2"
+                onmousemove="this.style.setProperty('--faq-x',event.clientX-this.getBoundingClientRect().left+'px');this.style.setProperty('--faq-y',event.clientY-this.getBoundingClientRect().top+'px')"
+                onmouseleave="this.style.removeProperty('--faq-x');this.style.removeProperty('--faq-y')">
+                <div class="faq-glow pointer-events-none absolute inset-0 transition-opacity duration-500 opacity-0 group-hover:opacity-100"></div>
+                <div class="relative px-8 py-7">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-full border border-neutral-300 dark:border-white/20 bg-neutral-900/5 dark:bg-white/5 flex items-center justify-center">
+                            <span class="material-icons-round text-secondary">shield</span>
+                        </div>
+                        <h2 class="font-display text-xl font-bold text-neutral-900 dark:text-white">Trust & Safety</h2>
                     </div>
-                    <h2 class="font-display text-xl font-bold dark:text-white text-slate-900">Trust & Safety</h2>
+                    <p class="text-neutral-600 dark:text-neutral-400 leading-relaxed">Payments are held in escrow until sprint completion and approval. Both parties are protected with clear contracts, trial periods, and a support team available for mediation.</p>
                 </div>
-                <p class="text-slate-600 dark:text-slate-400 leading-relaxed">Payments are held in escrow until sprint completion and approval. Both parties are protected with clear contracts, trial periods, and a support team available for mediation.</p>
-            </div>
-        </div>
+            </li>
+        </ul>
 
         <div class="text-center mt-12">
             <a href="{{ url_for('main.register') }}" class="inline-flex items-center gap-2 px-8 py-3 rounded-full btn-gradient text-slate-900 font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(20,241,149,0.4)]">

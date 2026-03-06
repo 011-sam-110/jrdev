@@ -3,6 +3,11 @@
  * Uses design tokens from liquid-glass.css (--primary-mint = indigo, --secondary-purple = teal)
  */
 
+/* Override smooth scroll for snappy native feel (liquid-glass sets scroll-behavior: smooth) */
+html {
+  scroll-behavior: auto;
+}
+
 /* ── Hero: gradient text (indigo → teal) ── */
 
 html, body {
@@ -190,7 +195,8 @@ html, body {
 .home-cta-primary {
   transition:
     transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.3s ease;
+    box-shadow 0.3s ease,
+    background-position 0.4s ease;
   box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
 }
 .home-cta-primary:hover {
@@ -199,6 +205,62 @@ html, body {
 }
 .home-cta-primary:active {
   transform: translateY(-1px);
+}
+
+/* ── Hire Talent: colorful gradient button (inspired by Button Colorful) ── */
+.btn-colorful {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #4f46e5 0%,
+    #6366f1 35%,
+    #7c3aed 65%,
+    #0d9488 100%
+  );
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s ease,
+    background-position 0.5s ease;
+  box-shadow:
+    0 4px 20px -4px rgba(79, 70, 229, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+.btn-colorful::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.btn-colorful:hover {
+  transform: translateY(-3px);
+  background-position: 100% 50%;
+  box-shadow:
+    0 20px 40px -10px rgba(79, 70, 229, 0.55),
+    0 8px 24px -8px rgba(13, 148, 136, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+.btn-colorful:hover::before {
+  opacity: 1;
+}
+.btn-colorful:active {
+  transform: translateY(-1px);
+}
+.btn-colorful .btn-colorful-arrow {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-colorful:hover .btn-colorful-arrow {
+  transform: translate(2px, -2px);
 }
 
 .home-cta-secondary {
@@ -570,7 +632,7 @@ a:hover .home-link-arrow {
   100% { transform: translateX(-50%); }
 }
 .home-reviews-track {
-  animation: home-reviews-marquee 45s linear infinite;
+  animation: home-reviews-marquee var(--marquee-duration, 45s) linear infinite;
 }
 .home-comparison-icon {
   width: 3rem;
@@ -603,7 +665,7 @@ a:hover .home-link-arrow {
   filter: drop-shadow(0 1px 2px rgba(79, 70, 229, 0.2));
 }
 
-/* ── Trust section: video placeholder + trusted by bar ── */
+/* ── Trust section: video ── */
 .home-video-placeholder {
   position: relative;
   min-height: 200px;
@@ -613,22 +675,6 @@ a:hover .home-link-arrow {
 }
 .home-video-play:hover {
   box-shadow: 0 12px 28px -8px rgba(79, 70, 229, 0.4);
-}
-.home-trust-logo.placeholder {
-  width: 120px;
-  height: 48px;
-  border-radius: 8px;
-  background: rgba(148, 163, 184, 0.2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-}
-.dark .home-trust-logo.placeholder {
-  background: rgba(255, 255, 255, 0.06);
-  color: #94a3b8;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -642,59 +688,6 @@ a:hover .home-link-arrow {
   .home-reviews-track {
     animation: none;
   }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Shared: Aurora section backgrounds + sleek card glow
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-.aurora-section {
-  position: relative;
-  overflow: hidden;
-  transition: background-color 0.7s;
-}
-.aurora-section > .aurora-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-.dark .aurora-section > .aurora-bg {
-  background: radial-gradient(ellipse 50% 100% at 10% 0%, rgba(226,232,240,0.15), transparent 65%), #000;
-}
-.aurora-section > .aurora-overlay {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  opacity: 0.8;
-  background: linear-gradient(130deg, rgba(15,23,42,0.08) 0%, transparent 70%);
-  mix-blend-mode: multiply;
-}
-.dark .aurora-section > .aurora-overlay {
-  background: linear-gradient(130deg, rgba(255,255,255,0.04) 0%, transparent 65%);
-  mix-blend-mode: screen;
-}
-
-/* Aurora position variants for visual rhythm between sections */
-.aurora-section--right > .aurora-bg {
-  background: radial-gradient(ellipse 50% 100% at 90% 100%, rgba(15,23,42,0.06), rgba(255,255,255,0.95) 70%);
-}
-.dark .aurora-section--right > .aurora-bg {
-  background: radial-gradient(ellipse 50% 100% at 90% 100%, rgba(226,232,240,0.12), transparent 65%), #000;
-}
-.aurora-section--center > .aurora-bg {
-  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(15,23,42,0.05), rgba(255,255,255,0.95) 70%);
-}
-.dark .aurora-section--center > .aurora-bg {
-  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(226,232,240,0.1), transparent 65%), #000;
-}
-
-/* Sprint glass wraps inside aurora — slightly warmer tones */
-.aurora-section .sprint-glass-wrap {
-  border-color: rgba(229,229,229,0.6);
-}
-.dark .aurora-section .sprint-glass-wrap {
-  border-color: rgba(255,255,255,0.08);
 }
 
 /* ── FAQ Section ── */
@@ -716,22 +709,6 @@ a:hover .home-link-arrow {
   0%, 30% { transform: translateX(-6px); opacity: 0.4; }
   50% { transform: translateX(2px); opacity: 1; }
   100% { transform: translateX(20px); opacity: 0; }
-}
-
-/* Aurora and overlay backgrounds */
-.faq-aurora {
-  background: radial-gradient(ellipse 50% 100% at 10% 0%, rgba(15, 23, 42, 0.08), rgba(255, 255, 255, 0.95) 70%);
-}
-.dark .faq-aurora {
-  background: radial-gradient(ellipse 50% 100% at 10% 0%, rgba(226, 232, 240, 0.15), transparent 65%), #000000;
-}
-.faq-overlay {
-  background: linear-gradient(130deg, rgba(15,23,42,0.08) 0%, transparent 70%);
-  mix-blend-mode: multiply;
-}
-.dark .faq-overlay {
-  background: linear-gradient(130deg, rgba(255,255,255,0.04) 0%, transparent 65%);
-  mix-blend-mode: screen;
 }
 
 /* Card shadow */

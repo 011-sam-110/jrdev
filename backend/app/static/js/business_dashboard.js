@@ -358,6 +358,38 @@
   }
 
   /**
+   * Initialize Flatpickr date pickers (Material/Calendar-inspired).
+   */
+  function bindDatePickers() {
+    const startEl = document.getElementById('sprint-start-date');
+    const endEl = document.getElementById('sprint-end-date');
+    if (!startEl || !endEl || typeof flatpickr === 'undefined') return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const startFp = flatpickr(startEl, {
+      dateFormat: 'Y-m-d',
+      minDate: today,
+      allowInput: true,
+      theme: 'dark',
+      onChange: function(selectedDates) {
+        if (selectedDates[0]) {
+          endFp.set('minDate', selectedDates[0]);
+        }
+      }
+    });
+
+    const endFp = flatpickr(endEl, {
+      dateFormat: 'Y-m-d',
+      minDate: today,
+      allowInput: true,
+      theme: 'dark',
+      onChange: function() {}
+    });
+  }
+
+  /**
    * Wire up all .js-help-toggle buttons to toggle their target panel.
    */
   function bindHelpToggles() {
@@ -427,6 +459,7 @@
     bindDeliverables(el);
     bindEssentialDeliverables(el);
     bindTechnologies(el);
+    bindDatePickers();
     bindHelpToggles();
     bindLaunchForm(el);
   }

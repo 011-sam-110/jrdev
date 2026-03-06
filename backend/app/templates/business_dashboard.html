@@ -2,6 +2,25 @@
 
 {% block title %}JrDev | Dashboard{% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css"/>
+<style>
+  /* Material-inspired date picker: rounded-xl, shadow-border */
+  .flatpickr-calendar {
+    border-radius: 1rem !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 8px 24px -8px rgba(0,0,0,0.4) !important;
+  }
+  .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+  }
+  .flatpickr-day:hover {
+    background: rgba(79, 70, 229, 0.3) !important;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 {% set attention_items = attention_items or [] %}
 {% set stats = stats or { 'active_developers': 0, 'total_listings': 0, 'open_listings': 0 } %}
@@ -154,11 +173,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Sprint Start Date</label>
-                        <input name="start_date" type="date" class="w-full liquid-glass-input rounded-lg px-3 py-2 text-slate-200 text-sm" required>
+                        <div class="sprint-date-wrapper relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg pointer-events-none">calendar_today</span>
+                            <input name="start_date" id="sprint-start-date" type="text" placeholder="Select start date" class="w-full liquid-glass-input rounded-xl pl-10 pr-4 py-3 text-slate-200 text-sm sprint-date-input" data-input required>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Sprint End Date</label>
-                        <input name="end_date" type="date" class="w-full liquid-glass-input rounded-lg px-3 py-2 text-slate-200 text-sm" required>
+                        <div class="sprint-date-wrapper relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg pointer-events-none">event</span>
+                            <input name="end_date" id="sprint-end-date" type="text" placeholder="Select end date" class="w-full liquid-glass-input rounded-xl pl-10 pr-4 py-3 text-slate-200 text-sm sprint-date-input" data-input required>
+                        </div>
                     </div>
                 </div>
                 <!-- Hidden task inputs are dynamically created by JS from deliverables -->
@@ -341,5 +366,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="{{ url_for('static', filename='js/business_dashboard.js') }}"></script>
 {% endblock %}
