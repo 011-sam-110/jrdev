@@ -1,0 +1,223 @@
+{% extends "developer_layout.html" %}
+
+{% block title %}JrDev | Settings{% endblock %}
+
+{% block content %}
+<div class="mb-10 liquid-glass-in">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Settings</h1>
+    <p class="text-slate-400">Manage your signature, address, and payment methods for sprints and prize pools.</p>
+</div>
+
+<div class="space-y-8">
+    <!-- Payment methods -->
+    <section class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+        <h2 class="font-display text-xl font-bold text-white mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-mint">credit_card</span>
+            Payment methods
+        </h2>
+        <p class="text-slate-400 text-sm mb-6">Add a card for prize pool entry fees. Card details are handled securely by Stripe.</p>
+        {% if stripe_available %}
+        {% if card_last4 %}
+        <div class="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-slate-300 flex items-center gap-3 flex-wrap">
+                <span class="card-brand-badge card-brand-badge--{{ (card_brand or '')|lower }}">{{ card_brand }}</span>
+                <span>ending in <span class="font-mono font-medium">**** {{ card_last4 }}</span></span>
+            </p>
+            <p class="text-slate-500 text-xs mt-2">Add a new card below to replace this one.</p>
+        </div>
+        {% endif %}
+        {% if stripe_publishable_key %}
+        <form id="payment-form" class="space-y-6 mb-6">
+            <input type="hidden" id="csrf-token" value="{{ csrf_token }}"/>
+            <div class="liquid-glass-input rounded-xl p-4 min-h-[44px]" id="card-element"></div>
+            <div id="card-errors" class="text-red-400 text-sm hidden" role="alert"></div>
+            <button type="submit" id="submit-btn" class="w-full py-4 rounded-xl liquid-glass-cta text-navy-900 font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined">lock</span>
+                {{ 'Update' if card_last4 else 'Save' }} card securely
+            </button>
+        </form>
+        <p class="text-slate-400 text-sm mb-4 flex items-center gap-2 font-medium">
+            <span class="material-symbols-outlined text-primary text-lg">verified_user</span>
+            Secured by Stripe. We never see or store your full card number.
+        </p>
+        <hr class="border-white/10 my-6"/>
+        <p class="text-slate-500 text-sm mb-2">Or use Stripe's portal to manage payment methods:</p>
+        <form method="POST" action="{{ url_for('main.developer_settings') }}">
+            <input type="hidden" name="action" value="billing_portal"/>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+            <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+                <span class="material-symbols-outlined text-lg">open_in_new</span>
+                Open Stripe billing portal
+            </button>
+        </form>
+        <p class="text-slate-500 text-xs mt-4">You can remove your card at any time by contacting <a href="mailto:support@jr-dev.com" class="text-mint hover:underline">support@jr-dev.com</a>.</p>
+        {% else %}
+        <form method="POST" action="{{ url_for('main.developer_settings') }}">
+            <input type="hidden" name="action" value="billing_portal"/>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+            <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+                <span class="material-symbols-outlined text-lg">add_card</span>
+                Manage payment methods
+            </button>
+        </form>
+        <p class="text-slate-500 text-xs mt-3">Opens Stripe's secure portal to add or update your card.</p>
+        <p class="text-slate-500 text-xs mt-2">You can remove your card at any time by contacting <a href="mailto:support@jr-dev.com" class="text-mint hover:underline">support@jr-dev.com</a>.</p>
+        {% endif %}
+        {% else %}
+        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm">
+            <p class="font-medium">Payment methods not available</p>
+            <p class="mt-1">Configure Stripe (STRIPE_SECRET_KEY) to add a card for prize pool entries.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Saved signature & address -->
+    <section class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+        <h2 class="font-display text-xl font-bold text-white mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-mint">draw</span>
+            Signature & address
+        </h2>
+        <p class="text-slate-400 text-sm mb-6">Save your signature and registered address so you don't need to re-enter them each time you sign a sprint contract.</p>
+        <form method="POST" action="{{ url_for('main.developer_settings') }}" class="space-y-4">
+            <input type="hidden" name="action" value="save_signature"/>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+            <div>
+                <label for="contractor_address" class="block text-xs font-medium text-slate-400 mb-1">Your registered address (for contracts)</label>
+                <input type="text" id="contractor_address" name="contractor_address" value="{{ profile.saved_contractor_address or '' }}" placeholder="e.g. 45 Dev Lane, Manchester, UK" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Your signature</label>
+                <div class="border-2 border-dashed border-white/20 rounded-xl bg-white/5 overflow-hidden">
+                    <canvas id="settings-signature-canvas" width="400" height="160" class="block w-full touch-none cursor-crosshair" style="touch-action: none;"></canvas>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <button type="button" id="settings-signature-clear" class="px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 text-sm font-medium">Clear</button>
+                </div>
+                <input type="hidden" name="signature_data" id="settings-signature-data" value="{{ profile.saved_signature or '' }}"/>
+                <p class="text-slate-500 text-xs mt-2">Draw above. Leave blank to clear saved signature.</p>
+            </div>
+            <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+                <span class="material-symbols-outlined text-lg">save</span>
+                Save signature & address
+            </button>
+        </form>
+    </section>
+</div>
+
+<script>
+(function() {
+    var canvas = document.getElementById('settings-signature-canvas');
+    var input = document.getElementById('settings-signature-data');
+    if (!canvas || !input) return;
+
+    var ctx = canvas.getContext('2d');
+    var drawing = false;
+
+    function getPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var scaleX = canvas.width / rect.width;
+        var scaleY = canvas.height / rect.height;
+        if (e.touches) {
+            return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+        }
+        return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    }
+    function start(e) { e.preventDefault(); drawing = true; var p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+    function move(e) { e.preventDefault(); if (!drawing) return; var p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    function end(e) { e.preventDefault(); drawing = false; }
+
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end, { passive: false });
+
+    var clearBtn = document.getElementById('settings-signature-clear');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+    }
+
+    // Load saved signature if present
+    var saved = (input.value || '').trim();
+    if (saved && saved.startsWith('data:image')) {
+        var img = new Image();
+        img.onload = function() { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+        img.src = saved;
+    }
+
+    // Before submit: capture canvas to hidden input
+    canvas.closest('form').addEventListener('submit', function() {
+        var d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        var hasPixels = false;
+        for (var i = 3; i < d.length; i += 4) {
+            if (d[i] > 0) { hasPixels = true; break; }
+        }
+        input.value = hasPixels ? canvas.toDataURL('image/png') : '';
+    });
+})();
+</script>
+{% endblock %}
+
+{% block scripts %}
+{% if stripe_publishable_key %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(function() {
+    var publishableKey = {{ stripe_publishable_key|tojson }};
+    var stripe = Stripe(publishableKey);
+    var elements = stripe.elements();
+    var cardElement = elements.create('card', {
+        style: {
+            base: { fontSize: '16px', color: '#e2e8f0', '::placeholder': { color: '#64748b' }, iconColor: '#4f46e5' },
+            invalid: { color: '#f87171' }
+        }
+    });
+    cardElement.mount('#card-element');
+    var form = document.getElementById('payment-form');
+    var submitBtn = document.getElementById('submit-btn');
+    var cardErrors = document.getElementById('card-errors');
+    if (form && submitBtn && cardErrors) {
+        form.addEventListener('submit', function(ev) {
+            ev.preventDefault();
+            submitBtn.disabled = true;
+            cardErrors.classList.add('hidden');
+            cardErrors.textContent = '';
+            var csrfToken = document.getElementById('csrf-token') && document.getElementById('csrf-token').value;
+            fetch('{{ url_for("main.developer_settings_create_setup_intent") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken || '' },
+                body: JSON.stringify({})
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) throw new Error(data.error);
+                return stripe.confirmCardSetup(data.client_secret, { payment_method: { card: cardElement } });
+            })
+            .then(function(result) {
+                if (result.error) {
+                    cardErrors.textContent = result.error.message || 'Something went wrong.';
+                    cardErrors.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    return;
+                }
+                window.location.reload();
+            })
+            .catch(function(err) {
+                cardErrors.textContent = err.message || 'Failed to save card.';
+                cardErrors.classList.remove('hidden');
+                submitBtn.disabled = false;
+            });
+        });
+    }
+})();
+</script>
+{% endif %}
+{% endblock %}

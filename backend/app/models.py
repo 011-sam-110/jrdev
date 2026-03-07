@@ -98,6 +98,10 @@ class DeveloperProfile(db.Model):
     contracts_won = db.Column(db.Integer, default=0)
     prototypes_completed = db.Column(db.Integer, default=0)
 
+    # Settings: saved signature & address for contracts (avoid re-entering each sprint)
+    saved_signature = db.Column(db.Text, nullable=True)  # base64 PNG data URL
+    saved_contractor_address = db.Column(db.String(255), nullable=True)
+
     # Relationships
     pinned_projects = db.relationship('PinnedProject', backref='profile', lazy=True)
 
@@ -218,3 +222,79 @@ class ListingSignup(db.Model):
     @property
     def is_fully_signed(self):
         return self.developer_signed_at is not None and self.business_signed_at is not None
+
+
+class PrizePool(db.Model):
+    """Prize pool challenge: paid (entry fee, user voting) or free (AI review placeholder)."""
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    status = db.Column(db.String(20), nullable=False, default='open')  # open, voting, closed
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    technologies_required = db.Column(db.String(500), nullable=True)
+    pool_type = db.Column(db.String(20), nullable=False, default='paid')  # paid | free
+    entry_fee_gbp = db.Column(db.Float, nullable=True)  # null = free pool
+    signup_ends_at = db.Column(db.DateTime, nullable=False)
+    submission_ends_at = db.Column(db.DateTime, nullable=False)
+    voting_ends_at = db.Column(db.DateTime, nullable=True)  # for paid
+    review_ends_at = db.Column(db.DateTime, nullable=True)  # for free, placeholder
+    max_participants = db.Column(db.Integer, nullable=True)  # null = unlimited
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    created_by = db.relationship('User', backref='created_prize_pools', foreign_keys=[created_by_id])
+    entries = db.relationship('PrizePoolEntry', backref='prize_pool', cascade='all, delete-orphan')
+    votes = db.relationship('PrizePoolVote', backref='prize_pool', cascade='all, delete-orphan')
+
+    @property
+    def entry_count(self):
+        """Number of paid/joined entries (with payment_completed_at for paid pools)."""
+        return len([e for e in self.entries if e.payment_completed_at is not None or self.pool_type == 'free'])
+
+    @property
+    def joined_count(self):
+        return len([e for e in self.entries if e.payment_completed_at is not None or self.entry_fee_gbp is None])
+
+    @property
+    def is_free(self):
+        return self.pool_type == 'free' or self.entry_fee_gbp is None
+
+
+class PrizePoolEntry(db.Model):
+    """Developer's entry in a prize pool. Payment required for paid pools."""
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    joined_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    payment_intent_id = db.Column(db.String(255), nullable=True)  # Stripe
+    payment_completed_at = db.Column(db.DateTime, nullable=True)
+    demo_video_url = db.Column(db.String(500), nullable=True)
+    github_submission_url = db.Column(db.String(500), nullable=True)
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    is_winner = db.Column(db.Boolean, default=False)
+    ai_review_result = db.Column(db.String(20), nullable=True)  # pass/fail for free, placeholder
+
+    user = db.relationship('User', backref='prize_pool_entries')
+
+    @property
+    def has_paid(self):
+        return self.payment_completed_at is not None
+
+    @property
+    def has_submitted(self):
+        return self.submitted_at is not None
+
+
+class PrizePoolVote(db.Model):
+    """Participant vote: ranks 3 entries (1st=best, 3rd=worst). Points: 1st=3, 2nd=2, 3rd=1."""
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
+    voter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    entry_1_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    entry_2_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    entry_3_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    rank_1_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)  # best
+    rank_2_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    rank_3_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)  # worst
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    voter = db.relationship('User', backref='prize_pool_votes', foreign_keys=[voter_id])

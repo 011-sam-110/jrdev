@@ -139,9 +139,21 @@
             currentSigner = btn.getAttribute('data-signer') || null;
             if (addressWrap) {
                 addressWrap.classList.toggle('hidden', currentSigner !== 'developer');
-                if (addressInput) addressInput.value = '';
+                if (addressInput) {
+                    var dataEl = document.getElementById('dev-saved-signature-data');
+                    addressInput.value = (currentSigner === 'developer' && dataEl && dataEl.getAttribute('data-address')) ? dataEl.getAttribute('data-address') : '';
+                }
             }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            var dataEl = document.getElementById('dev-saved-signature-data');
+            if (currentSigner === 'developer' && dataEl) {
+                var sig = dataEl.getAttribute('data-signature') || '';
+                if (sig && sig.startsWith('data:image')) {
+                    var img = new Image();
+                    img.onload = function() { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+                    img.src = sig;
+                }
+            }
             modal.classList.remove('hidden');
         });
     });

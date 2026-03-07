@@ -32,9 +32,11 @@ def create_app():
         import warnings
         warnings.warn('SECRET_KEY not set; use a strong secret in production.', UserWarning)
     app.config['SECRET_KEY'] = secret_key
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-        'DATABASE_URL', 'sqlite:///site.db'
-    )
+    database_url = os.environ.get('DATABASE_URL', 'sqlite:///site.db')
+    # Vercel/Heroku use postgres:// but SQLAlchemy 1.4+ requires postgresql://
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
     # Mail (development/production: set EMAIL_USER, EMAIL_PASS in env)
     app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
@@ -90,9 +92,28 @@ def create_app():
 
     app.add_template_filter(initials, 'initials')
 
+    def markdown_filter(text):
+        """Render markdown to HTML for templates. Sanitizes output to prevent XSS."""
+        if not text or not str(text).strip():
+            return ''
+        import markdown
+        from markupsafe import Markup
+        import bleach
+        html = markdown.markdown(str(text), extensions=['md_in_html'])
+        allowed_tags = ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote']
+        allowed_attrs = {'a': ['href', 'title']}
+        safe_html = bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs)
+        return Markup(safe_html)
+
+    app.add_template_filter(markdown_filter, 'markdown')
+
+    from app.utils import youtube_embed_url
+    app.add_template_filter(youtube_embed_url, 'youtube_embed_url')
+
     @app.context_processor
     def inject_csrf_token():
-        return {'csrf_token': generate_csrf()}
+        from app.decorators import can_manage_prize_pools
+        return {'csrf_token': generate_csrf(), 'can_manage_prize_pools': can_manage_prize_pools}
 
     with app.app_context():
         from app import models  # noqa: F401 - load models so db.create_all() sees them
@@ -105,6 +126,14 @@ def create_app():
         process_review_deadlines()
         import click
         click.echo('Review deadlines processed.')
+
+    @app.cli.command('process-prize-pools')
+    def process_prize_pools_cmd():
+        """Transition prize pool statuses and compute top 10% winners when voting ends. Run via cron: flask process-prize-pools"""
+        from app.routes import process_prize_pool_winners
+        process_prize_pool_winners()
+        import click
+        click.echo('Prize pools processed.')
 
     @app.errorhandler(404)
     def page_not_found(e):

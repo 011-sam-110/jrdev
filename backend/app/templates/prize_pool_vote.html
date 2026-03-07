@@ -1,0 +1,89 @@
+{% extends "developer_layout.html" %}
+
+{% block title %}JrDev | Vote - {{ pool.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-10 liquid-glass-in">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Vote on submissions</h1>
+    <p class="text-slate-400">{{ pool.title }} — Rank the three submissions from best (1st) to worst (3rd).</p>
+</div>
+
+{% if not can_vote %}
+<div class="liquid-glass-panel rounded-2xl p-12 text-center liquid-glass-in liquid-glass-in-delay-1">
+    <span class="material-symbols-outlined text-5xl text-slate-500 mb-4">schedule</span>
+    <p class="text-slate-400 mb-4">Voting is not ready yet. At least 3 participants must submit their work before voting can begin.</p>
+    <a href="{{ url_for('main.developer_joined_prize_pools') }}" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+        Back to Joined Prize Pools
+        <span class="material-symbols-outlined">arrow_forward</span>
+    </a>
+</div>
+{% else %}
+<form method="POST" action="{{ url_for('main.prize_pool_vote_submit', pool_id=pool.id) }}" id="vote-form" class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+    <p class="text-slate-400 text-sm mb-6">Watch each demo video and rank them. 1st = best, 3rd = worst. Points: 1st=3, 2nd=2, 3rd=1.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {% for entry in entries %}
+        <div class="rounded-xl border border-white/10 overflow-hidden bg-white/5" data-entry-id="{{ entry.id }}">
+            <div class="aspect-video bg-black">
+                {% if entry.demo_video_url and entry.demo_video_url|youtube_embed_url %}
+                <iframe class="w-full h-full min-h-[200px]" src="{{ entry.demo_video_url|youtube_embed_url }}" title="Demo {{ loop.index }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                {% else %}
+                <div class="w-full h-full min-h-[200px] flex items-center justify-center text-slate-500 text-sm">No video</div>
+                {% endif %}
+            </div>
+            <div class="p-3">
+                <p class="text-xs text-slate-500 mb-2">Submission {{ loop.index }}</p>
+                <label for="rank-{{ entry.id }}" class="block text-xs font-medium text-slate-400 mb-1">Rank as</label>
+                <select id="rank-{{ entry.id }}" name="rank_select" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" data-entry-id="{{ entry.id }}">
+                    <option value="">— Select —</option>
+                    <option value="1">1st (best)</option>
+                    <option value="2">2nd</option>
+                    <option value="3">3rd (worst)</option>
+                </select>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+    <input type="hidden" name="rank_1_id" id="rank_1_id" value=""/>
+    <input type="hidden" name="rank_2_id" id="rank_2_id" value=""/>
+    <input type="hidden" name="rank_3_id" id="rank_3_id" value=""/>
+    <input type="hidden" name="entry_ids" value="{{ entries|map(attribute='id')|join(',') }}"/>
+    <button type="submit" id="vote-submit-btn" disabled class="liquid-glass-cta px-6 py-3 rounded-xl font-bold text-sm opacity-60 cursor-not-allowed">
+        Submit vote
+    </button>
+</form>
+<script>
+(function() {
+    var form = document.getElementById('vote-form');
+    var rankSelects = form ? form.querySelectorAll('select[name="rank_select"]') : [];
+    var rank1Input = document.getElementById('rank_1_id');
+    var rank2Input = document.getElementById('rank_2_id');
+    var rank3Input = document.getElementById('rank_3_id');
+    var submitBtn = document.getElementById('vote-submit-btn');
+    function updateHidden() {
+        var r1 = null, r2 = null, r3 = null;
+        rankSelects.forEach(function(sel) {
+            var val = sel.value;
+            var eid = sel.getAttribute('data-entry-id');
+            if (val === '1') r1 = eid;
+            else if (val === '2') r2 = eid;
+            else if (val === '3') r3 = eid;
+        });
+        if (rank1Input) rank1Input.value = r1 || '';
+        if (rank2Input) rank2Input.value = r2 || '';
+        if (rank3Input) rank3Input.value = r3 || '';
+        var canSubmit = r1 && r2 && r3 && r1 !== r2 && r2 !== r3 && r1 !== r3;
+        if (submitBtn) {
+            submitBtn.disabled = !canSubmit;
+            submitBtn.classList.toggle('opacity-60', !canSubmit);
+            submitBtn.classList.toggle('cursor-not-allowed', !canSubmit);
+        }
+    }
+    rankSelects.forEach(function(sel) {
+        sel.addEventListener('change', updateHidden);
+    });
+    updateHidden();
+})();
+</script>
+{% endif %}
+{% endblock %}

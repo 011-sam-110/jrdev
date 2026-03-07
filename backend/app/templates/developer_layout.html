@@ -87,9 +87,16 @@
             <div class="hidden md:flex items-center space-x-8 text-base font-medium text-slate-400">
                 <a class="nav-link-animated {% if nav_active == 'dashboard' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 <a class="nav-link-animated {% if nav_active == 'listings' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_listings') }}">Listings</a>
-                <a class="nav-link-animated {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">Joined Listings</a>
+                <a class="nav-link-animated {% if nav_active == 'prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_prize_pools') }}">Prize Pools</a>
+                <a class="nav-link-animated {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">Your Listings</a>
+                {% if can_manage_prize_pools() %}
+                <a class="nav-link-animated {% if nav_active == 'admin_prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
+                {% endif %}
             </div>
             <div class="flex items-center gap-4">
+                <a href="{{ url_for('main.developer_settings') }}" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors" title="Settings" aria-label="Settings">
+                    <span class="material-symbols-outlined text-2xl">settings</span>
+                </a>
                 <div class="hidden md:block relative">
                     <button type="button" id="dev-profile-menu-btn" class="w-14 h-14 rounded-full bg-navy-700 border border-white/10 overflow-hidden flex items-center justify-center block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50 cursor-pointer" aria-expanded="false" aria-haspopup="true" aria-label="Profile menu" title="Profile">
                         {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
@@ -117,7 +124,11 @@
             <div class="px-4 pb-4 pt-2 space-y-1 border-t border-white/10">
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_listings') }}">Listings</a>
-                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_joined_listings') }}">Joined Listings</a>
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_prize_pools') }}">Prize Pools</a>
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_joined_listings') }}">Your Listings</a>
+                {% if can_manage_prize_pools() %}
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
+                {% endif %}
                 <div class="pt-2 mt-2 border-t border-white/10">
                     <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.logout') }}">Log out</a>
                 </div>

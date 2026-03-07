@@ -1,0 +1,113 @@
+{% extends "developer_layout.html" %}
+
+{% block title %}JrDev | Prize Pool Admin{% endblock %}
+
+{% block content %}
+<div class="mb-10 liquid-glass-in">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Prize Pool Admin</h1>
+    <p class="text-slate-400">Create and manage prize pools. Run <code class="text-mint">flask process-prize-pools</code> via cron to transition statuses and compute winners.</p>
+</div>
+
+<div class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in mb-10">
+    <h2 class="font-display text-xl font-bold text-white mb-6">Create Prize Pool</h2>
+    <form method="POST" action="{{ url_for('main.admin_prize_pools') }}" class="space-y-4 max-w-2xl">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+        <div>
+            <label for="title" class="block text-xs font-medium text-slate-400 mb-1">Title *</label>
+            <input type="text" id="title" name="title" required class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm" placeholder="e.g. March 2025 Build Challenge"/>
+        </div>
+        <div>
+            <label for="pool_type" class="block text-xs font-medium text-slate-400 mb-1">Pool type</label>
+            <select id="pool_type" name="pool_type" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm">
+                <option value="paid">Paid (entry fee, voting)</option>
+                <option value="free">Free (placeholder, coming soon)</option>
+            </select>
+        </div>
+        <div id="entry-fee-row">
+            <label for="entry_fee_gbp" class="block text-xs font-medium text-slate-400 mb-1">Entry fee (£ GBP)</label>
+            <input type="number" id="entry_fee_gbp" name="entry_fee_gbp" min="0" step="0.01" value="10" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+        </div>
+        <div>
+            <label for="description" class="block text-xs font-medium text-slate-400 mb-1">Description (markdown)</label>
+            <textarea id="description" name="description" rows="4" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm" placeholder="What should participants build?"></textarea>
+        </div>
+        <div>
+            <label for="technologies_required" class="block text-xs font-medium text-slate-400 mb-1">Technologies (comma-separated)</label>
+            <input type="text" id="technologies_required" name="technologies_required" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm" placeholder="React, Python, Flask"/>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <label for="signup_ends_at" class="block text-xs font-medium text-slate-400 mb-1">Signup ends (YYYY-MM-DD) *</label>
+                <input type="date" id="signup_ends_at" name="signup_ends_at" required class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+            </div>
+            <div>
+                <label for="submission_ends_at" class="block text-xs font-medium text-slate-400 mb-1">Submission ends (YYYY-MM-DD) *</label>
+                <input type="date" id="submission_ends_at" name="submission_ends_at" required class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+            </div>
+            <div id="voting-ends-row">
+                <label for="voting_ends_at" class="block text-xs font-medium text-slate-400 mb-1">Voting ends (YYYY-MM-DD)</label>
+                <input type="date" id="voting_ends_at" name="voting_ends_at" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+            </div>
+        </div>
+        <div>
+            <label for="max_participants" class="block text-xs font-medium text-slate-400 mb-1">Max participants (optional, blank = unlimited)</label>
+            <input type="number" id="max_participants" name="max_participants" min="1" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm" placeholder=""/>
+        </div>
+        <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+            <span class="material-symbols-outlined">add</span>
+            Create Prize Pool
+        </button>
+    </form>
+</div>
+
+<div class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+    <h2 class="font-display text-xl font-bold text-white mb-6">All Prize Pools</h2>
+    {% if pools %}
+    <div class="space-y-4">
+        {% for pool in pools %}
+        <div class="rounded-xl border border-white/10 p-4 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h3 class="font-display font-bold text-white">{{ pool.title }}</h3>
+                <p class="text-slate-500 text-sm">{{ pool.pool_type|capitalize }}{% if pool.entry_fee_gbp %} · £{{ pool.entry_fee_gbp }} entry{% endif %} · {{ pool.entry_count }} joined</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold {% if pool.status == 'open' %}bg-mint/20 text-mint border border-mint/40{% elif pool.status == 'voting' %}bg-purple-500/20 text-purple-400 border border-purple-500/40{% else %}bg-slate-600/50 text-slate-300{% endif %}">{{ pool.status|capitalize }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-500">No prize pools yet. Create one above.</p>
+    {% endif %}
+</div>
+
+<script>
+(function() {
+    var poolType = document.getElementById('pool_type');
+    var entryFeeRow = document.getElementById('entry-fee-row');
+    var votingEndsRow = document.getElementById('voting-ends-row');
+    function toggle() {
+        var isPaid = poolType && poolType.value === 'paid';
+        if (entryFeeRow) entryFeeRow.style.display = isPaid ? '' : 'none';
+        if (votingEndsRow) votingEndsRow.style.display = isPaid ? '' : 'none';
+    }
+    if (poolType) poolType.addEventListener('change', toggle);
+    toggle();
+    var today = new Date().toISOString().slice(0, 10);
+    var signup = document.getElementById('signup_ends_at');
+    var submission = document.getElementById('submission_ends_at');
+    var voting = document.getElementById('voting_ends_at');
+    if (signup && !signup.value) signup.value = today;
+    if (submission && !submission.value) {
+        var d = new Date();
+        d.setDate(d.getDate() + 7);
+        submission.value = d.toISOString().slice(0, 10);
+    }
+    if (voting && !voting.value) {
+        var d2 = new Date();
+        d2.setDate(d2.getDate() + 14);
+        voting.value = d2.toISOString().slice(0, 10);
+    }
+})();
+</script>
+{% endblock %}
