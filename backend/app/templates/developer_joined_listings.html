@@ -55,6 +55,7 @@
                 </div>
             </div>
 
+            <p class="text-xs text-slate-500 mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">lock</span> Contract details (including addresses) are kept confidential until both parties have e-signed.</p>
             <div class="flex flex-wrap gap-3 items-center">
                 <a href="{{ contract_view_url(signup.id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
                     <span class="material-symbols-outlined text-lg">description</span>
@@ -64,7 +65,8 @@
                 <form id="sign-form-{{ signup.id }}" method="POST" action="{{ url_for('main.signup_sign_developer', id=signup.id) }}" class="inline">
                     {{ form.hidden_tag() }}
                     <input type="hidden" name="signature_data" value=""/>
-                    <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}">
+                    <input type="hidden" name="contractor_address" value=""/>
+                    <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}" data-signer="developer">
                         <span class="material-symbols-outlined text-lg">edit_document</span>
                         E-sign contract
                     </button>

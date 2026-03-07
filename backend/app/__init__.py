@@ -42,6 +42,9 @@ def create_app():
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
     app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS')
+    # Platform (JRDEV Ltd) for contract PDF
+    app.config['PLATFORM_COMPANY_NUMBER'] = os.environ.get('PLATFORM_COMPANY_NUMBER', '[_______]')
+    app.config['PLATFORM_ADDRESS'] = os.environ.get('PLATFORM_ADDRESS', '[Address]')
     _log = logging.getLogger(__name__)
     if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
         _log.info('Mail configured (sender: %s). Email verification enabled.', app.config['MAIL_USERNAME'])

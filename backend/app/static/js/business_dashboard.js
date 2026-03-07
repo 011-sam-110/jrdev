@@ -25,7 +25,6 @@
     const techInput = document.getElementById('technologies-required-input');
     const techList = document.getElementById('technologies-tags-list');
     const devSlider = document.querySelector('.dev-allocation-slider') || document.querySelector('input[type="range"][max="5"]');
-    const timelineSlider = document.querySelector('.sprint-timeline-slider');
     const investmentPerDevSlider = document.querySelector('.investment-per-dev-slider');
     const minReqSlider = document.querySelector('.min-requirements-slider');
     const essentialSlider = document.querySelector('.essential-deliverables-slider');
@@ -47,9 +46,6 @@
       devSlider,
       devCount: document.querySelector('.dev-count'),
       devCountValue: document.querySelector('.dev-count-value'),
-      timelineSlider,
-      timelineDays: document.querySelector('.timeline-days'),
-      timelineDaysValue: document.querySelector('.timeline-days-value'),
       investmentPerDevSlider,
       investmentPerDevDisplay: document.querySelector('.investment-per-dev'),
       investmentPerDevValue: document.querySelector('.investment-per-dev-value'),
@@ -152,6 +148,24 @@
 
   function syncContractTasks(el) {
     updateContractTasksFromDeliverables(el.essentialList, el.reqList);
+  }
+
+  /**
+   * Sync post-contract form hidden fields (pay, min_tasks, essential_count) from sidebar. Call before Generate PDF submit.
+   */
+  function syncPostContractForm(el) {
+    var form = document.getElementById('post-contract-form');
+    if (!form) return;
+    syncContractTasks(el);
+    var payEl = document.getElementById('post-contract-pay');
+    var minTasksEl = document.getElementById('post-contract-min_tasks');
+    var essentialEl = document.getElementById('post-contract-essential_count');
+    if (payEl) payEl.value = el.investmentPerDevSlider?.value ?? DEFAULT_PER_DEV;
+    if (minTasksEl) minTasksEl.value = el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS;
+    if (essentialEl) {
+      var count = el.essentialList ? el.essentialList.querySelectorAll('.tech-tag').length : 0;
+      essentialEl.value = String(count);
+    }
   }
 
   /**
@@ -282,7 +296,6 @@
     const perDev = parseInt(el.investmentPerDevSlider?.value || DEFAULT_PER_DEV, 10);
     investEl.textContent = '£' + (devs * perDev);
     if (el.devCountValue) el.devCountValue.textContent = String(devs);
-    if (el.timelineDaysValue) el.timelineDaysValue.textContent = el.timelineSlider?.value ?? DEFAULT_TIMELINE_DAYS;
     if (el.investmentPerDevValue) el.investmentPerDevValue.textContent = String(perDev);
     var minVal = el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS;
     if (el.minRequirementsValue) el.minRequirementsValue.textContent = String(minVal);
@@ -298,8 +311,6 @@
     const {
       devSlider,
       devCount,
-      timelineSlider,
-      timelineDays,
       investmentPerDevSlider,
       investmentPerDevDisplay,
       minReqSlider,
@@ -325,9 +336,6 @@
 
     if (devSlider) {
       devSlider.addEventListener('input', () => updateInvestmentDisplay(el));
-    }
-    if (timelineSlider) {
-      timelineSlider.addEventListener('input', () => updateInvestmentDisplay(el));
     }
     if (investmentPerDevSlider) {
       investmentPerDevSlider.addEventListener('input', () => {
@@ -375,7 +383,18 @@
       theme: 'dark',
       onChange: function(selectedDates) {
         if (selectedDates[0]) {
-          endFp.set('minDate', selectedDates[0]);
+          const start = selectedDates[0];
+          const minEnd = new Date(start);
+          minEnd.setDate(minEnd.getDate() + 3);
+          const maxEnd = new Date(start);
+          maxEnd.setDate(maxEnd.getDate() + 14);
+          endFp.set('minDate', minEnd);
+          endFp.set('maxDate', maxEnd);
+          if (endFp.selectedDates[0]) {
+            const end = endFp.selectedDates[0];
+            const days = Math.round((end - start) / (24 * 60 * 60 * 1000));
+            if (days < 3 || days > 14) endFp.clear();
+          }
         }
       }
     });
@@ -407,6 +426,7 @@
    */
   function syncLaunchFormHiddenFields(el) {
     const company = el.postContractForm?.querySelector('input[name="company_name"]');
+    const companyAddr = el.postContractForm?.querySelector('input[name="company_address"]');
     const startDate = el.postContractForm?.querySelector('input[name="start_date"]');
     const endDate = el.postContractForm?.querySelector('input[name="end_date"]');
 
@@ -416,6 +436,7 @@
     };
 
     setLaunch('launch-company_name', company?.value ?? '');
+    setLaunch('launch-company_address', companyAddr?.value ?? '');
     setLaunch('launch-sprint_begins_at', startDate?.value ?? '');
     setLaunch('launch-sprint_ends_at', endDate?.value ?? '');
     setLaunch('launch-signup_ends_at', startDate?.value ?? '');
@@ -423,7 +444,6 @@
 
     const perDev = parseInt(el.investmentPerDevSlider?.value || DEFAULT_PER_DEV, 10);
     setLaunch('launch-pay_for_prototype', String(perDev));
-    setLaunch('launch-sprint_timeline_days', el.timelineSlider?.value ?? DEFAULT_TIMELINE_DAYS);
     setLaunch('launch-minimum_requirements_for_pay', el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS);
     setLaunch('launch-essential_deliverables_count', el.essentialSlider?.value ?? '0');
     const essentialTags = el.essentialList
@@ -443,11 +463,71 @@
   }
 
   /**
-   * Bind launch form submit to sync hidden fields then allow default submit.
+   * Before post-contract form submit: sync pay, min_tasks, essential_count from sidebar.
+   */
+  function syncPostContractForm(el) {
+    var form = el.postContractForm;
+    if (!form) return;
+    syncContractTasks(el);
+    var payEl = document.getElementById('post-contract-pay');
+    var minEl = document.getElementById('post-contract-min_tasks');
+    var essentialEl = document.getElementById('post-contract-essential_count');
+    if (payEl) payEl.value = el.investmentPerDevSlider?.value ?? DEFAULT_PER_DEV;
+    if (minEl) minEl.value = el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS;
+    if (essentialEl) {
+      var count = el.essentialList ? el.essentialList.querySelectorAll('.tech-tag').length : 0;
+      essentialEl.value = String(count);
+    }
+  }
+
+  /**
+   * Bind post-contract form submit: sync hidden fields before submit.
+   */
+  function bindPostContractForm(el) {
+    if (!el.postContractForm) return;
+    el.postContractForm.addEventListener('submit', function() {
+      syncPostContractForm(el);
+    });
+  }
+
+  /**
+   * Bind launch form submit: validate technologies + card, sync hidden fields, then allow default submit.
    */
   function bindLaunchForm(el) {
     if (!el.launchForm) return;
-    el.launchForm.addEventListener('submit', () => syncLaunchFormHiddenFields(el));
+    el.launchForm.addEventListener('submit', function(ev) {
+      var hasCard = el.launchForm.getAttribute('data-has-card') === 'true';
+      var billingUrl = el.launchForm.getAttribute('data-billing-url') || '';
+      if (!hasCard && billingUrl) {
+        ev.preventDefault();
+        window.location.href = billingUrl;
+        return;
+      }
+      var techTags = el.techList ? Array.from(el.techList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean) : [];
+      if (techTags.length === 0) {
+        ev.preventDefault();
+        alert('Please add at least one technology before launching a sprint.');
+        return;
+      }
+      syncLaunchFormHiddenFields(el);
+      var startVal = el.launchForm.querySelector('#launch-sprint_begins_at')?.value;
+      var endVal = el.launchForm.querySelector('#launch-sprint_ends_at')?.value;
+      if (startVal && endVal) {
+        var start = new Date(startVal);
+        var end = new Date(endVal);
+        var days = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        if (days < 3) {
+          ev.preventDefault();
+          alert('Sprint duration must be at least 3 days.');
+          return;
+        }
+        if (days > 14) {
+          ev.preventDefault();
+          alert('Sprint duration cannot exceed 14 days (2 weeks).');
+          return;
+        }
+      }
+    });
   }
 
   /**
@@ -462,6 +542,7 @@
     bindDatePickers();
     bindHelpToggles();
     bindLaunchForm(el);
+    bindPostContractForm(el);
   }
 
   if (document.readyState === 'loading') {

@@ -4,6 +4,7 @@ Shared route and profile utilities.
 Provides redirect helpers, URL/text parsing, developer profile helpers,
 review deadline helpers, and a single source of truth for profile theme defaults.
 """
+import json
 import re
 from datetime import timedelta
 from flask import redirect, url_for, request
@@ -80,14 +81,76 @@ def parse_comma_separated(s):
 # -----------------------------------------------------------------------------
 
 
+def _strip_tech_count(entry):
+    """Strip +N suffix from tech entry. 'Python+2' -> 'Python', 'React' -> 'React'."""
+    s = (entry or '').strip()
+    if '+' in s:
+        parts = s.rsplit('+', 1)
+        try:
+            int(parts[1])
+            return parts[0].strip()
+        except (ValueError, IndexError):
+            pass
+    return s
+
+
+def _technologies_verified_dict(profile):
+    """Return technologies_verified as a dict {tech_lower: count}. Empty dict if missing/invalid."""
+    raw = getattr(profile, 'technologies_verified', None)
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+
+
 def developer_stack_list(profile):
     """
-    Return the developer's technology stack as a list of strings.
-    Uses comma-separated parsing. Returns [] if profile or technologies missing.
+    Return the developer's technology stack as a list of display strings.
+    Merges technologies (user's chosen names) with technologies_verified (counts from completed sprints).
+    Developers cannot fake counts; only verified counts from sprints are shown.
+    """
+    if not profile:
+        return []
+    tech_names = parse_comma_separated(profile.technologies or '')
+    verified = _technologies_verified_dict(profile)
+    result = []
+    for name in tech_names:
+        base = _strip_tech_count(name)
+        if not base:
+            continue
+        key = base.lower()
+        count = verified.get(key, 0)
+        if count > 1:
+            result.append(f"{base}+{count}")
+        else:
+            result.append(base)
+    return result
+
+
+def technologies_for_edit(profile):
+    """
+    Return tech names only (no counts) for the edit form.
+    Strips any +N from legacy data so developers cannot see or edit counts.
     """
     if not profile or not getattr(profile, 'technologies', None):
-        return []
-    return parse_comma_separated(profile.technologies)
+        return ''
+    parts = parse_comma_separated(profile.technologies)
+    names = [_strip_tech_count(p) for p in parts if _strip_tech_count(p)]
+    return ', '.join(names)
+
+
+def normalize_technologies_input(raw):
+    """
+    Normalize user input: strip +N from each tech, return comma-separated names only.
+    Prevents developers from adding fake counters.
+    """
+    if not raw or not str(raw).strip():
+        return ''
+    parts = parse_comma_separated(raw)
+    names = [_strip_tech_count(p) for p in parts if _strip_tech_count(p)]
+    return ', '.join(names)
 
 
 def developer_avg_rating(user_id):

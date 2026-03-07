@@ -194,8 +194,9 @@
 <h2 class="font-display text-4xl font-semibold leading-tight md:text-5xl text-neutral-900 dark:text-white">What people say.</h2>
 <p class="text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto mt-4">Reviews from businesses and developers using JrDev.</p>
 </div>
-<div class="home-reviews-marquee overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8">
-<div class="home-reviews-track flex gap-6">
+<div class="home-reviews-marquee overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 space-y-4">
+<div class="home-reviews-row overflow-hidden">
+<div class="home-reviews-track home-reviews-track--1 flex gap-6">
 <div class="home-review-card rounded-2xl p-6 border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/50 shadow-lg flex flex-col flex-shrink-0 w-[min(320px,90vw)]">
 <div class="flex gap-0.5 mb-3" aria-label="5 out of 5 stars"><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span><span class="material-icons-round text-amber-500 text-lg">star</span></div>
 <p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"We got our MVP built in under two weeks. The developers were responsive and the quality exceeded our expectations."</p>
@@ -267,6 +268,10 @@
 <p class="text-slate-600 dark:text-slate-400 italic mb-4 flex-grow">"Clear deliverables, fair pay, and no pressure. Exactly the kind of first gig I needed to build my confidence."</p>
 <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">DP</div><div><span class="font-semibold text-slate-900 dark:text-white block">David Park</span><span class="text-sm text-slate-500 dark:text-slate-400">Junior Developer</span></div></div>
 </div>
+</div>
+</div>
+<div class="home-reviews-row home-reviews-row--2 overflow-hidden mt-6">
+<div class="home-reviews-track home-reviews-track--2 flex gap-6"></div>
 </div>
 </div>
 </div>
@@ -959,20 +964,6 @@
             pillObserver.observe(pill);
         }
     });
-
-    // Testimonials marquee: speed up when section is in view
-    (function() {
-        var section = document.getElementById('testimonials-section');
-        var track = document.querySelector('.home-reviews-track');
-        if (!section || !track) return;
-        var observer = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                var duration = entry.isIntersecting ? '18s' : '45s';
-                track.style.setProperty('--marquee-duration', duration);
-            });
-        }, { threshold: 0.15, rootMargin: '0px' });
-        observer.observe(section);
-    })();
 
 </script>
 <script src="{{ url_for('static', filename='js/home.js') }}"></script>

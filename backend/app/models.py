@@ -22,6 +22,8 @@ class User(db.Model, UserMixin):
     """Platform user: developer or business; auth, 2FA, optional Stripe customer."""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
+    first_name = db.Column(db.String(50), nullable=True)
+    last_name = db.Column(db.String(50), nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     image_file = db.Column(db.String(64), nullable=False, default='default.jpg')
     password = db.Column(db.String(60), nullable=False)
@@ -76,7 +78,8 @@ class DeveloperProfile(db.Model):
     availability = db.Column(db.String(20), default='Open to Work')
     
     # Skills & Links
-    technologies = db.Column(db.String(255), default='Python,JavaScript') # Comma separated
+    technologies = db.Column(db.String(255), default='Python,JavaScript') # Comma separated (names only; no +N)
+    technologies_verified = db.Column(db.Text, nullable=True)  # JSON: {"python": 2, "react": 1} from completed sprints only
     github_link = db.Column(db.String(120))
     linkedin_link = db.Column(db.String(120))
     portfolio_link = db.Column(db.String(120))
@@ -124,6 +127,7 @@ class SprintListing(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     company_name = db.Column(db.String(120), nullable=False)
+    company_address = db.Column(db.String(255), nullable=True)
     max_talent_pool = db.Column(db.Integer, nullable=False, default=3)
     pay_for_prototype = db.Column(db.Float, nullable=False, default=20.0)
     business_rating = db.Column(db.Float, nullable=True)
@@ -198,6 +202,7 @@ class ListingSignup(db.Model):
     business_signed_at = db.Column(db.DateTime, nullable=True)
     developer_signature_image = db.Column(db.Text, nullable=True)  # base64 PNG data URL
     business_signature_image = db.Column(db.Text, nullable=True)  # base64 PNG data URL
+    developer_registered_address = db.Column(db.String(255), nullable=True)  # provided when developer e-signs
     github_submission_url = db.Column(db.String(500), nullable=True)
     demo_video_url = db.Column(db.String(500), nullable=True)
     prototype_submitted_at = db.Column(db.DateTime, nullable=True)

@@ -21,6 +21,8 @@ from app.utils import (
     developer_stack_list,
     developer_avg_rating,
     developer_profile_theme_defaults,
+    technologies_for_edit,
+    normalize_technologies_input,
     REVIEW_DEADLINE_HOURS,
     review_deadline_from,
 )
@@ -176,7 +178,8 @@ def dashboard():
         awaiting_business = sum(1 for s in all_signups if s.status == 'accepted' and not s.business_signed_at)
         if awaiting_business:
             attention_items.append({'text': 'Awaiting your signature', 'url': url_for('main.review_gallery'), 'count': awaiting_business})
-        return render_template('business_dashboard.html', title='Business Dashboard', nav_active='sprint', my_listings=my_listings, stats=stats, attention_items=attention_items)
+        has_card = _business_has_card() if current_user.role == 'BUSINESS' else True
+        return render_template('business_dashboard.html', title='Business Dashboard', nav_active='sprint', my_listings=my_listings, stats=stats, attention_items=attention_items, has_card=has_card)
     return redirect_after_action()
 
 @main.route("/about")
@@ -207,7 +210,7 @@ def edit_profile():
         profile.headline = form.headline.data
         profile.location = form.location.data
         profile.availability = form.availability.data
-        profile.technologies = form.technologies.data
+        profile.technologies = normalize_technologies_input(form.technologies.data)
         profile.github_link = normalize_url(form.github_link.data)
         profile.linkedin_link = normalize_url(form.linkedin_link.data)
         profile.portfolio_link = normalize_url(form.portfolio_link.data)
@@ -239,7 +242,7 @@ def edit_profile():
         form.headline.data = profile.headline
         form.location.data = profile.location
         form.availability.data = profile.availability
-        form.technologies.data = profile.technologies
+        form.technologies.data = technologies_for_edit(profile)
         form.github_link.data = profile.github_link
         form.linkedin_link.data = profile.linkedin_link
         form.portfolio_link.data = profile.portfolio_link
@@ -250,15 +253,23 @@ def edit_profile():
 
     return render_template('edit_profile.html', title='Edit Profile', form=form)
 
+ABOUT_ME_MAX_LENGTH = 600
+PINNED_PROJECTS_MAX = 30
+
+
 @main.route("/update-markdown", methods=['POST'])
 @login_required
 @require_verified
 @require_role('DEVELOPER', json_response=True)
 def update_markdown():
-    content = request.form.get('content')
+    content = request.form.get('content') or ''
+    if len(content) > ABOUT_ME_MAX_LENGTH:
+        flash(f'About Me is limited to {ABOUT_ME_MAX_LENGTH} characters. You entered {len(content)}.', 'danger')
+        return redirect(url_for('main.dashboard'))
     profile = current_user.developer_profile
     profile.custom_markdown = content
     db.session.commit()
+    flash('About Me updated!', 'success')
     return redirect(url_for('main.dashboard'))
 
 @main.route("/add-pinned-project", methods=['POST'])
@@ -266,14 +277,17 @@ def update_markdown():
 @require_verified
 @require_role('DEVELOPER')
 def add_pinned_project():
+    profile = current_user.developer_profile
+    if len(profile.pinned_projects) >= PINNED_PROJECTS_MAX:
+        flash(f'You can pin at most {PINNED_PROJECTS_MAX} projects. Remove one to add another.', 'warning')
+        return redirect(url_for('main.dashboard'))
     title = request.form.get('title')
     desc = request.form.get('description')
     tags = request.form.get('tags')
     link = request.form.get('link')
-    
     if title and desc:
         project = PinnedProject(
-            profile_id=current_user.developer_profile.id,
+            profile_id=profile.id,
             title=title,
             description=desc,
             tags=tags,
@@ -344,7 +358,15 @@ def register():
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         totp_secret = pyotp.random_base32()
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password, role=form.role.data, two_factor_secret=totp_secret)
+        user = User(
+            username=form.username.data,
+            first_name=form.first_name.data.strip(),
+            last_name=form.last_name.data.strip(),
+            email=form.email.data,
+            password=hashed_password,
+            role=form.role.data,
+            two_factor_secret=totp_secret,
+        )
         db.session.add(user)
         try:
             db.session.commit()
@@ -498,6 +520,17 @@ def account():
 def _stripe_available():
     return stripe is not None and os.environ.get('STRIPE_SECRET_KEY')
 
+def _business_has_card():
+    """True if business has a payment method on file (Stripe). If Stripe unavailable, returns True (no block)."""
+    if not _stripe_available() or current_user.role != 'BUSINESS' or not current_user.stripe_customer_id:
+        return not _stripe_available()  # No Stripe = don't block
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    try:
+        pms = stripe.PaymentMethod.list(customer=current_user.stripe_customer_id, type='card')
+        return bool(pms.data)
+    except stripe.error.StripeError:
+        return False
+
 def _get_stripe_customer():
     """Get or create Stripe customer for current business user."""
     if not _stripe_available() or current_user.role != 'BUSINESS':
@@ -624,16 +657,35 @@ def launch_sprint():
         flash('Sprint start date cannot be in the past.', 'danger')
         return redirect(url_for('main.dashboard'))
 
+    sprint_duration_days = (sprint_ends - sprint_begins).days
+    if sprint_duration_days < 3:
+        flash('Sprint duration must be at least 3 days.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    if sprint_duration_days > 14:
+        flash('Sprint duration cannot exceed 14 days (2 weeks).', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    technologies_required = (request.form.get('technologies_required') or '').strip()
+    if not technologies_required:
+        flash('Please add at least one technology before launching a sprint.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    if _stripe_available() and not _business_has_card():
+        flash('Please add a payment method before launching a sprint.', 'danger')
+        return redirect(url_for('main.billing'))
+
+    company_address = (request.form.get('company_address') or '').strip() or None
     listing = SprintListing(
         business_id=current_user.id,
         company_name=company_name,
+        company_address=company_address,
         max_talent_pool=int(request.form.get('max_talent_pool', 3)),
         pay_for_prototype=float(request.form.get('pay_for_prototype', 60)),
-        technologies_required=request.form.get('technologies_required', ''),
+        technologies_required=technologies_required,
         deliverables=(request.form.get('deliverables') or '').strip() or None,
         essential_deliverables=(request.form.get('essential_deliverables') or '').strip() or None,
         essential_deliverables_count=int(request.form.get('essential_deliverables_count', 0) or 0),
-        sprint_timeline_days=int(request.form.get('sprint_timeline_days', 7)),
+        sprint_timeline_days=sprint_duration_days,
         minimum_requirements_for_pay=int(request.form.get('minimum_requirements_for_pay', 1)),
         sprint_begins_at=sprint_begins,
         sprint_ends_at=sprint_ends,
@@ -711,6 +763,9 @@ def signup_sign_developer(id):
     signature_data = (request.form.get('signature_data') or '').strip()
     if signature_data and signature_data.startswith('data:image'):
         signup.developer_signature_image = signature_data
+    contractor_address = (request.form.get('contractor_address') or '').strip() or None
+    if contractor_address:
+        signup.developer_registered_address = contractor_address
     signup.developer_signed_at = datetime.utcnow()
     db.session.commit()
     flash('Contract signed by you. Waiting for business countersign.', 'success')
@@ -773,6 +828,7 @@ def signup_submit_deliverables(id):
 
 def _apply_reviewed_state(signup):
     """Set reviewed_at and update developer profile stats (shared by mark-reviewed and auto-release). Caller must commit."""
+    import json
     signup.reviewed_at = datetime.utcnow()
     profile = signup.user.developer_profile
     if profile:
@@ -780,26 +836,32 @@ def _apply_reviewed_state(signup):
         profile.contracts_won = (profile.contracts_won or 0) + 1
         sprint_techs = parse_comma_separated(signup.listing.technologies_required)
         if sprint_techs:
-            existing = {}
-            for entry in parse_comma_separated(profile.technologies):
-                if '+' in entry:
-                    parts = entry.rsplit('+', 1)
-                    existing[parts[0].strip().lower()] = {'name': parts[0].strip(), 'count': int(parts[1])}
-                else:
-                    existing[entry.lower()] = {'name': entry, 'count': 1}
+            # Update technologies_verified (counts from completed sprints only; developers cannot fake these)
+            raw = getattr(profile, 'technologies_verified', None)
+            verified = {}
+            if raw:
+                try:
+                    verified = json.loads(raw)
+                except (TypeError, ValueError):
+                    pass
             for tech in sprint_techs:
-                key = tech.lower()
-                if key in existing:
-                    existing[key]['count'] += 1
-                else:
-                    existing[key] = {'name': tech, 'count': 1}
-            updated = []
-            for info in existing.values():
-                if info['count'] > 1:
-                    updated.append(f"{info['name']}+{info['count']}")
-                else:
-                    updated.append(info['name'])
-            profile.technologies = ','.join(updated)
+                key = tech.strip().lower()
+                if key:
+                    verified[key] = verified.get(key, 0) + 1
+            profile.technologies_verified = json.dumps(verified)
+            # Add new tech names to technologies (user's display list) if not already present
+            from app.utils import _strip_tech_count
+            existing_parts = [t for t in parse_comma_separated(profile.technologies or '') if _strip_tech_count(t)]
+            existing_names = {_strip_tech_count(t).lower() for t in existing_parts}
+            to_add = []
+            for tech in sprint_techs:
+                name = tech.strip()
+                if name and name.lower() not in existing_names:
+                    to_add.append(name)
+                    existing_names.add(name.lower())
+            if to_add:
+                all_names = [_strip_tech_count(t) for t in existing_parts] + to_add
+                profile.technologies = ', '.join(all_names)
 
 
 def apply_auto_release(signup):

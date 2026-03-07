@@ -163,9 +163,10 @@
             <!-- Edit Mode (hidden by default) -->
             <div id="markdown-edit" class="hidden">
                 <form method="POST" action="{{ url_for('main.update_markdown') }}">
-                    <textarea name="content" rows="8"
+                    <textarea name="content" rows="8" maxlength="600"
                         class="liquid-glass-input w-full rounded-xl p-4 text-sm font-mono"
-                        placeholder="Write in Markdown...">{{ profile.custom_markdown if profile.custom_markdown else '' }}</textarea>
+                        placeholder="Write in Markdown... (max 600 characters)" id="about-me-textarea">{{ profile.custom_markdown if profile.custom_markdown else '' }}</textarea>
+                    <p class="text-slate-500 text-xs mt-2"><span id="about-me-count">{{ (profile.custom_markdown or '')|length }}</span>/600 characters</p>
                     <div class="flex gap-3 mt-4">
                         <button type="submit" class="px-5 py-2 rounded-lg dev-cta font-bold text-sm transition-all">Save</button>
                         <button id="cancel-markdown-edit" type="button" class="px-5 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
@@ -180,10 +181,15 @@
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined dev-accent-text">push_pin</span>
                     <h3 class="font-display text-xl font-semibold text-white">Pinned Projects</h3>
+                    <span class="text-slate-500 text-xs">({{ profile.pinned_projects|length }}/30)</span>
                 </div>
+                {% if profile.pinned_projects|length < 30 %}
                 <button id="toggle-add-project" type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-lg dev-cta font-bold text-xs transition-all">
                     <span class="material-symbols-outlined text-sm">add</span> Add Project
                 </button>
+                {% else %}
+                <p class="text-slate-500 text-xs">Limit reached. Remove a project to add another.</p>
+                {% endif %}
             </div>
 
             <!-- Add Project Form (hidden by default) -->

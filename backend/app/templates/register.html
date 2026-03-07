@@ -15,6 +15,10 @@
     <form method="POST" action="">
         {{ form.hidden_tag() }}
         <div class="space-y-5">
+            <div class="grid grid-cols-2 gap-4">
+                {{ render_field(form.first_name) }}
+                {{ render_field(form.last_name) }}
+            </div>
             {{ render_field(form.username) }}
             {{ render_field(form.email) }}
 

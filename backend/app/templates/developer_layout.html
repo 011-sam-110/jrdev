@@ -124,22 +124,7 @@
             </div>
         </div>
     </nav>
-    {% block flash %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div id="flash-messages" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 space-y-2 max-w-md w-full px-4 flash-dismiss">
-        {% for category, message in messages %}
-        <div class="flash-item rounded-xl px-4 py-3 text-sm font-medium border transition-opacity duration-500 flex items-center gap-3 {% if category == 'success' %}bg-mint/20 border-mint/40 text-mint py-4 shadow-lg shadow-mint/10{% elif category == 'danger' %}bg-red-500/20 border-red-500/40 text-red-300{% else %}bg-slate-500/20 border-slate-400/40 text-slate-200{% endif %}">
-            {% if category == 'success' %}
-            <span class="material-symbols-outlined text-2xl flex-shrink-0">check_circle</span>
-            {% endif %}
-            <span>{{ message }}</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
-    {% endblock %}
+    {% block flash %}{% endblock %}
     <div class="pt-28"></div>
     <main class="app-main-in flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12{% endblock %}">
         {% include 'partials/flash_messages.html' %}
@@ -148,14 +133,6 @@
     {% block footer %}{% endblock %}
     <script>
         (function() {
-            var flash = document.getElementById('flash-messages');
-            if (flash) {
-                setTimeout(function() {
-                    var items = flash.querySelectorAll('.flash-item');
-                    items.forEach(function(el) { el.style.opacity = '0'; });
-                    setTimeout(function() { flash.remove(); }, 500);
-                }, 4500);
-            }
             var nav = document.getElementById('dev-nav');
             if (nav) {
                 function onScroll() { nav.classList.toggle('nav-bar-scrolled', window.scrollY > 20); }
