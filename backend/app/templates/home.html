@@ -68,8 +68,40 @@
             <h1>Launch your MVP with the <span class="nextGen">next generation</span> of developers</h1>
             <h2>Rapid prototyping by emerging talent. Post a sprint, get matched with hand-picked student developers, and ship in days - not months.</h2>
             <p>Students: get paid to build real projects and grow your portfolio.</p>
+            <div class="homeButtons">
+                <a href="/register?role=BUSINESS" id="hire">Hire Talent</a>
+                <a href="/register?role=DEVELOPER" id="join">Join as Developer</a>
+            </div>
+            <p>Starting at £50 per developer</p>
+        </div>
+
+        <div class="sprint" id="how-it-works">
+            <h1>The 4-Step Sprint</h1>
+            <p>From vision to shipped product.</p>
+            <div class="stepChoice">
+                <a href="#how-it-works" id="currentStep">Step 1</a>
+                <a href="#how-it-works">Step 2</a>
+                <a href="#how-it-works">Step 3</a>
+                <a href="#how-it-works">Step 4</a>
+            </div>
+
+            <div class="step">
+                <div class="stepText">
+                    <p class="stepNum">Step 1</p>
+                    <h1>Define Your Vision</h1>
+                    <p>Drop a brief. We match you with developers who fit your tech stack—typically within 24 hours.</p>
+                </div>
+
+                <div class="stepDemo">
+                    Demo stuff here
+                    <!-------------------------------------------------------------------------------------->
+                </div>
+            </div>
+
+            <p>Students gain hands-on experience and a real project for their portfolio.</p>
         </div>
     </body>
 
     <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sprints.js') }}"></script>
 </html>

@@ -1,14 +1,18 @@
-body, html {
+body, html, nav {
     margin: 0px;
+    scroll-behavior: smooth;
 }
 
 :root {
     --bg-dark: #0f172a;
+    --bg-light: #f8fafc;
     --primary: #6366f1;
+    --primary-light: #6366f133;
     --accent: #2dd4bf;
     --white: #ffffff;
     --black: #000000;
     --lightgray: #94a3b8;
+    --darkgray: #475569;
 }
 
 .navbar {
@@ -23,6 +27,7 @@ body, html {
     font-weight: 500;
     height: 6%;
     transition: 0.5s;
+    z-index: 99999;
 }
 
 .navbar a {
@@ -111,6 +116,7 @@ navCode, dev {
     padding-top: 20%;
     text-align: center;
     color: var(--white);
+    padding-bottom: 10%;
 }
 
 .tag {
@@ -168,11 +174,129 @@ navCode, dev {
     font-family: "Poppins";
 }
 
-.homeLaunch p {
+.homeLaunch p, .sprint p {
     margin-top: 1%;
     font-family: "Poppins";
     font-size: 80%;
     color: var(--lightgray);
+}
+
+#hire, #join {
+    border-radius: 50px;
+    font-weight: 600;
+    background: var(--primary);
+    margin: 0;
+    padding: 3%;
+    padding-left: 5%;
+    padding-right: 5%;
+    color: var(--white);
+    transform: translateY(0);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+    font-family: "Poppins";
+}
+
+#join {
+    background: #d3d3d344;
+    border: solid 1px var(--lightgray);
+}
+
+.homeButtons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 3%;
+    margin: auto;
+    text-align: center;
+    margin-bottom: 2%;
+}
+
+.homeButtons #hire, .homeButtons #join {
+    padding: 3%;
+    white-space: nowrap;
+    margin: 3px;
+    margin-bottom: 10px;
+    width: 90vw !important;
+    display: block;
+}
+
+.sprint {
+    background-color: var(--bg-light);
+    margin: 0;
+    padding: 2%;
+    text-align: center;
+    padding-bottom: 10%;
+}
+
+.sprint h1 {
+    font-family: "Space Grotesk";
+    font-weight: 800;
+}
+
+.stepChoice {
+    margin-top: 3%;
+}
+
+.stepChoice a, .stepNum {
+    text-decoration: none;
+    color: var(--darkgray);
+    font-family: "Poppins";
+    font-size: 85%;
+    margin: 2px;
+    border: solid 1px var(--primary-light);
+    padding: 1%;
+    padding-left: 2%;
+    padding-right: 2%;
+    border-radius: 10px;
+    font-weight: 800;
+    transition: 0.5s;
+}
+
+.step {
+    display: inline-block;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 3%;
+    width: 85%;
+    margin-left: 7.5%;
+    margin-bottom: 2%;
+}
+
+.stepText {
+    width: 100%;
+    text-align: left;
+}
+
+.stepDemo {
+    width: 100%;
+}
+
+.stepText p {
+    font-size: 100%;
+    color: var(--darkgray);
+}
+
+.stepNum, #currentStep {
+    background-color: var(--primary-light);
+    color: var(--primary)!important;
+    border: solid 1px var(--primary);
+    transition: 0.5s;
+}
+
+.stepNum {
+    width: max-content;
+    padding: 2%;
+    padding-left: 3%;
+    padding-right: 3%;
+    text-transform: uppercase;
+    background-color: var(--primary-light);
+    color: var(--primary)!important;
+    letter-spacing: 1px;
+    border: solid 1px var(--primary);
+    font-size: 70%!important;
 }
 
 @media (min-width:1200px) {
@@ -202,27 +326,49 @@ navCode, dev {
         font-family: "Poppins";
     }
 
-    #hire {
-        border: 2px solid var(--primary);
-        border-radius: 50px;
-        font-weight: 600;
-        background: var(--primary);
-        margin: 0;
-        padding: 3%;
-        padding-left: 5%;
-        padding-right: 5%;
-        color: var(--white);
-        transform: translateY(0);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
     #hire:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px #4f46e577;
     }
 
+    #join:hover {
+        background: #d3d3d377;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px #94a3b877;
+    }
+
     .homeLaunch {
         padding-top: 15%;
+    }
+
+    .homeButtons {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 10px;
+        width: auto;
+    }
+
+    .homeButtons #hire, .homeButtons #join {
+        width: max-content !important;
+        margin: 0;
+        padding: 1.2% 2%;
+    }
+
+    .stepChoice a:hover, #currentStep:hover {
+        background-color: #6366f122;
+        color: var(--bg-dark)!important;
+        border-color: var(--primary-light);
+    }
+
+    .stepText {
+        width: 40%;
+        float: left;
+    }
+
+    .stepDemo {
+        width: 55%;
+        float: right;
     }
 }
 
