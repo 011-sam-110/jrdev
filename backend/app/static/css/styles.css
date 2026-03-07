@@ -1,5 +1,4 @@
 body, html {
-    background: gray;
     margin: 0px;
 }
 
@@ -14,48 +13,63 @@ body, html {
     left: 0;
     font-weight: 500;
     height: 6%;
-
 }
 
 .navbar a {
     text-decoration: none;
     color: white;
     white-space: nowrap;
-    font-size: 105%;
-    padding: 5%;
+    font-size: 100%;
+    padding: 1.5%;
+    margin: 1.5%;
 }
 
 .navLeft {
     font-size: 150%;
     flex: 1;
+    font-weight: 600;
     font-family: "Space Grotesk";
+    color: white;
+}
+
+.navMiddle, .navRight {
+    display: none;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 25px;
+}
+
+.menu hr {
+    width: 25px;
+    height: 4px;
+    margin: 0;
+    border: none;
+    background: white;
+    border-radius: 6px;
+}
+
+navcode {
+    font-family: "Poppins";
 }
 
 navCode, dev {
     color: #4f46e5;
 }
 
-.navMiddle, .navRight {
-    white-space: nowrap;
-    margin-top: 0.8%;
-    padding: 0;
-    font-family: "To Be Confirmed"; /* ------------------------------------------------------ */
-}
-
-.navMiddle {
-    width: 40%;
-}
-
-.navRight {
-    width: 30%;
-    margin-left: 10%;
-}
-
 #hire {
     border: 2px solid #4f46e5;
     border-radius: 50px;
     font-weight: 600;
-    background: linear-gradient(to right, #524ae7, #6162f0)
+    background: linear-gradient(to right, #524ae7, #6162f0);
+    margin: 0;
+    padding: 3%;
+    padding-left: 5%;
+    padding-right: 5%;
 }
 
 .homeLaunch {
@@ -78,7 +92,7 @@ navCode, dev {
     padding-right: 1.5%;
     margin: auto;
     text-transform: uppercase;
-    font-family: "To Be Confirmed"; /* ------------------------------------------------------ */
+    font-family: "Poppins";
     font-weight: 500;
     font-size: 90%;
     background-color: #ffffff22;
@@ -106,5 +120,29 @@ li::marker {
     margin: auto;
     font-size: 200%;
     font-weight: 400;
-    font-family: "To Be Confirmed"; /* ------------------------------------------------------ */
+    font-family: "Poppins";
+}
+
+@media (min-width:1200px) {
+    .navMiddle, .navRight {
+        display: block;
+        white-space: nowrap;
+        margin-top: 0.8%;
+        padding: 0;
+        font-family: "Poppins";
+    }
+
+    .navMiddle {
+        width: 40%;
+    }
+
+    .navRight {
+        width: 28%;
+        margin-left: 10%;
+    }
+
+    .menu {
+        display: none;
+    }
+
 }

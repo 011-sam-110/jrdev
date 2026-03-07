@@ -2,13 +2,13 @@
 <html lang="en">
     <head>
         <meta charset="utf-8"/>
-        <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="JrDev connects businesses with student developers for rapid, affordable software prototyping. Launch a sprint, get an MVP built, pay only when deliverables are met."/>
         <link rel="icon" type="image/svg+xml" href="/backend/app/static/favicon.svg"/>
         <title>JrDev | Rapid prototyping by emerging talent</title>
         <link href="https://fonts.googleapis.com" rel="preconnect"/>
         <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk&family=Poppins" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     </head>
@@ -36,6 +36,12 @@
                     <a href="/register?role=DEVELOPER">Join as Developer</a>
                     <a href="/register?role=BUSINESS" id="hire">Hire Talent</a>
                 {% endif %}
+            </div>
+
+            <div class="menu">
+                <hr>
+                <hr>
+                <hr>
             </div>
         </nav>
 
