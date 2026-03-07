@@ -1,15 +1,15 @@
 function menu() {
-    const menuLists = document.querySelectorAll('.menuList');
+    const menuButton = document.querySelector(".menu");
+    const menuList = document.querySelector(".menuList");
 
-    menuLists.forEach(element => {
-        const currentDisplay = window.getComputedStyle(element).display;
+    document.body.classList.toggle("no-scroll");
+    menuButton.classList.toggle("open");
 
-        if (currentDisplay === "none") {
-            element.style.display = "block";
-        } else {
-            element.style.display = "none";
-        }
-    });
+    if (window.getComputedStyle(menuList).display === "none") {
+        menuList.style.display = "block";
+    } else {
+        menuList.style.display = "none";
+    }
 }
 
 window.addEventListener("scroll", function () {

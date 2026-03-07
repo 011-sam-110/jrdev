@@ -49,6 +49,11 @@ body, html, nav {
     transition: 0.5s;
 }
 
+.navLeft i {
+    width: 4%;
+    color: var(--primary);
+}
+
 .navMiddle, .navRight {
     display: none;
 }
@@ -68,12 +73,24 @@ body, html, nav {
     border: none;
     background: var(--white);
     border-radius: 6px;
-    transition: 0.5s;
+    transition: transform 0.4s ease, opacity 0.3s ease, background 0.4s ease;
+}
+
+.menu.open hr:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+}
+
+.menu.open hr:nth-child(2) {
+    opacity: 0;
+}
+
+.menu.open hr:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
 }
 
 .menuList {
     position: fixed;
-    top: 10%;
+    top: 9.5%;
     left: 0;
     width: 100%;
     background-color: var(--bg-dark);
@@ -93,7 +110,12 @@ body, html, nav {
     background-color: var(--primary);
 }
 
-navCode, dev {
+.no-scroll {
+    overflow: hidden;
+    height: 100vh;
+}
+
+dev {
     color: var(--primary);
 }
 
@@ -102,7 +124,16 @@ navCode, dev {
 }
 
 .navbar.scrolled{
-    background: var(--white);
+    background: var(--bg-light);
+    box-shadow: 1px 1px 10px var(--gray);
+}
+
+.navbar.scrolled .menuList {
+    background-color: var(--white);
+}
+
+.navbar.scrolled .menu hr {
+    background: var(--black);
 }
 
 .homeLaunch {
@@ -300,6 +331,10 @@ navCode, dev {
 }
 
 @media (min-width:1200px) {
+    .navLeft i {
+        width: 10%;
+    }
+
     .navMiddle, .navRight {
         white-space: nowrap;
         margin-top: 0.8%;
@@ -320,10 +355,6 @@ navCode, dev {
 
     .menu {
         display: none;
-    }
-
-    navcode {
-        font-family: "Poppins";
     }
 
     #hire:hover {
