@@ -125,7 +125,7 @@
                         <span class="material-symbols-outlined">add</span>
                     </button>
                 </div>
-                <p class="text-xs text-slate-500 deliverables-cap-hint">You can add up to <span class="deliverables-cap-num font-medium text-slate-400">1</span> optional deliverables (Min for Pay − Essential).</p>
+                <p class="text-xs text-slate-500 deliverables-cap-hint">You can add up to <span class="deliverables-cap-num font-medium text-slate-400">1</span> optional deliverables (Total Deliverables − Essential).</p>
                 <div id="requirement-buffet-list" class="flex flex-wrap gap-2">
                     <!-- Deliverables tags will appear here -->
                 </div>
@@ -141,7 +141,7 @@
                 </div>
                 <button type="button" class="liquid-glass-help-btn js-help-toggle" data-target="help-technologies" title="More info">?</button>
             </div>
-            <div id="help-technologies" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Specify the technologies or frameworks you'd like the prototype built with (e.g. React, Python, Flask). This helps match you with developers who have the right skills. Leave blank if you're flexible.</div>
+            <div id="help-technologies" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Specify the technologies or frameworks you'd like the prototype built with (e.g. React, Python, Flask). At least one technology is required to launch a sprint. This helps match you with developers who have the right skills.</div>
             <div class="space-y-2">
                 <div class="relative">
                     <input id="technologies-required-input" class="w-full liquid-glass-input rounded-xl px-4 py-3 pr-12 text-slate-200 focus:ring-2 focus:ring-purple focus:border-transparent transition-all" placeholder="Add a technology (e.g. React, Python, Flask...)" type="text"/>
@@ -166,11 +166,20 @@
             </div>
             <div id="help-contract" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">
                 <p>Company and contractor are filled from your account. Set dates and click "Generate PDF" to preview, then "Launch Sprint" to publish.</p>
+                <p class="mt-2 text-slate-500">Contract details (including addresses) are kept confidential until both parties have e-signed.</p>
             </div>
+            <p class="text-xs text-slate-500 mb-3 flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">lock</span> Contract details (including addresses) are kept confidential until both parties have e-signed.</p>
             <form id="post-contract-form" class="mt-3 space-y-2" method="POST" action="{{ url_for('contract.generate_contract') }}" target="_blank">
                 <input type="hidden" name="company_name" value="{{ current_user.username }}">
                 <input type="hidden" name="contractor_name" value="To be assigned">
+                <input type="hidden" name="pay" id="post-contract-pay" value="">
+                <input type="hidden" name="min_tasks" id="post-contract-min_tasks" value="">
+                <input type="hidden" name="essential_deliverables_count" id="post-contract-essential_count" value="">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs text-slate-400 mb-1">Client Registered Address (for contract)</label>
+                        <input name="company_address" id="company-address-input" type="text" placeholder="e.g. 123 High Street, London, UK" class="w-full liquid-glass-input rounded-xl px-4 py-3 text-slate-200 text-sm">
+                    </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Sprint Start Date</label>
                         <div class="sprint-date-wrapper relative">
@@ -188,20 +197,21 @@
                 </div>
                 <!-- Hidden task inputs are dynamically created by JS from deliverables -->
                 <p class="text-xs text-slate-500 mt-1">Deliverables are automatically included from the list above. Company: <strong class="text-slate-300">{{ current_user.username }}</strong></p>
+                <p class="text-xs text-slate-500 mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-sm">lock</span> Contract details (including addresses) are kept confidential until both parties have e-signed.</p>
                 <button type="submit" class="mt-3 px-4 py-2 rounded-lg liquid-glass-btn-ghost text-sm hover:bg-white/10 transition-colors flex items-center gap-2">
                     <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                     Generate PDF
                 </button>
             </form>
             <div class="mt-6 pt-6 border-t border-white/5">
-                <form id="launch-sprint-form" method="POST" action="{{ url_for('main.launch_sprint') }}">
+                <form id="launch-sprint-form" method="POST" action="{{ url_for('main.launch_sprint') }}" data-has-card="{{ 'true' if (has_card|default(false)) else 'false' }}" data-billing-url="{{ url_for('main.billing') }}">
                     <input type="hidden" id="launch-company_name" name="company_name">
+                    <input type="hidden" id="launch-company_address" name="company_address">
                     <input type="hidden" id="launch-sprint_begins_at" name="sprint_begins_at">
                     <input type="hidden" id="launch-sprint_ends_at" name="sprint_ends_at">
                     <input type="hidden" id="launch-signup_ends_at" name="signup_ends_at">
                     <input type="hidden" id="launch-max_talent_pool" name="max_talent_pool">
                     <input type="hidden" id="launch-pay_for_prototype" name="pay_for_prototype">
-                    <input type="hidden" id="launch-sprint_timeline_days" name="sprint_timeline_days">
                     <input type="hidden" id="launch-minimum_requirements_for_pay" name="minimum_requirements_for_pay">
                     <input type="hidden" id="launch-essential_deliverables_count" name="essential_deliverables_count">
                     <input type="hidden" id="launch-essential_deliverables" name="essential_deliverables">
@@ -278,19 +288,6 @@
                 <div class="flex justify-between mt-1 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
                     <span>Solo</span>
                     <span>Squad</span>
-                </div>
-            </div>
-
-            <!-- Sprint Timeline -->
-            <div class="mb-6">
-                <div class="flex justify-between items-end mb-2">
-                    <label class="text-sm font-medium text-slate-400">Sprint Timeline</label>
-                    <span class="text-2xl font-display font-bold text-mint timeline-days"><span class="timeline-days-value">7</span> <span class="text-xs uppercase text-slate-500">Days</span></span>
-                </div>
-                <input class="w-full h-1.5 bg-navy-700 rounded-lg appearance-none cursor-pointer accent-mint sprint-timeline-slider" max="7" min="1" type="range" value="7"/>
-                <div class="flex justify-between mt-1 text-[10px] text-slate-600 uppercase font-bold tracking-widest">
-                    <span>1 Day</span>
-                    <span>7 Days</span>
                 </div>
             </div>
 

@@ -10,9 +10,9 @@ from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail
 from app.forms import RegistrationForm, LoginForm
 from app.profile_forms import EditProfileForm, EditMarkdownForm, AddPinnedProjectForm
-from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup
+from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote
 from sqlalchemy.exc import IntegrityError
-from app.decorators import require_role, require_verified
+from app.decorators import require_role, require_verified, require_prize_pool_admin
 from app.utils import (
     redirect_after_action,
     normalize_url,
@@ -21,6 +21,8 @@ from app.utils import (
     developer_stack_list,
     developer_avg_rating,
     developer_profile_theme_defaults,
+    technologies_for_edit,
+    normalize_technologies_input,
     REVIEW_DEADLINE_HOURS,
     review_deadline_from,
 )
@@ -176,7 +178,8 @@ def dashboard():
         awaiting_business = sum(1 for s in all_signups if s.status == 'accepted' and not s.business_signed_at)
         if awaiting_business:
             attention_items.append({'text': 'Awaiting your signature', 'url': url_for('main.review_gallery'), 'count': awaiting_business})
-        return render_template('business_dashboard.html', title='Business Dashboard', nav_active='sprint', my_listings=my_listings, stats=stats, attention_items=attention_items)
+        has_card = _business_has_card() if current_user.role == 'BUSINESS' else True
+        return render_template('business_dashboard.html', title='Business Dashboard', nav_active='sprint', my_listings=my_listings, stats=stats, attention_items=attention_items, has_card=has_card)
     return redirect_after_action()
 
 @main.route("/about")
@@ -207,7 +210,7 @@ def edit_profile():
         profile.headline = form.headline.data
         profile.location = form.location.data
         profile.availability = form.availability.data
-        profile.technologies = form.technologies.data
+        profile.technologies = normalize_technologies_input(form.technologies.data)
         profile.github_link = normalize_url(form.github_link.data)
         profile.linkedin_link = normalize_url(form.linkedin_link.data)
         profile.portfolio_link = normalize_url(form.portfolio_link.data)
@@ -239,7 +242,7 @@ def edit_profile():
         form.headline.data = profile.headline
         form.location.data = profile.location
         form.availability.data = profile.availability
-        form.technologies.data = profile.technologies
+        form.technologies.data = technologies_for_edit(profile)
         form.github_link.data = profile.github_link
         form.linkedin_link.data = profile.linkedin_link
         form.portfolio_link.data = profile.portfolio_link
@@ -250,15 +253,23 @@ def edit_profile():
 
     return render_template('edit_profile.html', title='Edit Profile', form=form)
 
+ABOUT_ME_MAX_LENGTH = 600
+PINNED_PROJECTS_MAX = 30
+
+
 @main.route("/update-markdown", methods=['POST'])
 @login_required
 @require_verified
 @require_role('DEVELOPER', json_response=True)
 def update_markdown():
-    content = request.form.get('content')
+    content = request.form.get('content') or ''
+    if len(content) > ABOUT_ME_MAX_LENGTH:
+        flash(f'About Me is limited to {ABOUT_ME_MAX_LENGTH} characters. You entered {len(content)}.', 'danger')
+        return redirect(url_for('main.dashboard'))
     profile = current_user.developer_profile
     profile.custom_markdown = content
     db.session.commit()
+    flash('About Me updated!', 'success')
     return redirect(url_for('main.dashboard'))
 
 @main.route("/add-pinned-project", methods=['POST'])
@@ -266,14 +277,17 @@ def update_markdown():
 @require_verified
 @require_role('DEVELOPER')
 def add_pinned_project():
+    profile = current_user.developer_profile
+    if len(profile.pinned_projects) >= PINNED_PROJECTS_MAX:
+        flash(f'You can pin at most {PINNED_PROJECTS_MAX} projects. Remove one to add another.', 'warning')
+        return redirect(url_for('main.dashboard'))
     title = request.form.get('title')
     desc = request.form.get('description')
     tags = request.form.get('tags')
     link = request.form.get('link')
-    
     if title and desc:
         project = PinnedProject(
-            profile_id=current_user.developer_profile.id,
+            profile_id=profile.id,
             title=title,
             description=desc,
             tags=tags,
@@ -344,7 +358,15 @@ def register():
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         totp_secret = pyotp.random_base32()
-        user = User(username=form.username.data, email=form.email.data, password=hashed_password, role=form.role.data, two_factor_secret=totp_secret)
+        user = User(
+            username=form.username.data,
+            first_name=form.first_name.data.strip(),
+            last_name=form.last_name.data.strip(),
+            email=form.email.data,
+            password=hashed_password,
+            role=form.role.data,
+            two_factor_secret=totp_secret,
+        )
         db.session.add(user)
         try:
             db.session.commit()
@@ -498,6 +520,36 @@ def account():
 def _stripe_available():
     return stripe is not None and os.environ.get('STRIPE_SECRET_KEY')
 
+def _business_has_card():
+    """True if business has a payment method on file (Stripe). If Stripe unavailable, returns True (no block)."""
+    if not _stripe_available() or current_user.role != 'BUSINESS' or not current_user.stripe_customer_id:
+        return not _stripe_available()  # No Stripe = don't block
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    try:
+        pms = stripe.PaymentMethod.list(customer=current_user.stripe_customer_id, type='card')
+        return bool(pms.data)
+    except stripe.error.StripeError:
+        return False
+
+def _get_or_create_stripe_customer_for_developer():
+    """Get or create Stripe customer for current developer user."""
+    if not _stripe_available() or current_user.role != 'DEVELOPER':
+        return None
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    if current_user.stripe_customer_id:
+        try:
+            return stripe.Customer.retrieve(current_user.stripe_customer_id)
+        except stripe.error.InvalidRequestError:
+            current_user.stripe_customer_id = None
+            db.session.commit()
+    customer = stripe.Customer.create(
+        email=current_user.email,
+        name=current_user.username,
+    )
+    current_user.stripe_customer_id = customer.id
+    db.session.commit()
+    return customer
+
 def _get_stripe_customer():
     """Get or create Stripe customer for current business user."""
     if not _stripe_available() or current_user.role != 'BUSINESS':
@@ -517,6 +569,7 @@ def _get_stripe_customer():
     current_user.stripe_customer_id = customer.id
     db.session.commit()
     return customer
+
 
 @main.route("/billing")
 @login_required
@@ -543,6 +596,28 @@ def billing():
                            card_last4=card_last4,
                            card_brand=card_brand,
                            csrf_token=generate_csrf())
+
+@main.route("/developer/settings/create-setup-intent", methods=['POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def developer_settings_create_setup_intent():
+    """Create SetupIntent for developer to add card (prize pool entry fees)."""
+    if not _stripe_available():
+        return jsonify({'error': 'Stripe is not configured'}), 503
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    customer = _get_or_create_stripe_customer_for_developer()
+    if not customer:
+        return jsonify({'error': 'Could not create customer'}), 500
+    try:
+        intent = stripe.SetupIntent.create(
+            customer=customer.id,
+            payment_method_types=['card'],
+            usage='off_session',
+        )
+        return jsonify({'client_secret': intent.client_secret})
+    except stripe.error.StripeError as e:
+        return jsonify({'error': str(e)}), 400
 
 @main.route("/billing/create-setup-intent", methods=['POST'])
 @login_required
@@ -587,8 +662,381 @@ def developer_joined_listings():
         if s.prototype_submitted_at and not s.reviewed_at and not s.flagged_for_review else None
         for s in signups
     }
+    prize_pool_entries = PrizePoolEntry.query.filter_by(user_id=current_user.id).order_by(PrizePoolEntry.joined_at.desc()).all()
     form = AddPinnedProjectForm()
-    return render_template('developer_joined_listings.html', title='Joined Listings', nav_active='joined', signups=signups, signup_review_deadlines=signup_review_deadlines, form=form)
+    profile = current_user.developer_profile
+    return render_template('developer_joined_listings.html', title='Joined Listings', nav_active='joined', signups=signups, signup_review_deadlines=signup_review_deadlines, prize_pool_entries=prize_pool_entries, form=form, saved_signature=profile.saved_signature if profile else None, saved_contractor_address=profile.saved_contractor_address if profile else None)
+
+
+# ── Prize Pools ──
+
+@main.route("/developer/prize-pools")
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def developer_prize_pools():
+    """List available prize pools (paid + free placeholder). Include joined pools with badge."""
+    all_pools = PrizePool.query.filter(PrizePool.status.in_(['open', 'voting'])).order_by(PrizePool.created_at.desc()).all()
+    joined_pool_ids = {e.prize_pool_id for e in PrizePoolEntry.query.filter_by(user_id=current_user.id).all()}
+    paid_pools = [p for p in all_pools if p.pool_type == 'paid']
+    free_pools = [p for p in all_pools if p.pool_type == 'free']
+    form = AddPinnedProjectForm()
+    return render_template('developer_prize_pools.html', title='Prize Pools', nav_active='prize_pools', paid_pools=paid_pools, free_pools=free_pools, joined_pool_ids=joined_pool_ids, form=form)
+
+@main.route("/developer/prize-pools/joined")
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def developer_joined_prize_pools():
+    """Redirect to Joined Listings (prize pools are shown there)."""
+    return redirect(url_for('main.developer_joined_listings'))
+
+
+@main.route("/developer/settings", methods=['GET', 'POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def developer_settings():
+    """Settings: saved signature, contractor address, and Stripe billing."""
+    profile = current_user.developer_profile
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'save_signature':
+            sig = (request.form.get('signature_data') or '').strip()
+            addr = (request.form.get('contractor_address') or '').strip() or None
+            profile.saved_signature = sig if (sig and sig.startswith('data:image')) else None
+            profile.saved_contractor_address = addr
+            db.session.commit()
+            flash('Signature and address saved. They will be used when signing contracts.', 'success')
+        elif action == 'billing_portal' and _stripe_available():
+            stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+            cust_id = current_user.stripe_customer_id
+            if not cust_id:
+                try:
+                    cust = stripe.Customer.create(email=current_user.email)
+                    cust_id = cust.id
+                    current_user.stripe_customer_id = cust_id
+                    db.session.commit()
+                except stripe.error.StripeError:
+                    flash('Could not set up billing. Please try again.', 'danger')
+                    return redirect(url_for('main.developer_settings'))
+            try:
+                session = stripe.billing_portal.Session.create(
+                    customer=cust_id,
+                    return_url=url_for('main.developer_settings', _external=True),
+                )
+                return redirect(session.url)
+            except stripe.error.StripeError:
+                flash('Could not open billing portal. Please try again.', 'danger')
+        return redirect(url_for('main.developer_settings'))
+    stripe_publishable_key = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+    card_last4 = None
+    card_brand = None
+    if _stripe_available() and current_user.stripe_customer_id:
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        try:
+            pms = stripe.PaymentMethod.list(customer=current_user.stripe_customer_id, type='card')
+            if pms.data:
+                pm = pms.data[0]
+                card_last4 = pm.card.last4
+                card_brand = (pm.card.brand or '').capitalize()
+        except stripe.error.StripeError:
+            pass
+    return render_template('developer_settings.html',
+                           title='Settings',
+                           nav_active='settings',
+                           profile=profile,
+                           stripe_available=_stripe_available(),
+                           stripe_publishable_key=stripe_publishable_key,
+                           card_last4=card_last4,
+                           card_brand=card_brand,
+                           csrf_token=generate_csrf())
+
+
+def _prize_pool_join_checkout(pool, user):
+    """Create Stripe Checkout Session for prize pool entry fee. Returns session URL or None on error."""
+    if not _stripe_available() or not pool.entry_fee_gbp or pool.entry_fee_gbp <= 0:
+        return None
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    try:
+        session = stripe.checkout.Session.create(
+            mode='payment',
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'gbp',
+                    'product_data': {
+                        'name': f'Prize Pool: {pool.title}',
+                        'description': f'Entry fee for {pool.title}',
+                    },
+                    'unit_amount': int(pool.entry_fee_gbp * 100),
+                },
+                'quantity': 1,
+            }],
+            metadata={'prize_pool_id': str(pool.id), 'user_id': str(user.id)},
+            success_url=url_for('main.prize_pool_join_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('main.developer_prize_pools', _external=True),
+        )
+        return session.url
+    except stripe.error.StripeError:
+        return None
+
+
+@main.route("/prize-pool/<int:pool_id>/join", methods=['POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_join(pool_id):
+    """Join a prize pool. For paid pools, redirects to Stripe Checkout. For free, placeholder."""
+    pool = PrizePool.query.get_or_404(pool_id)
+    if pool.status not in ('open', 'voting'):
+        flash('This prize pool is no longer accepting entries.', 'warning')
+        return redirect(url_for('main.developer_prize_pools'))
+    existing = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    if existing:
+        flash('You have already joined this prize pool.', 'info')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    if pool.pool_type == 'free':
+        flash('Free prize pools with AI review are coming soon.', 'info')
+        return redirect(url_for('main.developer_prize_pools'))
+    if pool.entry_fee_gbp and pool.entry_fee_gbp > 0:
+        checkout_url = _prize_pool_join_checkout(pool, current_user)
+        if checkout_url:
+            return redirect(checkout_url)
+        flash('Payment is not available. Please try again later.', 'danger')
+        return redirect(url_for('main.developer_prize_pools'))
+    else:
+        entry = PrizePoolEntry(prize_pool_id=pool_id, user_id=current_user.id, payment_completed_at=datetime.utcnow())
+        db.session.add(entry)
+        db.session.commit()
+        flash('You have joined this prize pool!', 'success')
+    return redirect(url_for('main.developer_joined_prize_pools'))
+
+
+@main.route("/prize-pool/join/success")
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_join_success():
+    """Handle Stripe Checkout success: verify payment and create PrizePoolEntry."""
+    session_id = request.args.get('session_id')
+    if not session_id or not _stripe_available():
+        flash('Invalid or missing payment session.', 'danger')
+        return redirect(url_for('main.developer_prize_pools'))
+    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        if session.payment_status != 'paid':
+            flash('Payment was not completed.', 'warning')
+            return redirect(url_for('main.developer_prize_pools'))
+        pool_id = int(session.metadata.get('prize_pool_id', 0))
+        user_id = int(session.metadata.get('user_id', 0))
+        if user_id != current_user.id:
+            flash('Session does not match your account.', 'danger')
+            return redirect(url_for('main.developer_prize_pools'))
+        pool = PrizePool.query.get(pool_id)
+        if not pool:
+            flash('Prize pool not found.', 'danger')
+            return redirect(url_for('main.developer_prize_pools'))
+        existing = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=user_id).first()
+        if existing:
+            if not existing.payment_completed_at:
+                existing.payment_completed_at = datetime.utcnow()
+                existing.payment_intent_id = session.payment_intent
+                db.session.commit()
+            flash('You have joined this prize pool!', 'success')
+        else:
+            entry = PrizePoolEntry(
+                prize_pool_id=pool_id,
+                user_id=user_id,
+                payment_intent_id=session.payment_intent,
+                payment_completed_at=datetime.utcnow(),
+            )
+            db.session.add(entry)
+            db.session.commit()
+            flash('You have joined this prize pool!', 'success')
+    except stripe.error.StripeError:
+        flash('Could not verify payment. Please contact support if you were charged.', 'danger')
+    return redirect(url_for('main.developer_joined_prize_pools'))
+
+
+@main.route("/prize-pool/<int:pool_id>/submit", methods=['POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_submit(pool_id):
+    """Submit demo video and GitHub URL for a prize pool entry."""
+    pool = PrizePool.query.get_or_404(pool_id)
+    entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    if not entry or not entry.payment_completed_at:
+        flash('You must join and pay before submitting.', 'danger')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    if pool.pool_type != 'paid':
+        flash('Submission is not available for this pool type.', 'warning')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    if pool.submission_ends_at and datetime.utcnow() > pool.submission_ends_at:
+        flash('Submission deadline has passed.', 'warning')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    entry.demo_video_url = request.form.get('demo_video_url', '').strip() or None
+    entry.github_submission_url = request.form.get('github_submission_url', '').strip() or None
+    entry.submitted_at = datetime.utcnow()
+    db.session.commit()
+    flash('Your work has been submitted!', 'success')
+    return redirect(url_for('main.developer_joined_prize_pools'))
+
+
+@main.route("/prize-pool/<int:pool_id>/vote", methods=['GET'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_vote_page(pool_id):
+    """Show voting UI: 3 submissions to rank. Participants only, must have submitted."""
+    pool = PrizePool.query.get_or_404(pool_id)
+    entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    if not entry or not entry.payment_completed_at:
+        flash('You must join this prize pool before voting.', 'danger')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    if not entry.submitted_at:
+        flash('You must submit your work before voting.', 'warning')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    has_voted = PrizePoolVote.query.filter_by(prize_pool_id=pool_id, voter_id=current_user.id).first() is not None
+    if has_voted:
+        flash('You have already voted in this prize pool.', 'info')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    submitted_entries = [e for e in pool.entries if e.submitted_at and e.user_id != current_user.id]
+    if len(submitted_entries) < 3:
+        form = AddPinnedProjectForm()
+        return render_template('prize_pool_vote.html', pool=pool, entries=[], can_vote=False, form=form,
+                               title='Vote', nav_active='prize_pools_joined')
+    import random
+    vote_entries = random.sample(submitted_entries, 3)
+    form = AddPinnedProjectForm()
+    return render_template('prize_pool_vote.html', pool=pool, entries=vote_entries, can_vote=True, form=form,
+                           title='Vote', nav_active='prize_pools_joined')
+
+
+@main.route("/prize-pool/<int:pool_id>/vote", methods=['POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_vote_submit(pool_id):
+    """Submit vote: rank_1_id, rank_2_id, rank_3_id (1st=best, 3rd=worst)."""
+    pool = PrizePool.query.get_or_404(pool_id)
+    entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    if not entry or not entry.submitted_at:
+        flash('You must submit before voting.', 'warning')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    if PrizePoolVote.query.filter_by(prize_pool_id=pool_id, voter_id=current_user.id).first():
+        flash('You have already voted.', 'info')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    rank_1_id = int(request.form.get('rank_1_id', 0) or 0)
+    rank_2_id = int(request.form.get('rank_2_id', 0) or 0)
+    rank_3_id = int(request.form.get('rank_3_id', 0) or 0)
+    entry_ids_str = request.form.get('entry_ids', '')
+    try:
+        shown_ids = [int(x.strip()) for x in entry_ids_str.split(',') if x.strip()]
+    except ValueError:
+        shown_ids = []
+    if len(shown_ids) != 3 or {rank_1_id, rank_2_id, rank_3_id} != set(shown_ids):
+        flash('Invalid vote. Please rank exactly the 3 entries shown.', 'danger')
+        return redirect(url_for('main.prize_pool_vote_page', pool_id=pool_id))
+    entry_1_id, entry_2_id, entry_3_id = shown_ids[0], shown_ids[1], shown_ids[2]
+    vote = PrizePoolVote(
+        prize_pool_id=pool_id,
+        voter_id=current_user.id,
+        entry_1_id=entry_1_id,
+        entry_2_id=entry_2_id,
+        entry_3_id=entry_3_id,
+        rank_1_id=rank_1_id,
+        rank_2_id=rank_2_id,
+        rank_3_id=rank_3_id,
+    )
+    db.session.add(vote)
+    db.session.commit()
+    flash('Your vote has been recorded.', 'success')
+    return redirect(url_for('main.developer_joined_prize_pools'))
+
+
+@main.route("/prize-pool/<int:pool_id>/results")
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_results(pool_id):
+    """Show pool results: winners (top 10%) and all submitted entries."""
+    pool = PrizePool.query.get_or_404(pool_id)
+    entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    if not entry:
+        flash('You must join this prize pool to view results.', 'danger')
+        return redirect(url_for('main.developer_joined_prize_pools'))
+    submitted = [e for e in pool.entries if e.submitted_at]
+    winners = [e for e in submitted if e.is_winner]
+    return render_template('prize_pool_results.html', pool=pool, winners=winners, submitted=submitted,
+                           title='Results', nav_active='prize_pools_joined')
+
+
+# ── Admin: Prize Pool Management ──
+
+@main.route("/admin/prize-pools", methods=['GET', 'POST'])
+@login_required
+@require_verified
+@require_prize_pool_admin
+def admin_prize_pools():
+    """Create and list prize pools (platform admin)."""
+    if request.method == 'POST':
+        title = (request.form.get('title') or '').strip()
+        if not title:
+            flash('Title is required.', 'danger')
+            return redirect(url_for('main.admin_prize_pools'))
+        pool_type = request.form.get('pool_type', 'paid')
+        entry_fee = None
+        if pool_type == 'paid':
+            try:
+                entry_fee = float(request.form.get('entry_fee_gbp', 0) or 0)
+            except (ValueError, TypeError):
+                entry_fee = 0
+        description = (request.form.get('description') or '').strip() or None
+        technologies = (request.form.get('technologies_required') or '').strip() or None
+        try:
+            signup_ends = datetime.strptime(request.form.get('signup_ends_at', ''), '%Y-%m-%d')
+            submission_ends = datetime.strptime(request.form.get('submission_ends_at', ''), '%Y-%m-%d')
+        except (ValueError, TypeError):
+            flash('Invalid dates. Use YYYY-MM-DD.', 'danger')
+            return redirect(url_for('main.admin_prize_pools'))
+        voting_ends = None
+        if pool_type == 'paid':
+            try:
+                voting_ends = datetime.strptime(request.form.get('voting_ends_at', ''), '%Y-%m-%d')
+            except (ValueError, TypeError):
+                pass
+        max_participants = None
+        try:
+            mp = request.form.get('max_participants', '').strip()
+            if mp:
+                max_participants = int(mp)
+        except (ValueError, TypeError):
+            pass
+        pool = PrizePool(
+            title=title,
+            description=description,
+            technologies_required=technologies,
+            pool_type=pool_type,
+            entry_fee_gbp=entry_fee if pool_type == 'paid' else None,
+            signup_ends_at=signup_ends,
+            submission_ends_at=submission_ends,
+            voting_ends_at=voting_ends,
+            max_participants=max_participants,
+            status='open',
+            created_by_id=current_user.id,
+        )
+        db.session.add(pool)
+        db.session.commit()
+        flash(f'Prize pool "{title}" created.', 'success')
+        return redirect(url_for('main.admin_prize_pools'))
+    pools = PrizePool.query.order_by(PrizePool.created_at.desc()).all()
+    form = AddPinnedProjectForm()
+    return render_template('admin_prize_pools.html', title='Prize Pool Admin', nav_active='admin_prize_pools',
+                           pools=pools, form=form)
+
 
 @main.route("/business/listings")
 @login_required
@@ -624,16 +1072,35 @@ def launch_sprint():
         flash('Sprint start date cannot be in the past.', 'danger')
         return redirect(url_for('main.dashboard'))
 
+    sprint_duration_days = (sprint_ends - sprint_begins).days
+    if sprint_duration_days < 3:
+        flash('Sprint duration must be at least 3 days.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    if sprint_duration_days > 14:
+        flash('Sprint duration cannot exceed 14 days (2 weeks).', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    technologies_required = (request.form.get('technologies_required') or '').strip()
+    if not technologies_required:
+        flash('Please add at least one technology before launching a sprint.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    if _stripe_available() and not _business_has_card():
+        flash('Please add a payment method before launching a sprint.', 'danger')
+        return redirect(url_for('main.billing'))
+
+    company_address = (request.form.get('company_address') or '').strip() or None
     listing = SprintListing(
         business_id=current_user.id,
         company_name=company_name,
+        company_address=company_address,
         max_talent_pool=int(request.form.get('max_talent_pool', 3)),
         pay_for_prototype=float(request.form.get('pay_for_prototype', 60)),
-        technologies_required=request.form.get('technologies_required', ''),
+        technologies_required=technologies_required,
         deliverables=(request.form.get('deliverables') or '').strip() or None,
         essential_deliverables=(request.form.get('essential_deliverables') or '').strip() or None,
         essential_deliverables_count=int(request.form.get('essential_deliverables_count', 0) or 0),
-        sprint_timeline_days=int(request.form.get('sprint_timeline_days', 7)),
+        sprint_timeline_days=sprint_duration_days,
         minimum_requirements_for_pay=int(request.form.get('minimum_requirements_for_pay', 1)),
         sprint_begins_at=sprint_begins,
         sprint_ends_at=sprint_ends,
@@ -711,6 +1178,9 @@ def signup_sign_developer(id):
     signature_data = (request.form.get('signature_data') or '').strip()
     if signature_data and signature_data.startswith('data:image'):
         signup.developer_signature_image = signature_data
+    contractor_address = (request.form.get('contractor_address') or '').strip() or None
+    if contractor_address:
+        signup.developer_registered_address = contractor_address
     signup.developer_signed_at = datetime.utcnow()
     db.session.commit()
     flash('Contract signed by you. Waiting for business countersign.', 'success')
@@ -773,6 +1243,7 @@ def signup_submit_deliverables(id):
 
 def _apply_reviewed_state(signup):
     """Set reviewed_at and update developer profile stats (shared by mark-reviewed and auto-release). Caller must commit."""
+    import json
     signup.reviewed_at = datetime.utcnow()
     profile = signup.user.developer_profile
     if profile:
@@ -780,26 +1251,32 @@ def _apply_reviewed_state(signup):
         profile.contracts_won = (profile.contracts_won or 0) + 1
         sprint_techs = parse_comma_separated(signup.listing.technologies_required)
         if sprint_techs:
-            existing = {}
-            for entry in parse_comma_separated(profile.technologies):
-                if '+' in entry:
-                    parts = entry.rsplit('+', 1)
-                    existing[parts[0].strip().lower()] = {'name': parts[0].strip(), 'count': int(parts[1])}
-                else:
-                    existing[entry.lower()] = {'name': entry, 'count': 1}
+            # Update technologies_verified (counts from completed sprints only; developers cannot fake these)
+            raw = getattr(profile, 'technologies_verified', None)
+            verified = {}
+            if raw:
+                try:
+                    verified = json.loads(raw)
+                except (TypeError, ValueError):
+                    pass
             for tech in sprint_techs:
-                key = tech.lower()
-                if key in existing:
-                    existing[key]['count'] += 1
-                else:
-                    existing[key] = {'name': tech, 'count': 1}
-            updated = []
-            for info in existing.values():
-                if info['count'] > 1:
-                    updated.append(f"{info['name']}+{info['count']}")
-                else:
-                    updated.append(info['name'])
-            profile.technologies = ','.join(updated)
+                key = tech.strip().lower()
+                if key:
+                    verified[key] = verified.get(key, 0) + 1
+            profile.technologies_verified = json.dumps(verified)
+            # Add new tech names to technologies (user's display list) if not already present
+            from app.utils import _strip_tech_count
+            existing_parts = [t for t in parse_comma_separated(profile.technologies or '') if _strip_tech_count(t)]
+            existing_names = {_strip_tech_count(t).lower() for t in existing_parts}
+            to_add = []
+            for tech in sprint_techs:
+                name = tech.strip()
+                if name and name.lower() not in existing_names:
+                    to_add.append(name)
+                    existing_names.add(name.lower())
+            if to_add:
+                all_names = [_strip_tech_count(t) for t in existing_parts] + to_add
+                profile.technologies = ', '.join(all_names)
 
 
 def apply_auto_release(signup):
@@ -822,6 +1299,38 @@ def process_review_deadlines():
     for signup in overdue:
         apply_auto_release(signup)
         db.session.commit()
+
+
+def process_prize_pool_winners():
+    """Transition pool statuses (open->voting, voting->closed) and compute top 10% winners when voting ends. Safe to call via cron."""
+    import math
+    now = datetime.utcnow()
+    # open -> voting when submission_ends_at passes
+    open_pools = PrizePool.query.filter_by(status='open').all()
+    for pool in open_pools:
+        if pool.submission_ends_at and pool.submission_ends_at <= now:
+            pool.status = 'voting'
+            db.session.commit()
+    # voting -> closed when voting_ends_at passes; compute top 10% winners
+    voting_pools = PrizePool.query.filter_by(status='voting').all()
+    for pool in voting_pools:
+        if pool.voting_ends_at and pool.voting_ends_at <= now:
+            pool.status = 'closed'
+            # Aggregate vote points: rank_1=3, rank_2=2, rank_3=1
+            scores = {}
+            for vote in pool.votes:
+                for eid, pts in [(vote.rank_1_id, 3), (vote.rank_2_id, 2), (vote.rank_3_id, 1)]:
+                    scores[eid] = scores.get(eid, 0) + pts
+            submitted = [e for e in pool.entries if e.submitted_at]
+            if submitted and scores:
+                n = len(submitted)
+                top_count = max(1, math.ceil(0.1 * n))
+                sorted_entries = sorted(submitted, key=lambda e: scores.get(e.id, 0), reverse=True)
+                for e in pool.entries:
+                    e.is_winner = False
+                for e in sorted_entries[:top_count]:
+                    e.is_winner = True
+            db.session.commit()
 
 
 # ── Business reviews developer submissions ──

@@ -91,6 +91,9 @@
                 <a class="nav-link-animated px-4 py-2 rounded-lg {% if nav_active == 'sprint' %}bg-primary/25 text-white font-semibold border border-primary/50{% else %}hover:text-white hover:bg-white/10 transition-colors{% endif %}" href="{{ url_for('main.dashboard') }}">Sprint Creator</a>
                 <a class="nav-link-animated px-4 py-2 rounded-lg {% if nav_active == 'developers' %}bg-primary/25 text-white font-semibold border border-primary/50{% else %}hover:text-white hover:bg-white/10 transition-colors{% endif %}" href="{{ url_for('main.review_gallery') }}">Your Listings</a>
                 <a class="nav-link-animated px-4 py-2 rounded-lg {% if nav_active == 'billing' %}bg-primary/25 text-white font-semibold border border-primary/50{% else %}hover:text-white hover:bg-white/10 transition-colors{% endif %}" href="{{ url_for('main.billing') }}">Billing</a>
+                {% if can_manage_prize_pools() %}
+                <a class="nav-link-animated px-4 py-2 rounded-lg {% if nav_active == 'admin_prize_pools' %}bg-primary/25 text-white font-semibold border border-primary/50{% else %}hover:text-white hover:bg-white/10 transition-colors{% endif %}" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
+                {% endif %}
             </div>
             <div class="flex items-center gap-4">
                 <div class="hidden md:flex items-center gap-6">
@@ -126,6 +129,9 @@
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium {% if nav_active == 'sprint' %}bg-primary/20 text-white font-semibold{% endif %}" href="{{ url_for('main.dashboard') }}">Sprint Creator</a>
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium {% if nav_active == 'developers' %}bg-primary/20 text-white font-semibold{% endif %}" href="{{ url_for('main.review_gallery') }}">Your Listings</a>
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium {% if nav_active == 'billing' %}bg-primary/20 text-white font-semibold{% endif %}" href="{{ url_for('main.billing') }}">Billing</a>
+                {% if can_manage_prize_pools() %}
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium {% if nav_active == 'admin_prize_pools' %}bg-primary/20 text-white font-semibold{% endif %}" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
+                {% endif %}
                 <div class="pt-2 mt-2 border-t border-white/10">
                     <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.logout') }}">Log out</a>
                 </div>

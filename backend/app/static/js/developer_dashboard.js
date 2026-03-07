@@ -23,6 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ---- About Me character count ----
+    var aboutMeTextarea = document.getElementById('about-me-textarea');
+    var aboutMeCount = document.getElementById('about-me-count');
+    if (aboutMeTextarea && aboutMeCount) {
+        aboutMeTextarea.addEventListener('input', function() {
+            aboutMeCount.textContent = this.value.length;
+        });
+    }
+
     // ---- Add Pinned Project toggle ----
     var toggleProject = document.getElementById('toggle-add-project');
     var cancelProject = document.getElementById('cancel-add-project');

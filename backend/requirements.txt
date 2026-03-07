@@ -22,3 +22,6 @@ flask-limiter
 
 # Payments
 stripe
+
+# PostgreSQL (required for Vercel; SQLite does not persist on serverless)
+psycopg2-binary

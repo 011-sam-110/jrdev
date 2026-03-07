@@ -47,6 +47,7 @@
             </div>
             <div id="listing-developers-{{ listing.id }}" class="hidden border-t border-white/10 pt-4 mt-2 js-listing-developers">
                 {% if listing.signups %}
+                <p class="text-xs text-slate-500 mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-sm">lock</span> Contract details (including addresses) are kept confidential until both parties have e-signed.</p>
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Developers who joined</p>
                 <ul class="space-y-4">
                     {% for signup in listing.signups %}

@@ -17,6 +17,8 @@ EMAIL_VALIDATORS = [
 
 class RegistrationForm(FlaskForm):
     """Register a new user (developer or business) with email/password and optional 2FA."""
+    first_name = StringField('First Name', validators=[DataRequired(), Length(min=1, max=50)])
+    last_name = StringField('Last Name', validators=[DataRequired(), Length(min=1, max=50)])
     username = StringField('Username',
                            validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=EMAIL_VALIDATORS)
