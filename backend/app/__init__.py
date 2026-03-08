@@ -26,6 +26,21 @@ migrate = Migrate()
 
 def create_app():
     """Create and configure the Flask application. Use for WSGI and development."""
+    # Load .env early so env vars are available regardless of entry point (run.py, flask run, gunicorn)
+    _log = logging.getLogger(__name__)
+    try:
+        from dotenv import load_dotenv
+        _root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        _env_path = os.path.join(_root, '.env')
+        _backend_env = os.path.join(_root, 'backend', '.env')
+        for _p in (_env_path, _backend_env):
+            if os.path.isfile(_p):
+                load_dotenv(_p)
+                break
+        load_dotenv()  # Also load from cwd (e.g. backend/.env when running from backend/)
+    except ImportError:
+        pass
+
     app = Flask(__name__)
     secret_key = os.environ.get('SECRET_KEY', '5791628bb0b13ce0c676dfde280ba245')
     if not os.environ.get('SECRET_KEY') and os.environ.get('FLASK_ENV') == 'production':
@@ -54,6 +69,25 @@ def create_app():
         _log.warning(
             'Mail not configured: set EMAIL_USER and EMAIL_PASS in .env for verification emails.'
         )
+
+    # Stripe: store keys in app.config so they're available even if os.environ is unreliable at request time
+    _sk = (os.environ.get('STRIPE_SECRET_KEY') or '').strip()
+    _pk = (os.environ.get('STRIPE_PUBLISHABLE_KEY') or '').strip()
+    app.config['STRIPE_SECRET_KEY'] = _sk
+    app.config['STRIPE_PUBLISHABLE_KEY'] = _pk
+    try:
+        import stripe as _stripe_mod
+        if _sk and _pk:
+            _log.info('Stripe: configured (secret key present, publishable key present)')
+        else:
+            _log.warning(
+                'Stripe: not configured. STRIPE_SECRET_KEY=%s, STRIPE_PUBLISHABLE_KEY=%s. '
+                'Set both in .env to enable payments.',
+                'set' if _sk else 'missing',
+                'set' if _pk else 'missing',
+            )
+    except ImportError:
+        _log.warning('Stripe: stripe package not installed. Run: pip install stripe')
 
     db.init_app(app)
     bcrypt.init_app(app)

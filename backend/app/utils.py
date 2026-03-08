@@ -55,15 +55,26 @@ def normalize_url(val):
     return val
 
 
-def youtube_embed_url(url):
+def youtube_embed_url(url, autoplay=False, mute=False):
     """
     Convert a YouTube watch or youtu.be URL to the embed URL.
     Returns None if url is falsy or no video ID is found.
+    Optional: autoplay, mute for review embeds (e.g. autoplay=1&mute=1).
     """
     if not url:
         return None
     match = re.search(r'(?:v=|youtu\.be/)([\w-]+)', url)
-    return f'https://www.youtube.com/embed/{match.group(1)}' if match else None
+    if not match:
+        return None
+    base = f'https://www.youtube.com/embed/{match.group(1)}'
+    params = []
+    if autoplay:
+        params.append('autoplay=1')
+    if mute:
+        params.append('mute=1')
+    if params:
+        return base + '?' + '&'.join(params)
+    return base
 
 
 def parse_comma_separated(s):

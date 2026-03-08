@@ -94,23 +94,13 @@
                 {% endif %}
             </div>
             <div class="flex items-center gap-4">
-                <a href="{{ url_for('main.developer_settings') }}" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors" title="Settings" aria-label="Settings">
-                    <span class="material-symbols-outlined text-2xl">settings</span>
-                </a>
                 <div class="hidden md:block relative">
-                    <button type="button" id="dev-profile-menu-btn" class="w-14 h-14 rounded-full bg-navy-700 border border-white/10 overflow-hidden flex items-center justify-center block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50 cursor-pointer" aria-expanded="false" aria-haspopup="true" aria-label="Profile menu" title="Profile">
-                        {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
-                        <img alt="Profile" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
-                        {% else %}
-                        {% set size = 'nav-lg' %}{% include 'partials/avatar_fallback.html' with context %}
-                        {% endif %}
-                    </button>
-                    <div id="dev-profile-dropdown" class="nav-profile-dropdown absolute right-0 mt-2 py-2 w-48 rounded-xl bg-navy-800 border border-white/10 shadow-xl shadow-black/30 hidden z-50" role="menu" aria-orientation="vertical">
-                        <a href="{{ url_for('main.logout') }}" class="block px-4 py-3 text-base font-medium text-slate-300 hover:bg-white/10 hover:text-white rounded-lg mx-2 transition-colors flex items-center gap-2" role="menuitem">
-                            <span class="material-symbols-outlined text-lg">logout</span>
-                            Log out
-                        </a>
-                    </div>
+                    {% set trigger_id = 'dev-profile-menu-btn' %}
+                    {% set dropdown_id = 'dev-profile-dropdown' %}
+                    {% set show_view_profile = true %}
+                    {% set settings_url = url_for('main.developer_settings') %}
+                    {% set settings_label = 'Settings' %}
+                    {% include 'partials/profile_popover.html' %}
                 </div>
                 <div class="flex md:hidden items-center">
                     <button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
@@ -129,7 +119,9 @@
                 {% if can_manage_prize_pools() %}
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
                 {% endif %}
-                <div class="pt-2 mt-2 border-t border-white/10">
+                <div class="pt-2 mt-2 border-t border-white/10 space-y-1">
+                    <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.profile_by_username', username=current_user.username) }}">View Profile</a>
+                    <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_settings') }}">Settings</a>
                     <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.logout') }}">Log out</a>
                 </div>
             </div>

@@ -5,13 +5,13 @@
 {% block content %}
 <div class="mb-10 liquid-glass-in">
     <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Prize Pools</h1>
-    <p class="text-slate-400">Join paid prize pools with an entry fee. Submit your work, vote on others, and the top 10% win the distributed prize.</p>
+    <p class="text-slate-400">Join paid or free prize pools. Submit your work, vote on others (paid), and the top 10% win the distributed prize.</p>
 </div>
 
 <div class="mb-6 flex flex-wrap gap-2">
     <button type="button" class="js-filter-pill px-4 py-2 rounded-full text-sm font-medium transition-colors border border-white/20 bg-white/10 text-white" data-filter="all">All</button>
     <button type="button" class="js-filter-pill px-4 py-2 rounded-full text-sm font-medium transition-colors border border-transparent text-slate-400 hover:text-white hover:bg-white/5" data-filter="paid">Paid</button>
-    <button type="button" class="js-filter-pill px-4 py-2 rounded-full text-sm font-medium transition-colors border border-transparent text-slate-400 hover:text-white hover:bg-white/5" data-filter="free">Free (placeholder)</button>
+    <button type="button" class="js-filter-pill px-4 py-2 rounded-full text-sm font-medium transition-colors border border-transparent text-slate-400 hover:text-white hover:bg-white/5" data-filter="free">Free</button>
 </div>
 
 {% if not paid_pools and not free_pools %}
@@ -86,21 +86,59 @@
     </article>
     {% endfor %}
     {% for pool in free_pools %}
-    <article class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 opacity-90 liquid-glass-in js-pool-card" data-pool-type="free" data-pool-id="{{ pool.id }}">
+    <article class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 hover:border-mint/20 transition-colors liquid-glass-in js-pool-card" data-pool-type="free" data-pool-id="{{ pool.id }}">
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div class="flex-1 space-y-6">
                 <div>
                     <h2 class="font-display text-xl font-bold text-white mb-1">{{ pool.title }}</h2>
                     <p class="text-slate-500 text-sm">Posted {{ pool.created_at.strftime('%d %b %Y') }}</p>
-                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-semibold bg-slate-600/50 text-slate-300 border border-white/10">Free – Coming soon</span>
+                    <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-xs font-semibold bg-slate-600/50 text-slate-300 border border-white/10">Free</span>
                 </div>
                 {% if pool.description %}
                 <div class="text-slate-400 text-sm prose prose-invert max-w-none">{{ pool.description|markdown }}</div>
                 {% endif %}
-                <p class="text-slate-500 text-sm">AI-reviewed contract-style challenges. Simulate real work for your CV. Coming soon.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">group</span>
+                        <span class="text-slate-400">Joined:</span>
+                        <span class="text-white font-medium">{{ pool.entry_count }} / {{ pool.max_participants or '∞' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">event_available</span>
+                        <span class="text-slate-400">Signup ends:</span>
+                        <span class="text-white font-medium">{{ pool.signup_ends_at.strftime('%d %b %Y') if pool.signup_ends_at else '—' }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">upload</span>
+                        <span class="text-slate-400">Submission ends:</span>
+                        <span class="text-white font-medium">{{ pool.submission_ends_at.strftime('%d %b %Y') if pool.submission_ends_at else '—' }}</span>
+                    </div>
+                </div>
+                {% if pool.technologies_required %}
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Technologies</p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for tech in pool.technologies_required.split(',') %}
+                        {% if tech.strip() %}
+                        <span class="tech-tag px-3 py-1 bg-navy-700/60 border border-white/10 rounded-lg text-xs text-slate-300">{{ tech.strip() }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             <div class="lg:shrink-0 flex flex-col items-stretch lg:items-end gap-3">
-                <span class="px-4 py-2 rounded-xl border border-white/20 text-slate-500 text-sm font-medium">AI review coming soon</span>
+                {% if pool.id in joined_pool_ids %}
+                <span class="px-4 py-2 rounded-xl border border-mint/40 text-mint text-sm font-medium">Already joined</span>
+                <a href="{{ url_for('main.developer_joined_prize_pools') }}" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 text-sm font-medium">View in Joined &rarr;</a>
+                {% else %}
+                <form method="POST" action="{{ url_for('main.prize_pool_join', pool_id=pool.id) }}" class="inline">
+                    {{ form.hidden_tag() }}
+                    <button type="submit" class="liquid-glass-cta w-full lg:w-auto px-8 py-3 rounded-xl font-bold text-sm">
+                        Join (Free)
+                    </button>
+                </form>
+                {% endif %}
             </div>
         </div>
     </article>

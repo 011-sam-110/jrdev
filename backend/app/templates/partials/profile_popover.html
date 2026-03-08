@@ -1,0 +1,44 @@
+{# Profile popover: header (avatar, name, email), body (View Profile for dev only, Settings/Account), footer (Sign out)
+   Required: trigger_id, dropdown_id, show_view_profile (bool), settings_url, settings_label #}
+<div class="relative">
+    <button type="button" id="{{ trigger_id }}" class="w-14 h-14 rounded-full bg-navy-700 border border-white/10 overflow-hidden flex items-center justify-center block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50 cursor-pointer" aria-expanded="false" aria-haspopup="true" aria-label="Profile menu" title="Profile">
+        {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
+        <img alt="Profile" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
+        {% else %}
+        {% set size = 'nav-lg' %}{% include 'partials/avatar_fallback.html' with context %}
+        {% endif %}
+    </button>
+    <div id="{{ dropdown_id }}" class="profile-popover absolute right-0 mt-2 w-64 rounded-xl bg-navy-800 border border-white/10 shadow-xl shadow-black/30 hidden z-50 overflow-hidden" role="menu" aria-orientation="vertical">
+        <div class="profile-popover-header flex items-center gap-3 px-4 py-3 border-b border-white/10">
+            <div class="w-10 h-10 rounded-full bg-navy-700 border border-white/10 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
+                <img alt="" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
+                {% else %}
+                <span class="text-mint font-display font-bold text-sm">{{ current_user.username|initials }}</span>
+                {% endif %}
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="profile-popover-title font-display font-semibold text-white truncate">{{ current_user.first_name or current_user.username }}{% if current_user.first_name and current_user.last_name %} {{ current_user.last_name }}{% endif %}</p>
+                <p class="profile-popover-desc text-slate-400 text-xs truncate">{{ current_user.email }}</p>
+            </div>
+        </div>
+        <div class="profile-popover-body px-2 py-2 space-y-0.5">
+            {% if show_view_profile %}
+            <a href="{{ url_for('main.profile_by_username', username=current_user.username) }}" class="profile-popover-item flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white text-sm font-medium transition-colors" role="menuitem">
+                <span class="material-symbols-outlined text-lg">person</span>
+                View Profile
+            </a>
+            {% endif %}
+            <a href="{{ settings_url }}" class="profile-popover-item flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white text-sm font-medium transition-colors" role="menuitem">
+                <span class="material-symbols-outlined text-lg">settings</span>
+                {{ settings_label }}
+            </a>
+        </div>
+        <div class="profile-popover-footer px-3 py-2 border-t border-white/10">
+            <a href="{{ url_for('main.logout') }}" class="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/30 text-sm font-medium transition-colors" role="menuitem">
+                <span class="material-symbols-outlined text-lg">logout</span>
+                Sign out
+            </a>
+        </div>
+    </div>
+</div>
