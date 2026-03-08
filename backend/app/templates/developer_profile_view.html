@@ -8,9 +8,9 @@
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/developer_themes.css') }}"/>
 <div class="mb-8">
-    <a href="{{ url_for('main.review_gallery') }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-base font-medium transition-colors">
+    <a href="{{ back_url|default(url_for('main.review_gallery')) }}" class="inline-flex items-center gap-2 text-slate-400 hover:text-white text-base font-medium transition-colors">
         <span class="material-symbols-outlined text-xl">arrow_back</span>
-        Back to Your Listings
+        {{ back_text|default('Back to Your Listings') }}
     </a>
 </div>
 <div class="dev-profile-wrap" data-theme="{{ profile_theme }}" data-animation="{{ profile_animation }}" data-panel-style="{{ profile_panel_style }}" data-background="{{ profile_background }}">

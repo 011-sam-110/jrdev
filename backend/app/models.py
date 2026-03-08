@@ -240,10 +240,13 @@ class PrizePool(db.Model):
     review_ends_at = db.Column(db.DateTime, nullable=True)  # for free, placeholder
     max_participants = db.Column(db.Integer, nullable=True)  # null = unlimited
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    essential_deliverables = db.Column(db.Text, nullable=True)  # Newline-separated required deliverables
+    optional_deliverables = db.Column(db.Text, nullable=True)  # Newline-separated optional deliverables
 
     created_by = db.relationship('User', backref='created_prize_pools', foreign_keys=[created_by_id])
     entries = db.relationship('PrizePoolEntry', backref='prize_pool', cascade='all, delete-orphan')
     votes = db.relationship('PrizePoolVote', backref='prize_pool', cascade='all, delete-orphan')
+    pairwise_votes = db.relationship('PrizePoolPairwiseVote', backref='prize_pool', cascade='all, delete-orphan')
 
     @property
     def entry_count(self):
@@ -258,6 +261,25 @@ class PrizePool(db.Model):
     def is_free(self):
         return self.pool_type == 'free' or self.entry_fee_gbp is None
 
+    @property
+    def essential_deliverables_list(self):
+        """List of essential (required) deliverable strings."""
+        if self.essential_deliverables:
+            return [t.strip() for t in self.essential_deliverables.split('\n') if t.strip()]
+        return []
+
+    @property
+    def optional_deliverables_list(self):
+        """List of optional deliverable strings."""
+        if self.optional_deliverables:
+            return [t.strip() for t in self.optional_deliverables.split('\n') if t.strip()]
+        return []
+
+    @property
+    def deliverables_only_list(self):
+        """Full deliverables list for checkboxes (essential + optional)."""
+        return self.essential_deliverables_list + self.optional_deliverables_list
+
 
 class PrizePoolEntry(db.Model):
     """Developer's entry in a prize pool. Payment required for paid pools."""
@@ -270,6 +292,7 @@ class PrizePoolEntry(db.Model):
     demo_video_url = db.Column(db.String(500), nullable=True)
     github_submission_url = db.Column(db.String(500), nullable=True)
     submitted_at = db.Column(db.DateTime, nullable=True)
+    requirements_met = db.Column(db.String(500), nullable=True)  # Comma-separated deliverables completed
     is_winner = db.Column(db.Boolean, default=False)
     ai_review_result = db.Column(db.String(20), nullable=True)  # pass/fail for free, placeholder
 
@@ -298,3 +321,16 @@ class PrizePoolVote(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     voter = db.relationship('User', backref='prize_pool_votes', foreign_keys=[voter_id])
+
+
+class PrizePoolPairwiseVote(db.Model):
+    """Pairwise comparison: voter chose winner_entry_id as best between entry_a and entry_b."""
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
+    voter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    entry_a_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    entry_b_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    winner_entry_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    voter = db.relationship('User', backref='prize_pool_pairwise_votes', foreign_keys=[voter_id])

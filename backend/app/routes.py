@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail
 from app.forms import RegistrationForm, LoginForm
 from app.profile_forms import EditProfileForm, EditMarkdownForm, AddPinnedProjectForm
-from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote
+from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote, PrizePoolPairwiseVote
 from sqlalchemy.exc import IntegrityError
 from app.decorators import require_role, require_verified, require_prize_pool_admin
 from app.utils import (
@@ -254,7 +254,7 @@ def edit_profile():
     return render_template('edit_profile.html', title='Edit Profile', form=form)
 
 ABOUT_ME_MAX_LENGTH = 600
-PINNED_PROJECTS_MAX = 30
+PINNED_PROJECTS_MAX = 3
 
 
 @main.route("/update-markdown", methods=['POST'])
@@ -517,14 +517,21 @@ def account():
 
 # ── Billing (Stripe) – BUSINESS only ──
 
+def _stripe_secret_key():
+    """Prefer app.config (set at startup) over os.environ for reliability."""
+    return current_app.config.get('STRIPE_SECRET_KEY') or os.environ.get('STRIPE_SECRET_KEY', '')
+
+def _stripe_publishable_key():
+    return current_app.config.get('STRIPE_PUBLISHABLE_KEY') or os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+
 def _stripe_available():
-    return stripe is not None and os.environ.get('STRIPE_SECRET_KEY')
+    return stripe is not None and bool(_stripe_secret_key())
 
 def _business_has_card():
     """True if business has a payment method on file (Stripe). If Stripe unavailable, returns True (no block)."""
     if not _stripe_available() or current_user.role != 'BUSINESS' or not current_user.stripe_customer_id:
         return not _stripe_available()  # No Stripe = don't block
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    stripe.api_key = _stripe_secret_key()
     try:
         pms = stripe.PaymentMethod.list(customer=current_user.stripe_customer_id, type='card')
         return bool(pms.data)
@@ -535,13 +542,14 @@ def _get_or_create_stripe_customer_for_developer():
     """Get or create Stripe customer for current developer user."""
     if not _stripe_available() or current_user.role != 'DEVELOPER':
         return None
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    stripe.api_key = _stripe_secret_key()
     if current_user.stripe_customer_id:
         try:
             return stripe.Customer.retrieve(current_user.stripe_customer_id)
         except stripe.error.InvalidRequestError:
             current_user.stripe_customer_id = None
             db.session.commit()
+    logger.info('Stripe API: Customer.create (developer)')
     customer = stripe.Customer.create(
         email=current_user.email,
         name=current_user.username,
@@ -554,7 +562,7 @@ def _get_stripe_customer():
     """Get or create Stripe customer for current business user."""
     if not _stripe_available() or current_user.role != 'BUSINESS':
         return None
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    stripe.api_key = _stripe_secret_key()
     if current_user.stripe_customer_id:
         try:
             return stripe.Customer.retrieve(current_user.stripe_customer_id)
@@ -562,6 +570,7 @@ def _get_stripe_customer():
             current_user.stripe_customer_id = None
             db.session.commit()
     # Create new customer
+    logger.info('Stripe API: Customer.create (business)')
     customer = stripe.Customer.create(
         email=current_user.email,
         name=current_user.username,
@@ -571,16 +580,32 @@ def _get_stripe_customer():
     return customer
 
 
+@main.route("/billing/stripe-status")
+@login_required
+def billing_stripe_status():
+    """Diagnostic: report whether Stripe is configured (for debugging)."""
+    has_secret = bool(_stripe_secret_key())
+    has_publishable = bool(_stripe_publishable_key())
+    stripe_imported = stripe is not None
+    configured = _stripe_available()
+    return jsonify({
+        'configured': configured,
+        'stripe_module': stripe_imported,
+        'STRIPE_SECRET_KEY_set': has_secret,
+        'STRIPE_PUBLISHABLE_KEY_set': has_publishable,
+    })
+
+
 @main.route("/billing")
 @login_required
 @require_verified
 @require_role('BUSINESS')
 def billing():
-    stripe_publishable_key = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+    stripe_publishable_key = _stripe_publishable_key()
     card_last4 = None
     card_brand = None
     if _stripe_available() and current_user.stripe_customer_id:
-        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        stripe.api_key = _stripe_secret_key()
         try:
             pms = stripe.PaymentMethod.list(customer=current_user.stripe_customer_id, type='card')
             if pms.data:
@@ -605,11 +630,12 @@ def developer_settings_create_setup_intent():
     """Create SetupIntent for developer to add card (prize pool entry fees)."""
     if not _stripe_available():
         return jsonify({'error': 'Stripe is not configured'}), 503
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    stripe.api_key = _stripe_secret_key()
     customer = _get_or_create_stripe_customer_for_developer()
     if not customer:
         return jsonify({'error': 'Could not create customer'}), 500
     try:
+        logger.info('Stripe API: SetupIntent.create (developer) for customer %s', customer.id)
         intent = stripe.SetupIntent.create(
             customer=customer.id,
             payment_method_types=['card'],
@@ -617,6 +643,7 @@ def developer_settings_create_setup_intent():
         )
         return jsonify({'client_secret': intent.client_secret})
     except stripe.error.StripeError as e:
+        logger.warning('Stripe API error (developer SetupIntent): %s', e)
         return jsonify({'error': str(e)}), 400
 
 @main.route("/billing/create-setup-intent", methods=['POST'])
@@ -626,11 +653,12 @@ def developer_settings_create_setup_intent():
 def billing_create_setup_intent():
     if not _stripe_available():
         return jsonify({'error': 'Stripe is not configured'}), 503
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    stripe.api_key = _stripe_secret_key()
     customer = _get_stripe_customer()
     if not customer:
         return jsonify({'error': 'Could not create customer'}), 500
     try:
+        logger.info('Stripe API: SetupIntent.create (business) for customer %s', customer.id)
         intent = stripe.SetupIntent.create(
             customer=customer.id,
             payment_method_types=['card'],
@@ -638,6 +666,7 @@ def billing_create_setup_intent():
         )
         return jsonify({'client_secret': intent.client_secret})
     except stripe.error.StripeError as e:
+        logger.warning('Stripe API error (business SetupIntent): %s', e)
         return jsonify({'error': str(e)}), 400
 
 @main.route("/developer/listings")
@@ -709,7 +738,7 @@ def developer_settings():
             db.session.commit()
             flash('Signature and address saved. They will be used when signing contracts.', 'success')
         elif action == 'billing_portal' and _stripe_available():
-            stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+            stripe.api_key = _stripe_secret_key()
             cust_id = current_user.stripe_customer_id
             if not cust_id:
                 try:
@@ -729,11 +758,11 @@ def developer_settings():
             except stripe.error.StripeError:
                 flash('Could not open billing portal. Please try again.', 'danger')
         return redirect(url_for('main.developer_settings'))
-    stripe_publishable_key = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+    stripe_publishable_key = _stripe_publishable_key()
     card_last4 = None
     card_brand = None
     if _stripe_available() and current_user.stripe_customer_id:
-        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        stripe.api_key = _stripe_secret_key()
         try:
             pms = stripe.PaymentMethod.list(customer=current_user.stripe_customer_id, type='card')
             if pms.data:
@@ -757,11 +786,13 @@ def _prize_pool_join_checkout(pool, user):
     """Create Stripe Checkout Session for prize pool entry fee. Returns session URL or None on error."""
     if not _stripe_available() or not pool.entry_fee_gbp or pool.entry_fee_gbp <= 0:
         return None
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    stripe.api_key = _stripe_secret_key()
     try:
         session = stripe.checkout.Session.create(
             mode='payment',
             payment_method_types=['card'],
+            customer=user.stripe_customer_id if user.stripe_customer_id else None,
+            customer_email=user.email if not user.stripe_customer_id else None,
             line_items=[{
                 'price_data': {
                     'currency': 'gbp',
@@ -797,8 +828,11 @@ def prize_pool_join(pool_id):
         flash('You have already joined this prize pool.', 'info')
         return redirect(url_for('main.developer_joined_prize_pools'))
     if pool.pool_type == 'free':
-        flash('Free prize pools with AI review are coming soon.', 'info')
-        return redirect(url_for('main.developer_prize_pools'))
+        entry = PrizePoolEntry(prize_pool_id=pool_id, user_id=current_user.id, payment_completed_at=datetime.utcnow())
+        db.session.add(entry)
+        db.session.commit()
+        flash('You have joined this prize pool!', 'success')
+        return redirect(url_for('main.developer_joined_prize_pools'))
     if pool.entry_fee_gbp and pool.entry_fee_gbp > 0:
         checkout_url = _prize_pool_join_checkout(pool, current_user)
         if checkout_url:
@@ -823,8 +857,9 @@ def prize_pool_join_success():
     if not session_id or not _stripe_available():
         flash('Invalid or missing payment session.', 'danger')
         return redirect(url_for('main.developer_prize_pools'))
-    stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+    stripe.api_key = _stripe_secret_key()
     try:
+        logger.info('Stripe API: checkout.Session.retrieve (session_id=%s)', session_id[:20] + '...' if len(session_id) > 20 else session_id)
         session = stripe.checkout.Session.retrieve(session_id)
         if session.payment_status != 'paid':
             flash('Payment was not completed.', 'warning')
@@ -869,20 +904,117 @@ def prize_pool_submit(pool_id):
     pool = PrizePool.query.get_or_404(pool_id)
     entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
     if not entry or not entry.payment_completed_at:
-        flash('You must join and pay before submitting.', 'danger')
-        return redirect(url_for('main.developer_joined_prize_pools'))
-    if pool.pool_type != 'paid':
-        flash('Submission is not available for this pool type.', 'warning')
-        return redirect(url_for('main.developer_joined_prize_pools'))
+        flash('You must join this prize pool before submitting.', 'danger')
+        return redirect(url_for('main.developer_joined_listings'))
     if pool.submission_ends_at and datetime.utcnow() > pool.submission_ends_at:
         flash('Submission deadline has passed.', 'warning')
-        return redirect(url_for('main.developer_joined_prize_pools'))
+        return redirect(url_for('main.developer_joined_listings'))
     entry.demo_video_url = request.form.get('demo_video_url', '').strip() or None
     entry.github_submission_url = request.form.get('github_submission_url', '').strip() or None
+    reqs = request.form.getlist('requirements_met')
+    entry.requirements_met = ', '.join(reqs) if reqs else None
     entry.submitted_at = datetime.utcnow()
     db.session.commit()
     flash('Your work has been submitted!', 'success')
-    return redirect(url_for('main.developer_joined_prize_pools'))
+    return redirect(url_for('main.developer_joined_listings'))
+
+
+def _get_next_pairwise_pair(pool_id, voter_id):
+    """Return (entry_a, entry_b) for next pairwise comparison, or (None, None) if no more pairs.
+    Excludes voter's entry, only entries with demo_video_url, prefers under-compared entries."""
+    pool = PrizePool.query.get(pool_id)
+    if not pool:
+        return None, None
+    eligible = [e for e in pool.entries if e.submitted_at and e.user_id != voter_id and e.demo_video_url and youtube_embed_url(e.demo_video_url)]
+    if len(eligible) < 2:
+        return None, None
+    # Pairs this voter has already compared
+    existing = PrizePoolPairwiseVote.query.filter_by(prize_pool_id=pool_id, voter_id=voter_id).all()
+    compared = {(min(v.entry_a_id, v.entry_b_id), max(v.entry_a_id, v.entry_b_id)) for v in existing}
+    # Count comparisons per entry (for coverage)
+    from collections import Counter
+    comp_count = Counter()
+    for v in pool.pairwise_votes:
+        comp_count[v.entry_a_id] += 1
+        comp_count[v.entry_b_id] += 1
+    # All possible pairs (excluding already compared by this voter)
+    import itertools
+    import random
+    candidates = []
+    for a, b in itertools.combinations(eligible, 2):
+        key = (min(a.id, b.id), max(a.id, b.id))
+        if key not in compared:
+            score = -(comp_count[a.id] + comp_count[b.id])  # prefer less-compared
+            candidates.append((score, a, b))
+    if not candidates:
+        return None, None
+    candidates.sort(key=lambda x: x[0])
+    best_score = candidates[0][0]
+    best = [c for c in candidates if c[0] == best_score]
+    _, ea, eb = random.choice(best)
+    return ea, eb
+
+
+@main.route("/prize-pool/<int:pool_id>/review/next-pair", methods=['GET'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_review_next_pair(pool_id):
+    """Return next pairwise comparison as JSON, or null if no more pairs."""
+    pool = PrizePool.query.get_or_404(pool_id)
+    entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    if not entry or not entry.submitted_at:
+        return jsonify({'error': 'Must submit before reviewing'}), 403
+    ea, eb = _get_next_pairwise_pair(pool_id, current_user.id)
+    if not ea or not eb:
+        return jsonify({'pair': None})
+    embed_a = youtube_embed_url(ea.demo_video_url, autoplay=True, mute=True)
+    embed_b = youtube_embed_url(eb.demo_video_url, autoplay=True, mute=True)
+    return jsonify({
+        'pair': {
+            'entry_a': {'id': ea.id, 'demo_video_url': ea.demo_video_url, 'embed_url': embed_a},
+            'entry_b': {'id': eb.id, 'demo_video_url': eb.demo_video_url, 'embed_url': embed_b},
+        }
+    })
+
+
+@main.route("/prize-pool/<int:pool_id>/review/vote", methods=['POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def prize_pool_review_vote(pool_id):
+    """Submit pairwise vote: winner_entry_id, entry_a_id, entry_b_id."""
+    pool = PrizePool.query.get_or_404(pool_id)
+    entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    if not entry or not entry.submitted_at:
+        return jsonify({'error': 'Must submit before reviewing'}), 403
+    data = request.get_json() or {}
+    winner_id = int(data.get('winner_entry_id', 0) or 0)
+    entry_a_id = int(data.get('entry_a_id', 0) or 0)
+    entry_b_id = int(data.get('entry_b_id', 0) or 0)
+    if winner_id not in (entry_a_id, entry_b_id) or entry_a_id == entry_b_id:
+        return jsonify({'error': 'Invalid vote'}), 400
+    ea = PrizePoolEntry.query.get(entry_a_id)
+    eb = PrizePoolEntry.query.get(entry_b_id)
+    if not ea or not eb or ea.prize_pool_id != pool_id or eb.prize_pool_id != pool_id:
+        return jsonify({'error': 'Invalid entries'}), 400
+    a, b = min(entry_a_id, entry_b_id), max(entry_a_id, entry_b_id)
+    existing = PrizePoolPairwiseVote.query.filter_by(
+        prize_pool_id=pool_id, voter_id=current_user.id,
+        entry_a_id=a, entry_b_id=b
+    ).first()
+    if existing:
+        return jsonify({'error': 'Already voted for this pair'}), 400
+    vote = PrizePoolPairwiseVote(
+        prize_pool_id=pool_id,
+        voter_id=current_user.id,
+        entry_a_id=a,
+        entry_b_id=b,
+        winner_entry_id=winner_id,
+    )
+    db.session.add(vote)
+    db.session.commit()
+    return jsonify({'ok': True})
 
 
 @main.route("/prize-pool/<int:pool_id>/vote", methods=['GET'])
@@ -890,7 +1022,7 @@ def prize_pool_submit(pool_id):
 @require_verified
 @require_role('DEVELOPER')
 def prize_pool_vote_page(pool_id):
-    """Show voting UI: 3 submissions to rank. Participants only, must have submitted."""
+    """Show pairwise review UI: two videos side-by-side, 30s watch, Rank best. Participants only, must have submitted."""
     pool = PrizePool.query.get_or_404(pool_id)
     entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
     if not entry or not entry.payment_completed_at:
@@ -899,20 +1031,14 @@ def prize_pool_vote_page(pool_id):
     if not entry.submitted_at:
         flash('You must submit your work before voting.', 'warning')
         return redirect(url_for('main.developer_joined_prize_pools'))
-    has_voted = PrizePoolVote.query.filter_by(prize_pool_id=pool_id, voter_id=current_user.id).first() is not None
-    if has_voted:
-        flash('You have already voted in this prize pool.', 'info')
-        return redirect(url_for('main.developer_joined_prize_pools'))
-    submitted_entries = [e for e in pool.entries if e.submitted_at and e.user_id != current_user.id]
-    if len(submitted_entries) < 3:
+    submitted_with_video = [e for e in pool.entries if e.submitted_at and e.user_id != current_user.id and e.demo_video_url and youtube_embed_url(e.demo_video_url)]
+    if len(submitted_with_video) < 2:
         form = AddPinnedProjectForm()
-        return render_template('prize_pool_vote.html', pool=pool, entries=[], can_vote=False, form=form,
-                               title='Vote', nav_active='prize_pools_joined')
-    import random
-    vote_entries = random.sample(submitted_entries, 3)
+        return render_template('prize_pool_vote.html', pool=pool, can_vote=False, form=form,
+                               title='Complete reviews', nav_active='prize_pools_joined', csrf_token=generate_csrf())
     form = AddPinnedProjectForm()
-    return render_template('prize_pool_vote.html', pool=pool, entries=vote_entries, can_vote=True, form=form,
-                           title='Vote', nav_active='prize_pools_joined')
+    return render_template('prize_pool_vote.html', pool=pool, can_vote=True, form=form,
+                           title='Complete reviews', nav_active='prize_pools_joined', csrf_token=generate_csrf())
 
 
 @main.route("/prize-pool/<int:pool_id>/vote", methods=['POST'])
@@ -996,6 +1122,8 @@ def admin_prize_pools():
                 entry_fee = 0
         description = (request.form.get('description') or '').strip() or None
         technologies = (request.form.get('technologies_required') or '').strip() or None
+        essential_deliverables = (request.form.get('essential_deliverables') or '').strip() or None
+        optional_deliverables = (request.form.get('optional_deliverables') or '').strip() or None
         try:
             signup_ends = datetime.strptime(request.form.get('signup_ends_at', ''), '%Y-%m-%d')
             submission_ends = datetime.strptime(request.form.get('submission_ends_at', ''), '%Y-%m-%d')
@@ -1019,6 +1147,8 @@ def admin_prize_pools():
             title=title,
             description=description,
             technologies_required=technologies,
+            essential_deliverables=essential_deliverables,
+            optional_deliverables=optional_deliverables,
             pool_type=pool_type,
             entry_fee_gbp=entry_fee if pool_type == 'paid' else None,
             signup_ends_at=signup_ends,
@@ -1316,11 +1446,11 @@ def process_prize_pool_winners():
     for pool in voting_pools:
         if pool.voting_ends_at and pool.voting_ends_at <= now:
             pool.status = 'closed'
-            # Aggregate vote points: rank_1=3, rank_2=2, rank_3=1
+            # Aggregate pairwise wins: each winner_entry_id gets +1
             scores = {}
-            for vote in pool.votes:
-                for eid, pts in [(vote.rank_1_id, 3), (vote.rank_2_id, 2), (vote.rank_3_id, 1)]:
-                    scores[eid] = scores.get(eid, 0) + pts
+            for vote in pool.pairwise_votes:
+                wid = vote.winner_entry_id
+                scores[wid] = scores.get(wid, 0) + 1
             submitted = [e for e in pool.entries if e.submitted_at]
             if submitted and scores:
                 n = len(submitted)
@@ -1453,4 +1583,61 @@ def developer_profile_view(user_id):
                            profile_animation=theme_defaults.get('profile_animation', 'glow'),
                            profile_panel_style=theme_defaults.get('profile_panel_style', 'solid'),
                            profile_background=theme_defaults.get('profile_background', 'default'),
+                           back_url=url_for('main.review_gallery'),
+                           back_text='Back to Your Listings',
                            nav_active='listings')
+
+
+# Reserved path segments that must not be treated as usernames
+_PROFILE_RESERVED = frozenset({
+    'login', 'logout', 'register', 'account', 'billing', 'dashboard', 'developers',
+    'developer', 'business', 'signup', 'listing', 'admin', 'prize-pool', 'static',
+    'about', 'privacy', 'terms', 'support', 'home', 'edit-profile', 'verify-email',
+    'setup-2fa', 'verify-2fa', 'skip-2fa', 'resend-verification', 'api'
+})
+
+
+@main.route("/<username>")
+@login_required
+@require_verified
+def profile_by_username(username):
+    """Public profile by username: /username. Developers see business view of their profile; business users see minimal profile."""
+    if username.lower() in _PROFILE_RESERVED:
+        return render_template('404.html'), 404
+    user = User.query.filter_by(username=username).first_or_404()
+    if user.role == 'DEVELOPER':
+        profile = user.developer_profile
+        if not profile:
+            flash('Profile not found.', 'warning')
+            return redirect(url_for('main.dashboard'))
+        md_html = markdown.markdown(profile.custom_markdown) if profile.custom_markdown else ""
+        stack_list = developer_stack_list(profile)
+        pinned_projects = profile.pinned_projects
+        avg_rating = developer_avg_rating(user.id)
+        theme_defaults = developer_profile_theme_defaults(profile)
+        is_own = current_user.id == user.id
+        if is_own:
+            back_url = url_for('main.dashboard')
+            back_text = 'Back to Dashboard'
+        else:
+            back_url = url_for('main.review_gallery') if current_user.role == 'BUSINESS' else url_for('main.developer_listings')
+            back_text = 'Back to Your Listings' if current_user.role == 'BUSINESS' else 'Back to Listings'
+        return render_template('developer_profile_view.html',
+                               title=f'{user.username} - Profile',
+                               dev_user=user,
+                               profile=profile,
+                               md_html=md_html,
+                               stack_list=stack_list,
+                               pinned_projects=pinned_projects,
+                               avg_rating=avg_rating,
+                               profile_theme=theme_defaults.get('profile_theme', 'mint'),
+                               profile_animation=theme_defaults.get('profile_animation', 'glow'),
+                               profile_panel_style=theme_defaults.get('profile_panel_style', 'solid'),
+                               profile_background=theme_defaults.get('profile_background', 'default'),
+                               back_url=back_url,
+                               back_text=back_text,
+                               nav_active='listings')
+    else:
+        return render_template('business_profile_view.html',
+                               title=f'{user.username} - Profile',
+                               profile_user=user)

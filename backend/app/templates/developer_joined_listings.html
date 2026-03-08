@@ -151,12 +151,23 @@
                         <span class="text-white font-medium">£{{ listing.pay_for_prototype }}</span>
                     </div>
                 </div>
-                {% if listing.deliverables_only_list %}
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Deliverables (from contract)</p>
+                {% if listing.essential_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Essential deliverables (required)</p>
                 <ol class="list-none space-y-3 ml-1">
-                    {% for item in listing.deliverables_only_list %}
+                    {% for item in listing.essential_deliverables_list %}
                     <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
                         <span class="text-mint font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
+                        <span class="min-w-0">{{ item }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% endif %}
+                {% if listing.optional_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Optional deliverables</p>
+                <ol class="list-none space-y-3 ml-1">
+                    {% for item in listing.optional_deliverables_list %}
+                    <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
+                        <span class="text-slate-500 font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
                         <span class="min-w-0">{{ item }}</span>
                     </li>
                     {% endfor %}
@@ -266,6 +277,37 @@
             <div class="text-slate-400 text-sm markdown-body">{{ pool.description|markdown }}</div>
             {% endif %}
 
+            {% if entry.payment_completed_at or pool.pool_type == 'free' %}
+            <div class="pt-4 border-t border-white/10 space-y-4">
+                <h3 class="font-display text-sm font-bold text-white uppercase tracking-wider mb-3">Deliverables</h3>
+                {% if pool.essential_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Essential (required)</p>
+                <ol class="list-none space-y-2 ml-1 mb-4">
+                    {% for item in pool.essential_deliverables_list %}
+                    <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
+                        <span class="text-mint font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
+                        <span class="min-w-0">{{ item }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% endif %}
+                {% if pool.optional_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Optional</p>
+                <ol class="list-none space-y-2 ml-1 mb-4">
+                    {% for item in pool.optional_deliverables_list %}
+                    <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
+                        <span class="text-slate-500 font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
+                        <span class="min-w-0">{{ item }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% endif %}
+                {% if not pool.essential_deliverables_list and not pool.optional_deliverables_list %}
+                <p class="text-slate-500 text-sm">No deliverables set for this pool. Submit your links below.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
             <div class="flex flex-wrap gap-3 items-center">
                 {% if pool.status == 'voting' and entry.submitted_at %}
                 <a href="{{ url_for('main.prize_pool_vote_page', pool_id=pool.id) }}" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
@@ -281,18 +323,36 @@
                 {% endif %}
             </div>
 
-            {% if entry.payment_completed_at and not entry.submitted_at and pool.status in ('open', 'voting') and pool.pool_type == 'paid' %}
+            {% if (entry.payment_completed_at or pool.pool_type == 'free') and not entry.submitted_at and pool.status in ('open', 'voting') %}
             <div class="pt-4 border-t border-white/10">
-                <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider mb-3">Submit your work</h4>
+                <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider mt-6 mb-2">Submit your work</h4>
                 <form method="POST" action="{{ url_for('main.prize_pool_submit', pool_id=pool.id) }}" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                    {% if pool.deliverables_only_list %}
                     <div>
-                        <label for="demo-{{ entry.id }}" class="block text-xs font-medium text-slate-400 mb-1">Demo video (YouTube link, unlisted)</label>
-                        <input type="url" id="demo-{{ entry.id }}" name="demo_video_url" value="{{ entry.demo_video_url or '' }}" placeholder="https://www.youtube.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                        <label class="block text-xs font-medium text-slate-400 mb-2">Requirements met (tick each deliverable you have completed)</label>
+                        <div class="space-y-2">
+                            {% set ns = namespace(met=[]) %}
+                            {% for r in (entry.requirements_met or '').split(',') %}
+                            {% if r.strip() %}{% set _ = ns.met.append(r.strip()) %}{% endif %}
+                            {% endfor %}
+                            {% for item in pool.deliverables_only_list %}
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                <input type="checkbox" name="requirements_met" value="{{ item }}" {% if item in ns.met %}checked{% endif %} class="rounded border-white/30 bg-white/5 text-mint focus:ring-mint flex-shrink-0"/>
+                                <span class="text-mint font-mono text-xs font-bold flex-shrink-0">{{ loop.index }}.</span>
+                                <span class="text-slate-300 text-sm">{{ item }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <label for="github-pool-{{ entry.id }}" class="block text-xs font-medium text-slate-400 mb-1">GitHub repository link (source code)</label>
+                        <input type="url" id="github-pool-{{ entry.id }}" name="github_submission_url" value="{{ entry.github_submission_url or '' }}" placeholder="https://github.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
                     </div>
                     <div>
-                        <label for="github-{{ entry.id }}" class="block text-xs font-medium text-slate-400 mb-1">GitHub repository link (optional)</label>
-                        <input type="url" id="github-{{ entry.id }}" name="github_submission_url" value="{{ entry.github_submission_url or '' }}" placeholder="https://github.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                        <label for="demo-pool-{{ entry.id }}" class="block text-xs font-medium text-slate-400 mb-1">Demonstration video (YouTube link)</label>
+                        <input type="url" id="demo-pool-{{ entry.id }}" name="demo_video_url" value="{{ entry.demo_video_url or '' }}" placeholder="https://www.youtube.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
                     </div>
                     <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
                         <span class="material-symbols-outlined text-lg">upload</span>
@@ -305,6 +365,10 @@
             {% if entry.submitted_at %}
             <div class="pt-4 border-t border-white/10 text-sm">
                 <p class="text-slate-400 mb-1">Submitted {{ entry.submitted_at.strftime('%d %b %Y') }}</p>
+                {% if entry.requirements_met %}
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Requirements you marked as met</p>
+                <p class="text-slate-400 text-sm mb-2">{{ entry.requirements_met }}</p>
+                {% endif %}
                 {% if entry.demo_video_url %}
                 <p class="text-slate-300">Demo: <a href="{{ entry.demo_video_url }}" target="_blank" rel="noopener" class="text-mint hover:underline">Watch</a></p>
                 {% endif %}
@@ -312,10 +376,6 @@
                 <p class="text-slate-300">GitHub: <a href="{{ entry.github_submission_url }}" target="_blank" rel="noopener" class="text-mint hover:underline">View</a></p>
                 {% endif %}
             </div>
-            {% endif %}
-
-            {% if pool.pool_type == 'free' %}
-            <p class="text-slate-500 text-sm italic">AI review coming soon. Free prize pools will simulate contract work with pass/fail for your CV.</p>
             {% endif %}
         </div>
     </article>

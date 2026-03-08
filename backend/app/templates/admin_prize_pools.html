@@ -20,7 +20,7 @@
             <label for="pool_type" class="block text-xs font-medium text-slate-400 mb-1">Pool type</label>
             <select id="pool_type" name="pool_type" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm">
                 <option value="paid">Paid (entry fee, voting)</option>
-                <option value="free">Free (placeholder, coming soon)</option>
+                <option value="free">Free</option>
             </select>
         </div>
         <div id="entry-fee-row">
@@ -34,6 +34,14 @@
         <div>
             <label for="technologies_required" class="block text-xs font-medium text-slate-400 mb-1">Technologies (comma-separated)</label>
             <input type="text" id="technologies_required" name="technologies_required" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm" placeholder="React, Python, Flask"/>
+        </div>
+        <div>
+            <label for="essential_deliverables" class="block text-xs font-medium text-slate-400 mb-1">Essential deliverables (one per line, required)</label>
+            <textarea id="essential_deliverables" name="essential_deliverables" rows="3" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm" placeholder="Working demo&#10;GitHub repo with README&#10;Deployed URL"></textarea>
+        </div>
+        <div>
+            <label for="optional_deliverables" class="block text-xs font-medium text-slate-400 mb-1">Optional deliverables (one per line)</label>
+            <textarea id="optional_deliverables" name="optional_deliverables" rows="2" class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm" placeholder="Unit tests&#10;Documentation"></textarea>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>

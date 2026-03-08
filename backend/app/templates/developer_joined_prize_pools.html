@@ -52,8 +52,8 @@
             <div class="flex flex-wrap gap-3 items-center">
                 {% if pool.status == 'voting' and entry.submitted_at %}
                 <a href="{{ url_for('main.prize_pool_vote_page', pool_id=pool.id) }}" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
-                    <span class="material-symbols-outlined text-lg">how_to_vote</span>
-                    Vote on submissions
+                    <span class="material-symbols-outlined text-lg">rate_review</span>
+                    Complete reviews
                 </a>
                 {% endif %}
                 {% if pool.status == 'closed' %}

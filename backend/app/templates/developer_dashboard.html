@@ -181,14 +181,14 @@
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined dev-accent-text">push_pin</span>
                     <h3 class="font-display text-xl font-semibold text-white">Pinned Projects</h3>
-                    <span class="text-slate-500 text-xs">({{ profile.pinned_projects|length }}/30)</span>
+                    <span class="text-slate-500 text-xs">({{ profile.pinned_projects|length }}/3)</span>
                 </div>
-                {% if profile.pinned_projects|length < 30 %}
+                {% if profile.pinned_projects|length < 3 %}
                 <button id="toggle-add-project" type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-lg dev-cta font-bold text-xs transition-all">
                     <span class="material-symbols-outlined text-sm">add</span> Add Project
                 </button>
                 {% else %}
-                <p class="text-slate-500 text-xs">Limit reached. Remove a project to add another.</p>
+                <p class="text-slate-500 text-xs">Limit reached (3 max). Remove a project to add another.</p>
                 {% endif %}
             </div>
 
