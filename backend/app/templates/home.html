@@ -74,30 +74,102 @@
             <p>Starting at £50 per developer</p>
         </div>
 
-        <div class="sprint" id="how-it-works">
+        <div class="section" id="how-it-works">
             <h1>The 4-Step Sprint</h1>
             <p>From vision to shipped product.</p>
             <div class="stepChoice">
-                <a href="#how-it-works" id="currentStep">Step 1</a>
-                <a href="#how-it-works">Step 2</a>
-                <a href="#how-it-works">Step 3</a>
-                <a href="#how-it-works">Step 4</a>
+                <a href="#how-it-works" data-step="1" id="currentStep">Step 1</a>
+                <a href="#how-it-works" data-step="2">Step 2</a>
+                <a href="#how-it-works" data-step="3">Step 3</a>
+                <a href="#how-it-works" data-step="4">Step 4</a>
             </div>
 
             <div class="step">
                 <div class="stepText">
                     <p class="stepNum">Step 1</p>
                     <h1>Define Your Vision</h1>
-                    <p>Drop a brief. We match you with developers who fit your tech stack—typically within 24 hours.</p>
+                    <p class="stepDesc">Drop a brief. We match you with developers who fit your tech stack—typically within 24 hours.</p>
                 </div>
 
                 <div class="stepDemo">
-                    Demo stuff here
-                    <!-------------------------------------------------------------------------------------->
+                    <img id="stepImage" src="{{ url_for('static', filename='images/Step 1.png') }}">
                 </div>
             </div>
 
             <p>Students gain hands-on experience and a real project for their portfolio.</p>
+        </div>
+
+        <div class="section">
+            <h1>Why JrDev?</h1>
+            <p>We're building a new kind of talent pipeline.</p>
+
+            <div class="threeBox">
+                <div class="pro">
+                    <i class="fa-solid fa-piggy-bank"></i>
+                    <h2>Cost-Effective Prototyping</h2>
+                    <p>Get your MVP off the ground without breaking the bank. Perfect for testing new ideas quickly.</p>
+                </div>
+
+                <div class="pro">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <h2>Empower Future Devs</h2>
+                    <p>Your projects provide the crucial real-world experience that shapes the next generation of developers.</p>
+                </div>
+
+                <div class="pro">
+                    <i class="fa-solid fa-unlock"></i>
+                    <h2>No Commitments</h2>
+                    <p>Flexible engagements with no long-term contracts. Scale up or down as your project needs evolve.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h1>See JrDev in action</h1>
+            <p>From posting a sprint to shipping your prototype - in one place.</p>
+            <div class="video">
+                <iframe src="https://www.youtube.com/embed/ujdFPoCeFM4?si=YYfkvZytfESQsjhU"></iframe>
+            </div>
+        </div>
+
+        <div class="section">
+            <h1>What people say</h1>
+            <p>Reviews from businesses and developers using JrDev</p>
+
+            <div class="threeBox">
+                <div class="review">
+                    <q>Review from a business after their first sprint. Fill in with real testimonials when ready.</q>
+                    <div class="reviewBottom">
+                        <i class="fa-solid fa-building"></i>
+                        <div class="reviewText">
+                            <h2>Coming soon</h2>
+                            <p>Business</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review">
+                    <q>Developer testimonial placeholder. Replace with real rating and quote after your first sprint.</q>
+                    <div class="reviewBottom">
+                        <i class="fa-solid fa-user"></i>
+                        <div class="reviewText">
+                            <h2>Coming soon</h2>
+                            <p>Developer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review">
+                    <q>Another review slot. Add star rating and name when you have more feedback.</q>
+                    <div class="reviewBottom">
+                        <i class="fa-solid fa-building"></i>
+                        <div class="reviewText">
+                            <h2>Coming soon</h2>
+                            <p>Business</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 
