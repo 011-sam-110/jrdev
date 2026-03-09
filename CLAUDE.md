@@ -18,8 +18,8 @@ cd backend && pip install -r requirements.txt
 cd backend && python run.py
 
 # Seed database
-cd backend && python seed_admin.py
-cd backend && python seed_prize_pools.py
+cd backend && python scripts/seeds/seed_admin.py
+cd backend && python scripts/seeds/seed_prize_pools.py
 
 # Flask CLI commands (run from backend/)
 flask process-review-deadlines   # Auto-release payments after 48h review window

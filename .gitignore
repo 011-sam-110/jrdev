@@ -138,3 +138,19 @@ dmypy.json
 cython_debug/
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Python
+
+# IDE / editor
+.cursor/
+.claude/
+.mcp.json
+.vscode/
+*.swp
+*.swo
+
+# Project-specific
+backend/instance/
+backend/app/__pycache__/
+backend/static/profile_pics/*
+!backend/static/profile_pics/default.jpg
+backend/app/static/profile_pics/*
+!backend/app/static/profile_pics/default.jpg
