@@ -6,6 +6,14 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}"/>
     <title>JrDev Platform - {{ title if title else 'Home' }}</title>
+    <meta property="og:title" content="JrDev | Rapid prototyping by emerging talent"/>
+    <meta property="og:description" content="Connect businesses with student developers for rapid, affordable software prototyping."/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="JrDev"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="JrDev | Rapid prototyping by emerging talent"/>
+    <meta name="twitter:description" content="Connect businesses with student developers for rapid, affordable software prototyping."/>
+    <link rel="canonical" href="{{ request.url }}"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -60,11 +68,12 @@
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-body transition-colors duration-300 min-h-screen flex flex-col">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium">Skip to content</a>
     {% set nav_variant = 'content' %}
     {% include 'partials/public_nav.html' with context %}
 
     <!-- Content -->
-    <main class="app-main-in flex-grow pt-28">
+    <main id="main-content" class="app-main-in flex-grow pt-28">
         <!-- Notification bar removed as requested -->
         
         {% block content %}{% endblock %}
@@ -141,5 +150,6 @@
         document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
     })();
     </script>
+    <script src="{{ url_for('static', filename='js/form-loading.js') }}"></script>
 </body>
 </html>

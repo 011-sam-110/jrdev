@@ -17,6 +17,8 @@
 
     track2.innerHTML = track1.innerHTML;
 
+    var track2Initialized = false;
+
     var BASE_VELOCITY = 50;
     var VELOCITY_MAP = [0, 3];
     var VELOCITY_FACTOR = [0, 5];
@@ -74,25 +76,31 @@
 
       if (contentWidth1 === 0) measureContentWidth();
 
-      smoothVelocity += (rawVelocity - smoothVelocity) * SMOOTH;
-      var vf = mapRange(clamp(smoothVelocity, VELOCITY_MAP[0], VELOCITY_MAP[1]), VELOCITY_MAP[0], VELOCITY_MAP[1], VELOCITY_FACTOR[0], VELOCITY_FACTOR[1]);
-      if (smoothVelocity < 0) vf = mapRange(clamp(smoothVelocity, -VELOCITY_MAP[1], 0), -VELOCITY_MAP[1], 0, -VELOCITY_FACTOR[1], 0);
-
-      if (vf < 0) directionFactor = -1;
-      else if (vf > 0) directionFactor = 1;
-
-      var moveBy = directionFactor * BASE_VELOCITY * (delta / 1000);
-      moveBy += directionFactor * moveBy * vf;
-
-      pos1 -= moveBy;
-      pos2 += moveBy;
-
+      /* Don't move until we have valid dimensions - prevents "running out of cards" */
       if (contentWidth1 > 0) {
+        /* Track 2 starts at -contentWidth2 so it scrolls right without revealing empty space */
+        if (!track2Initialized) {
+          pos2 = -contentWidth2;
+          track2Initialized = true;
+        }
+
+        smoothVelocity += (rawVelocity - smoothVelocity) * SMOOTH;
+        var vf = mapRange(clamp(smoothVelocity, VELOCITY_MAP[0], VELOCITY_MAP[1]), VELOCITY_MAP[0], VELOCITY_MAP[1], VELOCITY_FACTOR[0], VELOCITY_FACTOR[1]);
+        if (smoothVelocity < 0) vf = mapRange(clamp(smoothVelocity, -VELOCITY_MAP[1], 0), -VELOCITY_MAP[1], 0, -VELOCITY_FACTOR[1], 0);
+
+        if (vf < 0) directionFactor = -1;
+        else if (vf > 0) directionFactor = 1;
+
+        var moveBy = directionFactor * BASE_VELOCITY * (delta / 1000);
+        moveBy += directionFactor * moveBy * vf;
+
+        pos1 -= moveBy;
+        pos2 += moveBy;
+
         while (pos1 < -contentWidth1) pos1 += contentWidth1;
         while (pos1 > 0) pos1 -= contentWidth1;
-      }
-      if (contentWidth2 > 0) {
-        while (pos2 > contentWidth2) pos2 -= contentWidth2;
+        /* Track 2: keep in [-contentWidth2, 0] for seamless right-scroll loop */
+        while (pos2 >= 0) pos2 -= contentWidth2;
         while (pos2 < -contentWidth2) pos2 += contentWidth2;
       }
 
@@ -105,7 +113,12 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', measureContentWidth);
 
-    measureContentWidth();
-    requestAnimationFrame(animate);
+    /* Defer start until after layout (helps when reviews section is below the fold) */
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        measureContentWidth();
+        requestAnimationFrame(animate);
+      });
+    });
   })();
 })();

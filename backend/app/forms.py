@@ -22,7 +22,11 @@ class RegistrationForm(FlaskForm):
     username = StringField('Username',
                            validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=EMAIL_VALIDATORS)
-    password = PasswordField('Password', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[
+        DataRequired(),
+        Length(min=8, message='Password must be at least 8 characters.'),
+        Regexp(r'(?=.*[A-Za-z])(?=.*\d)', message='Password must contain at least one letter and one number.'),
+    ])
     confirm_password = PasswordField('Confirm Password',
                                      validators=[DataRequired(), EqualTo('password')])
     role = SelectField('Register as:', choices=[('DEVELOPER', 'Developer'), ('BUSINESS', 'Business')], validators=[DataRequired()])

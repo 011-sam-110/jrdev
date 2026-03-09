@@ -38,7 +38,7 @@
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-mint text-lg">payments</span>
                         <span class="text-slate-400">Entry fee:</span>
-                        <span class="text-white font-medium">£{{ "%.2f"|format(pool.entry_fee_gbp) }}</span>
+                        <span class="text-white font-medium">£{{ "%.2f"|format(pool.entry_fee_pence / 100) }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-slate-400 text-lg">group</span>
@@ -54,6 +54,11 @@
                         <span class="material-symbols-outlined text-slate-400 text-lg">upload</span>
                         <span class="text-slate-400">Submission ends:</span>
                         <span class="text-white font-medium">{{ pool.submission_ends_at.strftime('%d %b %Y') }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">how_to_vote</span>
+                        <span class="text-slate-400">Voting ends:</span>
+                        <span class="text-white font-medium">{{ pool.voting_ends_at.strftime('%d %b %Y') if pool.voting_ends_at else '—' }}</span>
                     </div>
                 </div>
                 {% if pool.technologies_required %}
@@ -77,7 +82,7 @@
                 <form method="POST" action="{{ url_for('main.prize_pool_join', pool_id=pool.id) }}" class="inline">
                     {{ form.hidden_tag() }}
                     <button type="submit" class="liquid-glass-cta w-full lg:w-auto px-8 py-3 rounded-xl font-bold text-sm">
-                        Join (£{{ "%.2f"|format(pool.entry_fee_gbp) }})
+                        Join (£{{ "%.2f"|format(pool.entry_fee_pence / 100) }})
                     </button>
                 </form>
                 {% endif %}
@@ -113,6 +118,13 @@
                         <span class="text-slate-400">Submission ends:</span>
                         <span class="text-white font-medium">{{ pool.submission_ends_at.strftime('%d %b %Y') if pool.submission_ends_at else '—' }}</span>
                     </div>
+                    {% if pool.voting_ends_at %}
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 text-lg">how_to_vote</span>
+                        <span class="text-slate-400">Voting ends:</span>
+                        <span class="text-white font-medium">{{ pool.voting_ends_at.strftime('%d %b %Y') }}</span>
+                    </div>
+                    {% endif %}
                 </div>
                 {% if pool.technologies_required %}
                 <div>

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="mb-10 liquid-glass-in">
     <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Prize Pool Admin</h1>
-    <p class="text-slate-400">Create and manage prize pools. Run <code class="text-mint">flask process-prize-pools</code> via cron to transition statuses and compute winners.</p>
+    <p class="text-slate-400">Create and manage prize pools. Run <code class="text-mint">flask process-prize-pools</code> via cron to transition statuses, compute winners, log payouts, and email winners/losers. If not everyone votes by the deadline, the pool still closes and results are based on votes received.</p>
 </div>
 
 <div class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in mb-10">
@@ -74,9 +74,12 @@
     <div class="space-y-4">
         {% for pool in pools %}
         <div class="rounded-xl border border-white/10 p-4 flex flex-wrap items-center justify-between gap-4">
-            <div>
+            <div class="min-w-0 flex-1">
                 <h3 class="font-display font-bold text-white">{{ pool.title }}</h3>
-                <p class="text-slate-500 text-sm">{{ pool.pool_type|capitalize }}{% if pool.entry_fee_gbp %} · £{{ pool.entry_fee_gbp }} entry{% endif %} · {{ pool.entry_count }} joined</p>
+                <p class="text-slate-500 text-sm">{{ pool.pool_type|capitalize }}{% if pool.entry_fee_pence %} · £{{ "%.2f"|format(pool.entry_fee_pence / 100) }} entry{% endif %} · {{ pool.entry_count }} joined</p>
+                {% if pool.status == 'closed' and pool.payouts %}
+                <p class="text-slate-400 text-xs mt-2">Payout log: {% for p in pool.payouts %}{{ p.user.username }} £{{ "%.2f"|format(p.amount_pence / 100) }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+                {% endif %}
             </div>
             <div class="flex items-center gap-2">
                 <span class="px-3 py-1 rounded-full text-xs font-semibold {% if pool.status == 'open' %}bg-mint/20 text-mint border border-mint/40{% elif pool.status == 'voting' %}bg-purple-500/20 text-purple-400 border border-purple-500/40{% else %}bg-slate-600/50 text-slate-300{% endif %}">{{ pool.status|capitalize }}</span>

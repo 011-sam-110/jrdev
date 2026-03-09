@@ -5,14 +5,14 @@ Uses shared helpers from app.utils and app.signup_helpers to keep handlers thin 
 """
 import logging
 import os
-from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify, current_app
+from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify, current_app, Response
 from werkzeug.utils import secure_filename
-from app import db, bcrypt, mail
+from app import db, bcrypt, mail, limiter
 from app.forms import RegistrationForm, LoginForm
 from app.profile_forms import EditProfileForm, EditMarkdownForm, AddPinnedProjectForm
-from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote, PrizePoolPairwiseVote
+from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote, PrizePoolPairwiseVote, PrizePoolPayout
 from sqlalchemy.exc import IntegrityError
-from app.decorators import require_role, require_verified, require_prize_pool_admin
+from app.decorators import require_role, require_verified, require_prize_pool_admin, can_manage_prize_pools
 from app.utils import (
     redirect_after_action,
     normalize_url,
@@ -25,6 +25,8 @@ from app.utils import (
     normalize_technologies_input,
     REVIEW_DEADLINE_HOURS,
     review_deadline_from,
+    sanitize_markdown,
+    is_safe_url,
 )
 from app.signup_helpers import (
     get_signup_for_business,
@@ -49,7 +51,7 @@ from flask_wtf.csrf import generate_csrf
 import pyotp
 import qrcode
 import io
-import markdown
+
 import base64
 from datetime import datetime, timedelta
 
@@ -60,13 +62,39 @@ except ImportError:
 
 main = Blueprint('main', __name__)
 
+
+@main.route('/robots.txt')
+def robots_txt():
+    return Response(
+        'User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\nSitemap: ' + url_for('main.sitemap_xml', _external=True) + '\n',
+        mimetype='text/plain',
+    )
+
+
+@main.route('/sitemap.xml')
+def sitemap_xml():
+    from datetime import datetime
+    pages = [
+        {'url': url_for('main.home', _external=True), 'priority': '1.0'},
+        {'url': url_for('main.about', _external=True), 'priority': '0.8'},
+        {'url': url_for('main.login', _external=True), 'priority': '0.6'},
+        {'url': url_for('main.register', _external=True), 'priority': '0.6'},
+    ]
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for page in pages:
+        xml += f'  <url><loc>{page["url"]}</loc><priority>{page["priority"]}</priority></url>\n'
+    xml += '</urlset>'
+    return Response(xml, mimetype='application/xml')
+
+
 @main.route("/developers")
 @login_required
 @require_verified
 @require_role('BUSINESS')
 def review_gallery():
     """Business view: developers by listing (accepted & fully signed) with phase (before/during/after sprint)."""
-    process_review_deadlines()
+    # process_review_deadlines() removed from request path — use CLI cron: flask process-review-deadlines
     my_listings = SprintListing.query.filter_by(business_id=current_user.id).all()
     listing_ids = [l.id for l in my_listings]
     signups = ListingSignup.query.filter(
@@ -147,7 +175,7 @@ def dashboard():
     """Role-based dashboard: developer (profile, stack, rating) or business (listings)."""
     if current_user.role == 'DEVELOPER':
         profile = current_user.developer_profile
-        md_html = markdown.markdown(profile.custom_markdown) if profile.custom_markdown else ""
+        md_html = sanitize_markdown(profile.custom_markdown) if profile.custom_markdown else ""
         stack_list = developer_stack_list(profile)
         avg_rating = developer_avg_rating(current_user.id)
         form = AddPinnedProjectForm()
@@ -335,6 +363,7 @@ This link expires in 30 minutes. If you did not create an account, you can ignor
 
 — JrDev Team''',
     )
+    msg.html = render_template('emails/verification.html', verify_url=verify_url, username=user.username)
     try:
         mail.send(msg)
         logger.info('Verification email sent to %s', user.email)
@@ -345,6 +374,7 @@ This link expires in 30 minutes. If you did not create an account, you can ignor
 
 
 @main.route("/register", methods=['GET', 'POST'])
+@limiter.limit("3 per minute")
 def register():
     if current_user.is_authenticated:
         return redirect_after_action()
@@ -417,6 +447,7 @@ def verify_email(token):
 
 
 @main.route("/resend-verification", methods=['POST'])
+@limiter.limit("3 per minute")
 def resend_verification():
     email = request.form.get('email') or session.get('verification_email_sent_to') or session.get('unverified_email')
     if not email:
@@ -461,6 +492,7 @@ def skip_2fa():
     return redirect(url_for('main.dashboard'))
 
 @main.route("/verify-2fa", methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def verify_2fa():
     if not session.get('2fa_user_id'):
         return redirect(url_for('main.login'))
@@ -476,7 +508,7 @@ def verify_2fa():
                 login_user(user)
                 session.pop('2fa_user_id', None)
                 next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('main.dashboard'))
+                return redirect(next_page) if (next_page and is_safe_url(next_page)) else redirect(url_for('main.dashboard'))
             else:
                 flash('Invalid 2FA Code', 'danger')
         else:
@@ -486,6 +518,7 @@ def verify_2fa():
     return render_template('verify_2fa.html')
 
 @main.route("/login", methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect_after_action()
@@ -499,7 +532,7 @@ def login():
                 return redirect(url_for('main.verify_email_sent'))
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('main.dashboard'))
+            return redirect(next_page) if (next_page and is_safe_url(next_page)) else redirect(url_for('main.dashboard'))
         flash('Login unsuccessful. Check email and password.', 'danger')
     return render_template('login.html', title='Login', form=form)
 
@@ -508,12 +541,56 @@ def logout():
     logout_user()
     return redirect_after_action()
 
+def _impersonation_enabled():
+    """True if dev impersonation is allowed (development/testing only)."""
+    if os.environ.get('ENABLE_IMPERSONATION', '').lower() in ('1', 'true', 'yes'):
+        return True
+    if current_app.config.get('DEBUG'):
+        return True
+    if os.environ.get('FLASK_ENV') == 'development':
+        return True
+    return False
+
+
+@main.route("/dev/impersonate/<int:user_id>")
+@login_required
+def dev_impersonate(user_id):
+    """Switch to another user (dev/testing only). Guarded by ENABLE_IMPERSONATION, DEBUG, or FLASK_ENV=development. Admin only."""
+    if not _impersonation_enabled():
+        flash('Impersonation is not available.', 'warning')
+        return redirect(url_for('main.account'))
+    if not can_manage_prize_pools():
+        flash('Unauthorized.', 'danger')
+        return redirect(url_for('main.account'))
+    target_user = User.query.get(user_id)
+    if not target_user:
+        flash('User not found.', 'warning')
+        return redirect(url_for('main.account'))
+    logger.warning('SECURITY: User %s (%s) impersonated user %s (%s)',
+                   current_user.id, current_user.email, target_user.id, target_user.email)
+    login_user(target_user)
+    flash(f'Now logged in as {target_user.username}. [Impersonation logged]', 'warning')
+    return redirect(url_for('main.dashboard'))
+
+
 @main.route("/account")
 @login_required
 @require_verified
 def account():
     nav_active = 'account'
-    return render_template('account.html', title='Account', nav_active=nav_active)
+    dev_test_users = []
+    if _impersonation_enabled():
+        dev_test_users = User.query.filter(
+            User.email.like('dev%@test.dev'),
+            User.role == 'DEVELOPER',
+        ).order_by(User.username).all()
+    return render_template(
+        'account.html',
+        title='Account',
+        nav_active=nav_active,
+        impersonation_enabled=_impersonation_enabled(),
+        dev_test_users=dev_test_users,
+    )
 
 # ── Billing (Stripe) – BUSINESS only ──
 
@@ -784,8 +861,9 @@ def developer_settings():
 
 def _prize_pool_join_checkout(pool, user):
     """Create Stripe Checkout Session for prize pool entry fee. Returns session URL or None on error."""
-    if not _stripe_available() or not pool.entry_fee_gbp or pool.entry_fee_gbp <= 0:
+    if not _stripe_available() or not pool.entry_fee_pence or pool.entry_fee_pence <= 0:
         return None
+    import uuid
     stripe.api_key = _stripe_secret_key()
     try:
         session = stripe.checkout.Session.create(
@@ -800,13 +878,14 @@ def _prize_pool_join_checkout(pool, user):
                         'name': f'Prize Pool: {pool.title}',
                         'description': f'Entry fee for {pool.title}',
                     },
-                    'unit_amount': int(pool.entry_fee_gbp * 100),
+                    'unit_amount': pool.entry_fee_pence,
                 },
                 'quantity': 1,
             }],
             metadata={'prize_pool_id': str(pool.id), 'user_id': str(user.id)},
             success_url=url_for('main.prize_pool_join_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('main.developer_prize_pools', _external=True),
+            idempotency_key=f'pool-{pool.id}-user-{user.id}-{uuid.uuid4().hex[:8]}',
         )
         return session.url
     except stripe.error.StripeError:
@@ -833,7 +912,7 @@ def prize_pool_join(pool_id):
         db.session.commit()
         flash('You have joined this prize pool!', 'success')
         return redirect(url_for('main.developer_joined_prize_pools'))
-    if pool.entry_fee_gbp and pool.entry_fee_gbp > 0:
+    if pool.entry_fee_pence and pool.entry_fee_pence > 0:
         checkout_url = _prize_pool_join_checkout(pool, current_user)
         if checkout_url:
             return redirect(checkout_url)
@@ -895,6 +974,50 @@ def prize_pool_join_success():
     return redirect(url_for('main.developer_joined_prize_pools'))
 
 
+@main.route("/stripe-webhook", methods=['POST'])
+@limiter.exempt
+def stripe_webhook():
+    """Verify Stripe webhook signature and handle payment events server-to-server."""
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+    endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET') or current_app.config.get('STRIPE_WEBHOOK_SECRET')
+    if not endpoint_secret or not _stripe_available():
+        logger.warning('Stripe webhook received but STRIPE_WEBHOOK_SECRET not configured')
+        return jsonify({'error': 'Webhook secret not configured'}), 500
+    stripe.api_key = _stripe_secret_key()
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except ValueError:
+        logger.warning('Stripe webhook: invalid payload')
+        return jsonify({'error': 'Invalid payload'}), 400
+    except stripe.error.SignatureVerificationError:
+        logger.warning('Stripe webhook: invalid signature')
+        return jsonify({'error': 'Invalid signature'}), 403
+    if event['type'] == 'checkout.session.completed':
+        sess = event['data']['object']
+        pool_id = int(sess.get('metadata', {}).get('prize_pool_id', 0))
+        user_id = int(sess.get('metadata', {}).get('user_id', 0))
+        if pool_id and user_id:
+            entry = PrizePoolEntry.query.filter_by(
+                prize_pool_id=pool_id, user_id=user_id
+            ).first()
+            if entry and not entry.payment_completed_at:
+                entry.payment_completed_at = datetime.utcnow()
+                entry.payment_intent_id = sess.get('payment_intent')
+                db.session.commit()
+                logger.info('Webhook: payment confirmed for pool %s user %s', pool_id, user_id)
+            elif not entry:
+                entry = PrizePoolEntry(
+                    prize_pool_id=pool_id, user_id=user_id,
+                    payment_intent_id=sess.get('payment_intent'),
+                    payment_completed_at=datetime.utcnow(),
+                )
+                db.session.add(entry)
+                db.session.commit()
+                logger.info('Webhook: created entry for pool %s user %s', pool_id, user_id)
+    return jsonify({'status': 'success'}), 200
+
+
 @main.route("/prize-pool/<int:pool_id>/submit", methods=['POST'])
 @login_required
 @require_verified
@@ -919,40 +1042,74 @@ def prize_pool_submit(pool_id):
     return redirect(url_for('main.developer_joined_listings'))
 
 
-def _get_next_pairwise_pair(pool_id, voter_id):
-    """Return (entry_a, entry_b) for next pairwise comparison, or (None, None) if no more pairs.
-    Excludes voter's entry, only entries with demo_video_url, prefers under-compared entries."""
-    pool = PrizePool.query.get(pool_id)
-    if not pool:
-        return None, None
-    eligible = [e for e in pool.entries if e.submitted_at and e.user_id != voter_id and e.demo_video_url and youtube_embed_url(e.demo_video_url)]
-    if len(eligible) < 2:
-        return None, None
-    # Pairs this voter has already compared
-    existing = PrizePoolPairwiseVote.query.filter_by(prize_pool_id=pool_id, voter_id=voter_id).all()
-    compared = {(min(v.entry_a_id, v.entry_b_id), max(v.entry_a_id, v.entry_b_id)) for v in existing}
-    # Count comparisons per entry (for coverage)
-    from collections import Counter
-    comp_count = Counter()
-    for v in pool.pairwise_votes:
-        comp_count[v.entry_a_id] += 1
-        comp_count[v.entry_b_id] += 1
-    # All possible pairs (excluding already compared by this voter)
+MIN_VOTES_PER_PAIR = 2
+
+
+def _review_progress(pool, voter_id):
+    """Calculate review quota and progress for a voter.
+    Returns (done, total, eligible, voter_votes, pair_vote_counts)."""
+    import math
+    eligible = [
+        e for e in pool.entries
+        if e.submitted_at and e.user_id != voter_id
+        and e.demo_video_url and youtube_embed_url(e.demo_video_url)
+    ]
+    n = len(eligible)
+    if n < 2:
+        return 0, 0, eligible, [], {}
+    voters = [
+        e for e in pool.entries
+        if e.submitted_at and e.demo_video_url
+    ]
+    k = max(len(voters), 1)
+    total_pairs = n * (n - 1) // 2
+    total_needed = total_pairs * MIN_VOTES_PER_PAIR
+    quota = max(1, math.ceil(total_needed / k))
+    voter_votes = PrizePoolPairwiseVote.query.filter_by(
+        prize_pool_id=pool.id, voter_id=voter_id
+    ).all()
+    done = len(voter_votes)
+    return done, quota, eligible, voter_votes, {}
+
+
+def _get_next_pairwise_pair(pool, voter_id):
+    """Return (entry_a, entry_b, done, total) for next pairwise comparison.
+    Returns (None, None, done, total) when the voter's quota is met or
+    all pairs needing votes are covered."""
     import itertools
     import random
+    from collections import Counter
+    done, quota, eligible, voter_votes, _ = _review_progress(
+        pool, voter_id
+    )
+    if len(eligible) < 2:
+        return None, None, 0, 0
+    if done >= quota:
+        return None, None, done, quota
+    compared = {
+        (min(v.entry_a_id, v.entry_b_id), max(v.entry_a_id, v.entry_b_id))
+        for v in voter_votes
+    }
+    pair_counts = Counter()
+    for v in pool.pairwise_votes:
+        key = (min(v.entry_a_id, v.entry_b_id), max(v.entry_a_id, v.entry_b_id))
+        pair_counts[key] += 1
     candidates = []
     for a, b in itertools.combinations(eligible, 2):
         key = (min(a.id, b.id), max(a.id, b.id))
-        if key not in compared:
-            score = -(comp_count[a.id] + comp_count[b.id])  # prefer less-compared
-            candidates.append((score, a, b))
+        if key in compared:
+            continue
+        votes_on_pair = pair_counts.get(key, 0)
+        if votes_on_pair >= MIN_VOTES_PER_PAIR:
+            continue
+        candidates.append((votes_on_pair, a, b))
     if not candidates:
-        return None, None
+        return None, None, done, quota
     candidates.sort(key=lambda x: x[0])
     best_score = candidates[0][0]
     best = [c for c in candidates if c[0] == best_score]
     _, ea, eb = random.choice(best)
-    return ea, eb
+    return ea, eb, done, quota
 
 
 @main.route("/prize-pool/<int:pool_id>/review/next-pair", methods=['GET'])
@@ -960,21 +1117,25 @@ def _get_next_pairwise_pair(pool_id, voter_id):
 @require_verified
 @require_role('DEVELOPER')
 def prize_pool_review_next_pair(pool_id):
-    """Return next pairwise comparison as JSON, or null if no more pairs."""
+    """Return next pairwise comparison + progress as JSON."""
     pool = PrizePool.query.get_or_404(pool_id)
-    entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
+    entry = PrizePoolEntry.query.filter_by(
+        prize_pool_id=pool_id, user_id=current_user.id
+    ).first()
     if not entry or not entry.submitted_at:
         return jsonify({'error': 'Must submit before reviewing'}), 403
-    ea, eb = _get_next_pairwise_pair(pool_id, current_user.id)
+    ea, eb, done, total = _get_next_pairwise_pair(pool, current_user.id)
+    progress = {'done': done, 'total': total}
     if not ea or not eb:
-        return jsonify({'pair': None})
+        return jsonify({'pair': None, 'progress': progress})
     embed_a = youtube_embed_url(ea.demo_video_url, autoplay=True, mute=True)
     embed_b = youtube_embed_url(eb.demo_video_url, autoplay=True, mute=True)
     return jsonify({
         'pair': {
             'entry_a': {'id': ea.id, 'demo_video_url': ea.demo_video_url, 'embed_url': embed_a},
             'entry_b': {'id': eb.id, 'demo_video_url': eb.demo_video_url, 'embed_url': embed_b},
-        }
+        },
+        'progress': progress,
     })
 
 
@@ -1035,10 +1196,79 @@ def prize_pool_vote_page(pool_id):
     if len(submitted_with_video) < 2:
         form = AddPinnedProjectForm()
         return render_template('prize_pool_vote.html', pool=pool, can_vote=False, form=form,
-                               title='Complete reviews', nav_active='prize_pools_joined', csrf_token=generate_csrf())
+                               title='Complete reviews', nav_active='prize_pools_joined', csrf_token=generate_csrf(),
+                               progress_done=0, progress_total=0, participant_count=0, entries_json='[]')
+    done, total, _, _, _ = _review_progress(pool, current_user.id)
+    participant_count = len([e for e in pool.entries if e.submitted_at and e.demo_video_url])
+    import json, random
+    shuffled = list(submitted_with_video)
+    random.shuffle(shuffled)
+    entries_data = [
+        {'id': e.id, 'label': 'Entry #' + str(i + 1), 'demo_video_url': e.demo_video_url,
+         'embed_url': youtube_embed_url(e.demo_video_url, autoplay=False, mute=True)}
+        for i, e in enumerate(shuffled)
+    ]
     form = AddPinnedProjectForm()
     return render_template('prize_pool_vote.html', pool=pool, can_vote=True, form=form,
-                           title='Complete reviews', nav_active='prize_pools_joined', csrf_token=generate_csrf())
+                           title='Complete reviews', nav_active='prize_pools_joined', csrf_token=generate_csrf(),
+                           progress_done=done, progress_total=total, participant_count=participant_count,
+                           entries_json=json.dumps(entries_data))
+
+
+@main.route("/prize-pool/<int:pool_id>/review/rank", methods=['POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER', json_response=True)
+def prize_pool_review_rank_submit(pool_id):
+    """Accept a full ranking (ordered list of entry IDs, best first) and
+    derive pairwise votes from it.  Every higher-ranked entry beats every
+    lower-ranked entry."""
+    import itertools
+    pool = PrizePool.query.get_or_404(pool_id)
+    entry = PrizePoolEntry.query.filter_by(
+        prize_pool_id=pool_id, user_id=current_user.id
+    ).first()
+    if not entry or not entry.submitted_at:
+        return jsonify({'error': 'Must submit before reviewing'}), 403
+    data = request.get_json() or {}
+    ranked_ids = data.get('ranking', [])
+    if not ranked_ids or len(ranked_ids) < 2:
+        return jsonify({'error': 'Ranking must include at least 2 entries'}), 400
+    # Validate all entries belong to this pool and are not the voter's own
+    valid_entries = {
+        e.id for e in pool.entries
+        if e.submitted_at and e.user_id != current_user.id
+        and e.demo_video_url and youtube_embed_url(e.demo_video_url)
+    }
+    for eid in ranked_ids:
+        if eid not in valid_entries:
+            return jsonify({'error': 'Invalid entry in ranking'}), 400
+    if len(set(ranked_ids)) != len(ranked_ids):
+        return jsonify({'error': 'Duplicate entries in ranking'}), 400
+    created = 0
+    for i, j in itertools.combinations(range(len(ranked_ids)), 2):
+        winner_id = ranked_ids[i]  # higher rank = winner
+        a_id = min(ranked_ids[i], ranked_ids[j])
+        b_id = max(ranked_ids[i], ranked_ids[j])
+        existing = PrizePoolPairwiseVote.query.filter_by(
+            prize_pool_id=pool_id, voter_id=current_user.id,
+            entry_a_id=a_id, entry_b_id=b_id
+        ).first()
+        if existing:
+            continue
+        vote = PrizePoolPairwiseVote(
+            prize_pool_id=pool_id,
+            voter_id=current_user.id,
+            entry_a_id=a_id,
+            entry_b_id=b_id,
+            winner_entry_id=winner_id,
+        )
+        db.session.add(vote)
+        created += 1
+    db.session.commit()
+    done, quota, _, _, _ = _review_progress(pool, current_user.id)
+    return jsonify({'ok': True, 'votes_created': created,
+                    'progress': {'done': done, 'total': quota}})
 
 
 @main.route("/prize-pool/<int:pool_id>/vote", methods=['POST'])
@@ -1088,7 +1318,7 @@ def prize_pool_vote_submit(pool_id):
 @require_verified
 @require_role('DEVELOPER')
 def prize_pool_results(pool_id):
-    """Show pool results: winners (top 10%) and all submitted entries."""
+    """Show pool results: winners (top 10%), payouts, and voting completion stats."""
     pool = PrizePool.query.get_or_404(pool_id)
     entry = PrizePoolEntry.query.filter_by(prize_pool_id=pool_id, user_id=current_user.id).first()
     if not entry:
@@ -1096,8 +1326,27 @@ def prize_pool_results(pool_id):
         return redirect(url_for('main.developer_joined_prize_pools'))
     submitted = [e for e in pool.entries if e.submitted_at]
     winners = [e for e in submitted if e.is_winner]
-    return render_template('prize_pool_results.html', pool=pool, winners=winners, submitted=submitted,
-                           title='Results', nav_active='prize_pools_joined')
+    # Voting completion: how many participants submitted at least one pairwise vote
+    voters_count = len(set(v.voter_id for v in pool.pairwise_votes))
+    participants_count = len(submitted)
+    # Current user's payout (if they won)
+    my_payout = None
+    if entry.payout:
+        my_payout = entry.payout.amount_pence / 100
+    # Payout amounts for display (entry_id -> amount in £)
+    payout_by_entry = {p.prize_pool_entry_id: p.amount_pence / 100 for p in pool.payouts}
+    return render_template(
+        'prize_pool_results.html',
+        pool=pool,
+        winners=winners,
+        submitted=submitted,
+        voters_count=voters_count,
+        participants_count=participants_count,
+        my_payout=my_payout,
+        payout_by_entry=payout_by_entry,
+        title='Results',
+        nav_active='prize_pools_joined',
+    )
 
 
 # ── Admin: Prize Pool Management ──
@@ -1117,7 +1366,7 @@ def admin_prize_pools():
         entry_fee = None
         if pool_type == 'paid':
             try:
-                entry_fee = float(request.form.get('entry_fee_gbp', 0) or 0)
+                entry_fee = int(float(request.form.get('entry_fee_gbp', 0) or 0) * 100)  # convert £ input to pence
             except (ValueError, TypeError):
                 entry_fee = 0
         description = (request.form.get('description') or '').strip() or None
@@ -1150,7 +1399,7 @@ def admin_prize_pools():
             essential_deliverables=essential_deliverables,
             optional_deliverables=optional_deliverables,
             pool_type=pool_type,
-            entry_fee_gbp=entry_fee if pool_type == 'paid' else None,
+            entry_fee_pence=entry_fee if pool_type == 'paid' else None,
             signup_ends_at=signup_ends,
             submission_ends_at=submission_ends,
             voting_ends_at=voting_ends,
@@ -1166,6 +1415,33 @@ def admin_prize_pools():
     form = AddPinnedProjectForm()
     return render_template('admin_prize_pools.html', title='Prize Pool Admin', nav_active='admin_prize_pools',
                            pools=pools, form=form)
+
+
+@main.route("/admin/prize-pool/entry/<int:entry_id>/refund", methods=['POST'])
+@login_required
+@require_verified
+@require_prize_pool_admin
+def admin_refund_entry(entry_id):
+    """Admin refund for a paid prize pool entry via Stripe."""
+    entry = PrizePoolEntry.query.get_or_404(entry_id)
+    if not entry.payment_intent_id:
+        flash('No payment to refund for this entry.', 'warning')
+        return redirect(url_for('main.admin_prize_pools'))
+    if not _stripe_available():
+        flash('Stripe is not configured.', 'danger')
+        return redirect(url_for('main.admin_prize_pools'))
+    stripe.api_key = _stripe_secret_key()
+    try:
+        stripe.Refund.create(payment_intent=entry.payment_intent_id)
+        entry.payment_completed_at = None
+        entry.payment_intent_id = entry.payment_intent_id + '_refunded'
+        db.session.commit()
+        logger.info('Admin refund: entry %s (pool %s, user %s)', entry.id, entry.prize_pool_id, entry.user_id)
+        flash(f'Refund issued for entry #{entry.id}.', 'success')
+    except stripe.error.StripeError as e:
+        logger.exception('Refund failed for entry %s: %s', entry.id, str(e))
+        flash(f'Refund failed: {str(e)}', 'danger')
+    return redirect(url_for('main.admin_prize_pools'))
 
 
 @main.route("/business/listings")
@@ -1225,7 +1501,7 @@ def launch_sprint():
         company_name=company_name,
         company_address=company_address,
         max_talent_pool=int(request.form.get('max_talent_pool', 3)),
-        pay_for_prototype=float(request.form.get('pay_for_prototype', 60)),
+        pay_for_prototype=int(float(request.form.get('pay_for_prototype', 60)) * 100),  # £ input to pence
         technologies_required=technologies_required,
         deliverables=(request.form.get('deliverables') or '').strip() or None,
         essential_deliverables=(request.form.get('essential_deliverables') or '').strip() or None,
@@ -1431,8 +1707,58 @@ def process_review_deadlines():
         db.session.commit()
 
 
+def _notify_prize_pool_results(pool, winners, loser_entries, payout_by_entry_id):
+    """Email winners and losers when a pool closes. payout_by_entry_id maps entry.id -> amount in £."""
+    username = current_app.config.get('MAIL_USERNAME')
+    password = current_app.config.get('MAIL_PASSWORD')
+    if not username or not password:
+        logger.warning('Prize pool result emails skipped: mail not configured.')
+        return
+    results_url = url_for('main.prize_pool_results', pool_id=pool.id, _external=True)
+    for entry in winners:
+        amount = payout_by_entry_id.get(entry.id, 0) or 0
+        amount_str = '£{:.2f}'.format(amount) if amount else 'N/A (free pool)'
+        try:
+            msg = Message(
+                subject=f'You won: {pool.title}',
+                sender=username,
+                recipients=[entry.user.email],
+                body=f'''Congratulations! You placed in the top 10% for "{pool.title}".
+
+Prize: {amount_str}
+
+View results: {results_url}
+
+— JrDev Team''',
+            )
+            msg.html = render_template('emails/winner.html', pool_title=pool.title, amount_str=amount_str, results_url=results_url)
+            mail.send(msg)
+            logger.info('Winner email sent to %s for pool %s', entry.user.email, pool.title)
+        except Exception as e:
+            logger.exception('Winner email failed for %s: %s', entry.user.email, e)
+    for entry in loser_entries:
+        try:
+            msg = Message(
+                subject=f'{pool.title} — results are in',
+                sender=username,
+                recipients=[entry.user.email],
+                body=f'''"{pool.title}" has closed. You didn't make the top 10% this time.
+
+View full results and winner list: {results_url}
+
+— JrDev Team''',
+            )
+            msg.html = render_template('emails/results.html', pool_title=pool.title, results_url=results_url)
+            mail.send(msg)
+            logger.info('Loser email sent to %s for pool %s', entry.user.email, pool.title)
+        except Exception as e:
+            logger.exception('Result email failed for %s: %s', entry.user.email, e)
+
+
 def process_prize_pool_winners():
-    """Transition pool statuses (open->voting, voting->closed) and compute top 10% winners when voting ends. Safe to call via cron."""
+    """Transition pool statuses (open->voting, voting->closed) and compute top 10% winners when voting ends.
+    Creates PrizePoolPayout records (backend log of who won and how much). Notifies winners and losers by email.
+    If not everyone voted: we still close at voting_ends_at; winners are computed from all pairwise votes received."""
     import math
     now = datetime.utcnow()
     # open -> voting when submission_ends_at passes
@@ -1441,7 +1767,7 @@ def process_prize_pool_winners():
         if pool.submission_ends_at and pool.submission_ends_at <= now:
             pool.status = 'voting'
             db.session.commit()
-    # voting -> closed when voting_ends_at passes; compute top 10% winners
+    # voting -> closed when voting_ends_at passes; compute top 10% winners, log payouts, notify
     voting_pools = PrizePool.query.filter_by(status='voting').all()
     for pool in voting_pools:
         if pool.voting_ends_at and pool.voting_ends_at <= now:
@@ -1452,15 +1778,45 @@ def process_prize_pool_winners():
                 wid = vote.winner_entry_id
                 scores[wid] = scores.get(wid, 0) + 1
             submitted = [e for e in pool.entries if e.submitted_at]
+            winners = []
+            payout_by_entry_id = {}
             if submitted and scores:
                 n = len(submitted)
                 top_count = max(1, math.ceil(0.1 * n))
                 sorted_entries = sorted(submitted, key=lambda e: scores.get(e.id, 0), reverse=True)
                 for e in pool.entries:
                     e.is_winner = False
-                for e in sorted_entries[:top_count]:
+                winners = sorted_entries[:top_count]
+                for e in winners:
                     e.is_winner = True
+                # Backend log: prize amounts (paid pools: pot split among winners; free: 0)
+                paid_count = len([e for e in pool.entries if e.payment_completed_at])
+                if winners and pool.entry_fee_pence and paid_count:
+                    total_pot_pence = pool.entry_fee_pence * paid_count
+                    amount_per_winner_pence = total_pot_pence // len(winners)
+                    for entry in winners:
+                        payout = PrizePoolPayout(
+                            prize_pool_id=pool.id,
+                            prize_pool_entry_id=entry.id,
+                            user_id=entry.user_id,
+                            amount_pence=amount_per_winner_pence,
+                        )
+                        db.session.add(payout)
+                        payout_by_entry_id[entry.id] = amount_per_winner_pence / 100
+                else:
+                    for entry in winners:
+                        payout = PrizePoolPayout(
+                            prize_pool_id=pool.id,
+                            prize_pool_entry_id=entry.id,
+                            user_id=entry.user_id,
+                            amount_pence=0,
+                            notes='Free pool' if pool.pool_type == 'free' else None,
+                        )
+                        db.session.add(payout)
+                        payout_by_entry_id[entry.id] = 0
             db.session.commit()
+            loser_entries = [e for e in submitted if e not in winners]
+            _notify_prize_pool_results(pool, winners, loser_entries, payout_by_entry_id)
 
 
 # ── Business reviews developer submissions ──
@@ -1475,7 +1831,7 @@ def signup_mark_reviewed(id):
         return err
     _apply_reviewed_state(signup)
     db.session.commit()
-    flash(f'Marked as reviewed. You have been charged £{signup.listing.pay_for_prototype:.0f} for this developer.', 'success')
+    flash(f'Marked as reviewed. You have been charged £{signup.listing.pay_for_prototype / 100:.2f} for this developer.', 'success')
     return redirect(url_for('main.review_gallery'))
 
 @main.route("/signup/<int:id>/flag", methods=['POST'])
@@ -1565,7 +1921,7 @@ def developer_profile_view(user_id):
         flash('User is not a developer.', 'warning')
         return redirect(url_for('main.business_my_listings'))
     profile = dev_user.developer_profile
-    md_html = markdown.markdown(profile.custom_markdown) if profile and profile.custom_markdown else ""
+    md_html = sanitize_markdown(profile.custom_markdown) if profile and profile.custom_markdown else ""
     stack_list = developer_stack_list(profile) if profile else []
     pinned_projects = profile.pinned_projects if profile else []
     avg_rating = developer_avg_rating(dev_user.id)
@@ -1610,7 +1966,7 @@ def profile_by_username(username):
         if not profile:
             flash('Profile not found.', 'warning')
             return redirect(url_for('main.dashboard'))
-        md_html = markdown.markdown(profile.custom_markdown) if profile.custom_markdown else ""
+        md_html = sanitize_markdown(profile.custom_markdown) if profile.custom_markdown else ""
         stack_list = developer_stack_list(profile)
         pinned_projects = profile.pinned_projects
         avg_rating = developer_avg_rating(user.id)
