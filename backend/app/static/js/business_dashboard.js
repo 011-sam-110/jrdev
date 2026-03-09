@@ -6,6 +6,17 @@
 (function () {
   'use strict';
 
+  function showFormError(form, message) {
+    var existing = form.querySelector('.js-form-error');
+    if (existing) existing.remove();
+    var el = document.createElement('div');
+    el.className = 'js-form-error rounded-lg px-4 py-3 text-sm font-medium bg-red-500/15 border border-red-500/30 text-red-300 mb-4';
+    el.setAttribute('role', 'alert');
+    el.textContent = message;
+    form.prepend(el);
+    setTimeout(function() { el.remove(); }, 5000);
+  }
+
   const DEFAULT_DEVS = 3;
   const DEFAULT_PER_DEV = 50;
   const MIN_PER_DEV = 50;
@@ -506,7 +517,7 @@
       var techTags = el.techList ? Array.from(el.techList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean) : [];
       if (techTags.length === 0) {
         ev.preventDefault();
-        alert('Please add at least one technology before launching a sprint.');
+        showFormError(el.launchForm, 'Please add at least one technology before launching a sprint.');
         return;
       }
       syncLaunchFormHiddenFields(el);
@@ -518,12 +529,12 @@
         var days = Math.round((end - start) / (1000 * 60 * 60 * 24));
         if (days < 3) {
           ev.preventDefault();
-          alert('Sprint duration must be at least 3 days.');
+          showFormError(el.launchForm, 'Sprint duration must be at least 3 days.');
           return;
         }
         if (days > 14) {
           ev.preventDefault();
-          alert('Sprint duration cannot exceed 14 days (2 weeks).');
+          showFormError(el.launchForm, 'Sprint duration cannot exceed 14 days (2 weeks).');
           return;
         }
       }

@@ -9,6 +9,18 @@
 </div>
 
 <div class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+    <p class="text-slate-500 text-sm mb-6">
+        Based on reviews from <strong class="text-slate-400">{{ voters_count }}</strong> of <strong class="text-slate-400">{{ participants_count }}</strong> participants.
+        {% if participants_count and voters_count < participants_count %}
+        <span class="text-amber-400/90">Not everyone completed their reviews before the deadline.</span>
+        {% endif %}
+    </p>
+    {% if my_payout is not none and my_payout > 0 %}
+    <div class="mb-6 p-4 rounded-xl bg-mint/10 border border-mint/30">
+        <p class="text-mint font-semibold">You won £{{ "%.2f"|format(my_payout) }}</p>
+        <p class="text-slate-400 text-sm mt-1">Prize recorded. Payout is processed separately.</p>
+    </div>
+    {% endif %}
     {% if winners %}
     <h2 class="font-display text-xl font-bold text-white mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined text-mint">emoji_events</span>
@@ -27,6 +39,9 @@
             <div class="p-4">
                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Winner</span>
                 <p class="text-slate-300 text-sm mt-2">{{ entry.user.username }}</p>
+                {% if payout_by_entry.get(entry.id) %}
+                <p class="text-mint text-sm font-medium mt-1">£{{ "%.2f"|format(payout_by_entry[entry.id]) }}</p>
+                {% endif %}
                 {% if entry.github_submission_url %}
                 <a href="{{ entry.github_submission_url }}" target="_blank" rel="noopener" class="text-mint hover:underline text-sm">GitHub →</a>
                 {% endif %}

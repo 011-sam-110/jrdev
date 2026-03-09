@@ -8,6 +8,21 @@ import json
 import re
 from datetime import timedelta
 from flask import redirect, url_for, request
+import markdown as md_lib
+import bleach
+
+
+_MD_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li',
+                    'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote']
+_MD_ALLOWED_ATTRS = {'a': ['href', 'title']}
+
+
+def sanitize_markdown(text):
+    """Convert markdown to HTML and sanitize to prevent XSS."""
+    if not text or not str(text).strip():
+        return ''
+    html = md_lib.markdown(str(text), extensions=['md_in_html'])
+    return bleach.clean(html, tags=_MD_ALLOWED_TAGS, attributes=_MD_ALLOWED_ATTRS)
 
 REVIEW_DEADLINE_HOURS = 48
 
@@ -24,15 +39,24 @@ def review_deadline_from(submitted_at):
 # -----------------------------------------------------------------------------
 
 
+def is_safe_url(target):
+    """Check that target URL is same-origin to prevent open redirects."""
+    from urllib.parse import urlparse
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(target)
+    return (test_url.scheme in ('', 'http', 'https') and
+            ref_url.netloc == test_url.netloc)
+
+
 def redirect_after_action(default_endpoint='main.home', allow_next=False):
     """
     Redirect after a successful action or denial.
-    If allow_next and request.args has 'next', redirect there;
+    If allow_next and request.args has 'next', redirect there (if same-origin);
     otherwise redirect to default_endpoint.
     """
     if allow_next:
         next_page = request.args.get('next')
-        if next_page:
+        if next_page and is_safe_url(next_page):
             return redirect(next_page)
     return redirect(url_for(default_endpoint))
 

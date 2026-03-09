@@ -32,7 +32,7 @@
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-mint text-lg">payments</span>
                         <span class="text-slate-400">Pay per developer:</span>
-                        <span class="text-white font-medium">£{{ listing.pay_for_prototype }}</span>
+                        <span class="text-white font-medium">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-slate-400 text-lg">star</span>

@@ -37,8 +37,8 @@ class User(db.Model, UserMixin):
     stripe_customer_id = db.Column(db.String(120), nullable=True)
     
     # Relationships
-    developer_profile = db.relationship('DeveloperProfile', backref='user', uselist=False, lazy=True)
-    projects = db.relationship('Project', backref='author', lazy=True)
+    developer_profile = db.relationship('DeveloperProfile', backref='user', uselist=False, lazy=True, cascade='all, delete-orphan')
+    projects = db.relationship('Project', backref='author', lazy=True, cascade='all, delete-orphan')
 
     def get_verification_token(self, expires_sec=1800):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -69,8 +69,8 @@ class User(db.Model, UserMixin):
 class DeveloperProfile(db.Model):
     """Developer-specific profile: headline, tech stack, links, markdown, theme options, stats."""
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+
     # Identity
     headline = db.Column(db.String(100), default='Aspiring Developer')
     bio = db.Column(db.Text, nullable=True) # Short bio
@@ -129,11 +129,11 @@ class Project(db.Model):
 class SprintListing(db.Model):
     """A prototype/sprint posting created by a business."""
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    business_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     company_name = db.Column(db.String(120), nullable=False)
     company_address = db.Column(db.String(255), nullable=True)
     max_talent_pool = db.Column(db.Integer, nullable=False, default=3)
-    pay_for_prototype = db.Column(db.Float, nullable=False, default=20.0)
+    pay_for_prototype = db.Column(db.Integer, nullable=False, default=2000)  # stored in pence
     business_rating = db.Column(db.Float, nullable=True)
     technologies_required = db.Column(db.String(500), nullable=True)
     deliverables = db.Column(db.Text, nullable=True)  # Newline-separated optional contract deliverables
@@ -145,7 +145,7 @@ class SprintListing(db.Model):
     sprint_ends_at = db.Column(db.DateTime, nullable=False)
     minimum_requirements_for_pay = db.Column(db.Integer, nullable=False, default=1)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    status = db.Column(db.String(20), nullable=False, default='open')
+    status = db.Column(db.String(20), nullable=False, default='open', index=True)
 
     business = db.relationship('User', backref='sprint_listings')
     signups = db.relationship('ListingSignup', backref='listing', cascade='all, delete-orphan')
@@ -198,10 +198,10 @@ class SprintListing(db.Model):
 class ListingSignup(db.Model):
     """Developer joining a sprint listing. Business can accept/deny; both parties e-sign contract."""
     id = db.Column(db.Integer, primary_key=True)
-    listing_id = db.Column(db.Integer, db.ForeignKey('sprint_listing.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('sprint_listing.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     joined_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    status = db.Column(db.String(20), nullable=False, default='pending')
+    status = db.Column(db.String(20), nullable=False, default='pending', index=True)
     developer_signed_at = db.Column(db.DateTime, nullable=True)
     business_signed_at = db.Column(db.DateTime, nullable=True)
     developer_signature_image = db.Column(db.Text, nullable=True)  # base64 PNG data URL
@@ -228,12 +228,12 @@ class PrizePool(db.Model):
     """Prize pool challenge: paid (entry fee, user voting) or free (AI review placeholder)."""
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    status = db.Column(db.String(20), nullable=False, default='open')  # open, voting, closed
+    status = db.Column(db.String(20), nullable=False, default='open', index=True)  # open, voting, closed
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
     technologies_required = db.Column(db.String(500), nullable=True)
     pool_type = db.Column(db.String(20), nullable=False, default='paid')  # paid | free
-    entry_fee_gbp = db.Column(db.Float, nullable=True)  # null = free pool
+    entry_fee_pence = db.Column(db.Integer, nullable=True)  # null = free pool, stored in pence
     signup_ends_at = db.Column(db.DateTime, nullable=False)
     submission_ends_at = db.Column(db.DateTime, nullable=False)
     voting_ends_at = db.Column(db.DateTime, nullable=True)  # for paid
@@ -255,11 +255,11 @@ class PrizePool(db.Model):
 
     @property
     def joined_count(self):
-        return len([e for e in self.entries if e.payment_completed_at is not None or self.entry_fee_gbp is None])
+        return len([e for e in self.entries if e.payment_completed_at is not None or self.entry_fee_pence is None])
 
     @property
     def is_free(self):
-        return self.pool_type == 'free' or self.entry_fee_gbp is None
+        return self.pool_type == 'free' or self.entry_fee_pence is None
 
     @property
     def essential_deliverables_list(self):
@@ -283,9 +283,12 @@ class PrizePool(db.Model):
 
 class PrizePoolEntry(db.Model):
     """Developer's entry in a prize pool. Payment required for paid pools."""
+    __table_args__ = (
+        db.UniqueConstraint('prize_pool_id', 'user_id', name='uq_prize_pool_entry_pool_user'),
+    )
     id = db.Column(db.Integer, primary_key=True)
-    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     joined_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     payment_intent_id = db.Column(db.String(255), nullable=True)  # Stripe
     payment_completed_at = db.Column(db.DateTime, nullable=True)
@@ -326,11 +329,27 @@ class PrizePoolVote(db.Model):
 class PrizePoolPairwiseVote(db.Model):
     """Pairwise comparison: voter chose winner_entry_id as best between entry_a and entry_b."""
     id = db.Column(db.Integer, primary_key=True)
-    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
-    voter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False, index=True)
+    voter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     entry_a_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
     entry_b_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
     winner_entry_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     voter = db.relationship('User', backref='prize_pool_pairwise_votes', foreign_keys=[voter_id])
+
+
+class PrizePoolPayout(db.Model):
+    """Log of prize payouts when a pool closes. One row per winning entry (who won, how much)."""
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
+    prize_pool_entry_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount_pence = db.Column(db.Integer, nullable=False, default=0)  # stored in pence
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)  # when actually paid out (manual/admin)
+    notes = db.Column(db.String(500), nullable=True)
+
+    prize_pool = db.relationship('PrizePool', backref=db.backref('payouts', lazy=True))
+    prize_pool_entry = db.relationship('PrizePoolEntry', backref=db.backref('payout', uselist=False, lazy=True))
+    user = db.relationship('User', backref='prize_pool_payouts', foreign_keys=[user_id])

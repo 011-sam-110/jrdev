@@ -48,7 +48,7 @@ if 'prize_pool' not in tables:
             description TEXT,
             technologies_required VARCHAR(500),
             pool_type VARCHAR(20) NOT NULL DEFAULT 'paid',
-            entry_fee_gbp REAL,
+            entry_fee_pence INTEGER,
             signup_ends_at DATETIME NOT NULL,
             submission_ends_at DATETIME NOT NULL,
             voting_ends_at DATETIME,

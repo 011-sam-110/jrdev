@@ -10,4 +10,5 @@ def init_db():
     print("Initialized the database.")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    app.run(debug=os.environ.get('FLASK_ENV') == 'development')

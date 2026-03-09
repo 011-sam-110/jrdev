@@ -339,7 +339,7 @@ def view_contract_for_signup(signup_id):
         'end_date': end_dt.strftime('%Y-%m-%d'),
         'duration_days': str(delta),
         'duration_weeks': str(weeks),
-        'pay': str(listing.pay_for_prototype),
+        'pay': f'{listing.pay_for_prototype / 100:.2f}',
         'min_tasks': str(listing.minimum_requirements_for_pay),
         'date': datetime.utcnow().strftime('%Y-%m-%d'),
         'mandatory_tasks': mandatory_tasks,

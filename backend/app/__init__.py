@@ -7,6 +7,7 @@ registers 404 handler, and creates DB tables in context.
 """
 import logging
 import os
+from datetime import timedelta
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -14,6 +15,8 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_wtf.csrf import generate_csrf
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -22,6 +25,7 @@ login_manager.login_view = 'main.login'
 login_manager.login_message_category = 'info'
 mail = Mail()
 migrate = Migrate()
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
 
 
 def create_app():
@@ -42,16 +46,36 @@ def create_app():
         pass
 
     app = Flask(__name__)
-    secret_key = os.environ.get('SECRET_KEY', '5791628bb0b13ce0c676dfde280ba245')
-    if not os.environ.get('SECRET_KEY') and os.environ.get('FLASK_ENV') == 'production':
-        import warnings
-        warnings.warn('SECRET_KEY not set; use a strong secret in production.', UserWarning)
+    is_production = os.environ.get('FLASK_ENV') == 'production'
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        if is_production:
+            raise RuntimeError('SECRET_KEY environment variable must be set in production')
+        import secrets
+        secret_key = secrets.token_hex(32)
+        _log.warning('Using random dev SECRET_KEY. Set SECRET_KEY env var for persistent sessions.')
     app.config['SECRET_KEY'] = secret_key
+
+    # Session security
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SECURE'] = is_production
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
+
+    # File upload limit
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
+
     database_url = os.environ.get('DATABASE_URL', 'sqlite:///site.db')
     # Vercel/Heroku use postgres:// but SQLAlchemy 1.4+ requires postgresql://
     if database_url and database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    if database_url.startswith('postgresql'):
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,
+            'pool_size': 10,
+            'pool_recycle': 300,
+        }
 
     # Mail (development/production: set EMAIL_USER, EMAIL_PASS in env)
     app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
@@ -94,6 +118,17 @@ def create_app():
     login_manager.init_app(app)
     mail.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        if is_production:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
 
     from app.routes import main
     app.register_blueprint(main)
@@ -128,16 +163,9 @@ def create_app():
 
     def markdown_filter(text):
         """Render markdown to HTML for templates. Sanitizes output to prevent XSS."""
-        if not text or not str(text).strip():
-            return ''
-        import markdown
         from markupsafe import Markup
-        import bleach
-        html = markdown.markdown(str(text), extensions=['md_in_html'])
-        allowed_tags = ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote']
-        allowed_attrs = {'a': ['href', 'title']}
-        safe_html = bleach.clean(html, tags=allowed_tags, attributes=allowed_attrs)
-        return Markup(safe_html)
+        from app.utils import sanitize_markdown
+        return Markup(sanitize_markdown(text))
 
     app.add_template_filter(markdown_filter, 'markdown')
 
@@ -169,8 +197,17 @@ def create_app():
         import click
         click.echo('Prize pools processed.')
 
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('403.html'), 403
+
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template('404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_error(e):
+        db.session.rollback()
+        return render_template('500.html'), 500
 
     return app

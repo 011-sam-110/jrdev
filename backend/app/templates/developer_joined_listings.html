@@ -103,7 +103,7 @@
             {% if signup.reviewed_at %}
             <div class="mt-4 p-4 rounded-xl bg-mint/10 border border-mint/20">
                 <p class="text-mint font-medium mb-2">Project complete and reviewed successfully</p>
-                <p class="text-slate-400 text-sm mb-3">Your payment of £{{ listing.pay_for_prototype }} will be processed for this sprint.</p>
+                <p class="text-slate-400 text-sm mb-3">Your payment of £{{ "%.2f"|format(listing.pay_for_prototype / 100) }} will be processed for this sprint.</p>
                 {% if signup.developer_rating_of_business is none %}
                 <form method="POST" action="{{ url_for('main.signup_rate_business', id=signup.id) }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
@@ -148,7 +148,7 @@
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-mint text-lg">payments</span>
                         <span class="text-slate-400">Your payment (per developer):</span>
-                        <span class="text-white font-medium">£{{ listing.pay_for_prototype }}</span>
+                        <span class="text-white font-medium">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }}</span>
                     </div>
                 </div>
                 {% if listing.essential_deliverables_list %}
@@ -254,7 +254,7 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h2 class="font-display text-xl font-bold text-white mb-1">{{ pool.title }}</h2>
-                    <p class="text-slate-500 text-sm">Joined {{ entry.joined_at.strftime('%d %b %Y') }}{% if pool.entry_fee_gbp %} · £{{ pool.entry_fee_gbp }} entry fee{% endif %}</p>
+                    <p class="text-slate-500 text-sm">Joined {{ entry.joined_at.strftime('%d %b %Y') }}{% if pool.entry_fee_pence %} · £{{ "%.2f"|format(pool.entry_fee_pence / 100) }} entry fee{% endif %}{% if pool.status in ('open', 'voting') %}{% if pool.submission_ends_at %} · Voting begins {{ pool.submission_ends_at.strftime('%d %b %Y') }}{% endif %}{% if pool.voting_ends_at %} · Voting ends {{ pool.voting_ends_at.strftime('%d %b %Y') }}{% endif %}{% endif %}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     {% if entry.is_winner %}
