@@ -1,0 +1,140 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}JrDev Admin – Sprints{% endblock %}
+{% block page_title %}Sprint Listings{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl space-y-6">
+
+    <!-- Create sprint form -->
+    <details class="rounded-xl border border-white/6 bg-[#111827]/50">
+        <summary class="px-5 py-4 cursor-pointer font-display font-semibold text-white text-sm flex items-center gap-2 select-none">
+            <span class="material-symbols-outlined text-indigo-400" style="font-size:1.1rem">add_circle</span>
+            Create Sprint (on behalf of a business)
+        </summary>
+        <div class="px-5 pb-5 border-t border-white/5 pt-4">
+            <form method="POST" action="{{ url_for('main.admin_sprints') }}" class="space-y-4 max-w-2xl">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Business user *</label>
+                        <select name="business_id" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm">
+                            {% for b in business_users %}
+                            <option value="{{ b.id }}">{{ b.username }} ({{ b.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Company name *</label>
+                        <input type="text" name="company_name" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="Acme Ltd"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Company address</label>
+                        <input type="text" name="company_address" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="123 Main St, London"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Pay for prototype (£) *</label>
+                        <input type="number" name="pay_for_prototype" value="60" min="1" step="0.01" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Max talent pool</label>
+                        <input type="number" name="max_talent_pool" value="3" min="1" max="20" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Signup ends *</label>
+                        <input type="date" name="signup_ends_at" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" id="adm-signup-ends"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Sprint begins *</label>
+                        <input type="date" name="sprint_begins_at" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" id="adm-sprint-begins"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Sprint ends *</label>
+                        <input type="date" name="sprint_ends_at" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" id="adm-sprint-ends"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Min requirements for pay</label>
+                        <input type="number" name="minimum_requirements_for_pay" value="1" min="0" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Technologies (comma-separated) *</label>
+                        <input type="text" name="technologies_required" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="React, Python, Flask"/>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Essential deliverables (one per line)</label>
+                        <textarea name="essential_deliverables" rows="3" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="Working demo&#10;GitHub repo with README"></textarea>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Optional deliverables (one per line)</label>
+                        <textarea name="deliverables" rows="2" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="Unit tests&#10;Deployment URL"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-colors">
+                    Create Sprint
+                </button>
+            </form>
+        </div>
+    </details>
+
+    <!-- All sprints -->
+    <div>
+        <p class="text-sm text-slate-400 mb-3">{{ listings|length }} total listings</p>
+        <div class="rounded-xl border border-white/6 overflow-x-auto">
+            <table class="w-full text-sm min-w-[700px]">
+                <thead>
+                    <tr class="border-b border-white/5 bg-white/3">
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">ID</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Company</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Business</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Signups</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pay</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/3">
+                    {% for l in listings %}
+                    <tr class="hover:bg-white/3 transition-colors">
+                        <td class="px-4 py-3 text-xs font-mono text-slate-500">{{ l.id }}</td>
+                        <td class="px-4 py-3 text-slate-200 font-medium">{{ l.company_name }}</td>
+                        <td class="px-4 py-3 text-xs text-slate-400">{{ l.business.username }}</td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                                {% if l.status == 'open' %}bg-emerald-500/15 text-emerald-400{% else %}bg-slate-600/40 text-slate-400{% endif %}">
+                                {{ l.status }}{% if l.is_full %} (full){% endif %}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-slate-400">{{ l.joined_count }} / {{ l.max_talent_pool }}</td>
+                        <td class="px-4 py-3 text-xs font-mono text-slate-400">£{{ "%.2f"|format(l.pay_for_prototype / 100) }}</td>
+                        <td class="px-4 py-3">
+                            {% if l.status == 'open' %}
+                            <form method="POST" action="{{ url_for('main.admin_sprint_close', listing_id=l.id) }}" onsubmit="return confirm('Force-close this sprint?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                                <button type="submit" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">Close</button>
+                            </form>
+                            {% else %}
+                            <span class="text-xs text-slate-600">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    var today = new Date().toISOString().slice(0,10);
+    function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0,10); }
+    var su = document.getElementById('adm-signup-ends');
+    var sb = document.getElementById('adm-sprint-begins');
+    var se = document.getElementById('adm-sprint-ends');
+    if (su && !su.value) su.value = addDays(today, 2);
+    if (sb && !sb.value) sb.value = addDays(today, 3);
+    if (se && !se.value) se.value = addDays(today, 10);
+})();
+</script>
+{% endblock %}
