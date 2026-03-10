@@ -1,0 +1,134 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}JrDev Admin – Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl space-y-8">
+
+    <!-- Stats grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Total Users</p>
+            <p class="font-display text-3xl font-bold text-white">{{ stats.total_users }}</p>
+            <p class="text-xs text-slate-500 mt-1">{{ stats.developers }} dev · {{ stats.businesses }} biz</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Verified</p>
+            <p class="font-display text-3xl font-bold text-emerald-400">{{ stats.verified }}</p>
+            <p class="text-xs text-slate-500 mt-1">{{ stats.unverified }} unverified</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Sprint Listings</p>
+            <p class="font-display text-3xl font-bold text-indigo-400">{{ stats.total_listings }}</p>
+            <p class="text-xs text-slate-500 mt-1">{{ stats.open_listings }} open · {{ stats.closed_listings }} closed</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Signups</p>
+            <p class="font-display text-3xl font-bold text-purple-400">{{ stats.total_signups }}</p>
+            <p class="text-xs text-slate-500 mt-1">{{ stats.accepted_signups }} accepted</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Prize Pools</p>
+            <p class="font-display text-3xl font-bold text-amber-400">{{ stats.total_pools }}</p>
+            <p class="text-xs text-slate-500 mt-1">{{ stats.open_pools }} open · {{ stats.closed_pools }} closed</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Pool Entries</p>
+            <p class="font-display text-3xl font-bold text-teal-400">{{ stats.pool_entries }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Prototype Subs</p>
+            <p class="font-display text-3xl font-bold text-sky-400">{{ stats.prototypes_submitted }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Payouts</p>
+            <p class="font-display text-3xl font-bold text-rose-400">£{{ "%.2f"|format(stats.total_payouts_pence / 100) }}</p>
+        </div>
+    </div>
+
+    <!-- Recent users -->
+    <div>
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="font-display font-semibold text-white">Recent Registrations</h2>
+            <a href="{{ url_for('main.admin_users') }}" class="text-xs text-indigo-400 hover:text-indigo-300">View all →</a>
+        </div>
+        <div class="rounded-xl border border-white/6 overflow-hidden">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-white/5 bg-white/3">
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Verified</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Joined</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/3">
+                    {% for u in recent_users %}
+                    <tr class="hover:bg-white/3 transition-colors">
+                        <td class="px-4 py-3">
+                            <a href="{{ url_for('main.admin_user_detail', user_id=u.id) }}" class="text-indigo-400 hover:text-indigo-300 font-medium">{{ u.username }}</a>
+                            <p class="text-xs text-slate-500">{{ u.email }}</p>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                                {% if u.role == 'DEVELOPER' %}bg-indigo-500/15 text-indigo-400
+                                {% else %}bg-teal-500/15 text-teal-400{% endif %}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if u.is_verified %}
+                            <span class="text-emerald-400 text-xs">✓ Yes</span>
+                            {% else %}
+                            <span class="text-slate-500 text-xs">No</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-slate-500 font-mono">
+                            {{ u.id }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent sprints -->
+    <div>
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="font-display font-semibold text-white">Recent Sprints</h2>
+            <a href="{{ url_for('main.admin_sprints') }}" class="text-xs text-indigo-400 hover:text-indigo-300">View all →</a>
+        </div>
+        <div class="rounded-xl border border-white/6 overflow-hidden">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-white/5 bg-white/3">
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Company</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Business</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pay</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/3">
+                    {% for l in recent_listings %}
+                    <tr class="hover:bg-white/3 transition-colors">
+                        <td class="px-4 py-3 text-slate-200 font-medium">{{ l.company_name }}</td>
+                        <td class="px-4 py-3 text-xs text-slate-400">{{ l.business.username }}</td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                                {% if l.status == 'open' %}bg-emerald-500/15 text-emerald-400
+                                {% else %}bg-slate-600/40 text-slate-400{% endif %}">
+                                {{ l.status }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-slate-400 font-mono">£{{ "%.2f"|format(l.pay_for_prototype / 100) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

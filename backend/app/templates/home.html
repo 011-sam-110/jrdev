@@ -167,10 +167,68 @@
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-body transition-colors duration-300">
+<div class="home-progress-bar" id="home-progress-bar" aria-hidden="true"></div>
 {% set nav_variant = 'home' %}
 {% include 'partials/public_nav.html' with context %}
 <section class="hero home-hero relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-b from-[#1e1b4b] via-[#0f172a] to-[#020617]">
 <div class="home-hero-pattern absolute inset-0 z-0 pointer-events-none" aria-hidden="true"></div>
+<!-- Aurora orbs -->
+<div class="home-hero-orb home-hero-orb--1" aria-hidden="true"></div>
+<div class="home-hero-orb home-hero-orb--2" aria-hidden="true"></div>
+<div class="home-hero-orb home-hero-orb--3" aria-hidden="true"></div>
+<!-- Floating tech pills -->
+<div class="home-hero-floats" aria-hidden="true">
+  <span class="home-float-pill" style="--x:3%;--delay:0s;--duration:11s">React</span>
+  <span class="home-float-pill" style="--x:9%;--delay:7s;--duration:9s">Python</span>
+  <span class="home-float-pill" style="--x:15%;--delay:2s;--duration:13s">Flask</span>
+  <span class="home-float-pill" style="--x:21%;--delay:14s;--duration:10s">Node.js</span>
+  <span class="home-float-pill" style="--x:27%;--delay:5s;--duration:14s">TypeScript</span>
+  <span class="home-float-pill" style="--x:33%;--delay:11s;--duration:8s">PostgreSQL</span>
+  <span class="home-float-pill" style="--x:39%;--delay:1s;--duration:12s">Next.js</span>
+  <span class="home-float-pill" style="--x:45%;--delay:18s;--duration:11s">Docker</span>
+  <span class="home-float-pill" style="--x:51%;--delay:3s;--duration:10s">Vue.js</span>
+  <span class="home-float-pill" style="--x:57%;--delay:9s;--duration:13s">MongoDB</span>
+  <span class="home-float-pill" style="--x:63%;--delay:0.5s;--duration:9s">GraphQL</span>
+  <span class="home-float-pill" style="--x:69%;--delay:16s;--duration:11s">Redis</span>
+  <span class="home-float-pill" style="--x:75%;--delay:4s;--duration:8s">AWS</span>
+  <span class="home-float-pill" style="--x:81%;--delay:12s;--duration:14s">Tailwind</span>
+  <span class="home-float-pill" style="--x:87%;--delay:2.5s;--duration:10s">Django</span>
+  <span class="home-float-pill" style="--x:93%;--delay:8s;--duration:12s">Kubernetes</span>
+  <span class="home-float-pill" style="--x:6%;--delay:20s;--duration:11s">Angular</span>
+  <span class="home-float-pill" style="--x:12%;--delay:6s;--duration:9s">Svelte</span>
+  <span class="home-float-pill" style="--x:18%;--delay:22s;--duration:13s">FastAPI</span>
+  <span class="home-float-pill" style="--x:24%;--delay:10s;--duration:10s">Go</span>
+  <span class="home-float-pill" style="--x:30%;--delay:3.5s;--duration:14s">Rust</span>
+  <span class="home-float-pill" style="--x:36%;--delay:17s;--duration:8s">MySQL</span>
+  <span class="home-float-pill" style="--x:42%;--delay:1.5s;--duration:12s">Firebase</span>
+  <span class="home-float-pill" style="--x:48%;--delay:13s;--duration:11s">Supabase</span>
+  <span class="home-float-pill" style="--x:54%;--delay:7.5s;--duration:9s">Prisma</span>
+  <span class="home-float-pill" style="--x:60%;--delay:24s;--duration:13s">Express</span>
+  <span class="home-float-pill" style="--x:66%;--delay:4.5s;--duration:10s">Laravel</span>
+  <span class="home-float-pill" style="--x:72%;--delay:19s;--duration:8s">Spring</span>
+  <span class="home-float-pill" style="--x:78%;--delay:2s;--duration:11s">Terraform</span>
+  <span class="home-float-pill" style="--x:84%;--delay:15s;--duration:14s">GCP</span>
+  <span class="home-float-pill" style="--x:90%;--delay:5.5s;--duration:9s">Azure</span>
+  <span class="home-float-pill" style="--x:4%;--delay:21s;--duration:12s">Stripe</span>
+  <span class="home-float-pill" style="--x:10%;--delay:9.5s;--duration:10s">Vite</span>
+  <span class="home-float-pill" style="--x:16%;--delay:25s;--duration:13s">Webpack</span>
+  <span class="home-float-pill" style="--x:22%;--delay:6.5s;--duration:8s">Sass</span>
+  <span class="home-float-pill" style="--x:28%;--delay:18.5s;--duration:11s">Swift</span>
+  <span class="home-float-pill" style="--x:34%;--delay:3s;--duration:14s">Kotlin</span>
+  <span class="home-float-pill" style="--x:40%;--delay:11.5s;--duration:9s">Flutter</span>
+  <span class="home-float-pill" style="--x:46%;--delay:0.8s;--duration:12s">Rails</span>
+  <span class="home-float-pill" style="--x:52%;--delay:23s;--duration:10s">Linux</span>
+  <span class="home-float-pill" style="--x:58%;--delay:8s;--duration:13s">Nginx</span>
+  <span class="home-float-pill" style="--x:64%;--delay:16.5s;--duration:8s">Remix</span>
+  <span class="home-float-pill" style="--x:70%;--delay:4s;--duration:11s">Kafka</span>
+  <span class="home-float-pill" style="--x:76%;--delay:13.5s;--duration:14s">Gatsby</span>
+  <span class="home-float-pill" style="--x:82%;--delay:2s;--duration:9s">OpenAI</span>
+  <span class="home-float-pill" style="--x:88%;--delay:20.5s;--duration:12s">SQLite</span>
+  <span class="home-float-pill" style="--x:94%;--delay:7s;--duration:10s">C#</span>
+  <span class="home-float-pill" style="--x:8%;--delay:26s;--duration:11s">Java</span>
+  <span class="home-float-pill" style="--x:44%;--delay:14.5s;--duration:13s">PHP</span>
+  <span class="home-float-pill" style="--x:80%;--delay:10s;--duration:9s">Figma</span>
+</div>
 <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 <div class="fade-in inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/10 text-white/95 text-xs font-semibold mb-8 uppercase tracking-wider">
 <span class="home-badge-dot w-2 h-2 rounded-full bg-secondary"></span>
@@ -190,6 +248,26 @@
 <p class="fade-in delay-300 mt-4 text-slate-500 text-sm" id="pricing">Starting at £50 per developer</p>
 </div>
 </section>
+
+<!-- Stats bar -->
+<div class="home-stats-bar">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-3 gap-4 text-center items-center">
+    <div class="home-stat-item">
+      <div class="font-display text-4xl sm:text-5xl font-bold home-stat-number" data-target="120" data-suffix="+">0</div>
+      <p class="text-neutral-500 dark:text-neutral-500 text-xs sm:text-sm mt-1.5 font-medium uppercase tracking-widest">Sprints Launched</p>
+    </div>
+    <div class="home-stat-item relative">
+      <div class="home-stat-divider absolute left-0 top-1/2 -translate-y-1/2 h-10 hidden sm:block"></div>
+      <div class="home-stat-divider absolute right-0 top-1/2 -translate-y-1/2 h-10 hidden sm:block"></div>
+      <div class="font-display text-4xl sm:text-5xl font-bold home-stat-number" data-target="85" data-suffix="+">0</div>
+      <p class="text-neutral-500 dark:text-neutral-500 text-xs sm:text-sm mt-1.5 font-medium uppercase tracking-widest">Developers Active</p>
+    </div>
+    <div class="home-stat-item">
+      <div class="font-display text-4xl sm:text-5xl font-bold home-stat-number" data-target="94" data-suffix="%">0</div>
+      <p class="text-neutral-500 dark:text-neutral-500 text-xs sm:text-sm mt-1.5 font-medium uppercase tracking-widest">Delivery Rate</p>
+    </div>
+  </div>
+</div>
 
 <section id="testimonials-section" class="py-24 relative overflow-hidden">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -507,7 +585,7 @@
 </div>
 </div>
 </section>
-<section class="py-24 relative overflow-hidden">
+<section class="home-benefits-section py-24 relative overflow-hidden">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="text-center mb-16 home-reveal">
 <div class="faq-intro" id="benefits-intro">
@@ -787,7 +865,9 @@
 </div>
 </section>
 
-<section class="py-24 relative overflow-hidden">
+<section class="home-final-cta py-24 relative overflow-hidden">
+<div class="home-final-cta-orb home-final-cta-orb--1" aria-hidden="true"></div>
+<div class="home-final-cta-orb home-final-cta-orb--2" aria-hidden="true"></div>
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 <div class="faq-card group relative rounded-3xl p-10 md:p-16 text-center overflow-hidden backdrop-blur-xl border transition-all duration-500 hover:-translate-y-0.5 border-neutral-200 dark:border-white/10 bg-white/70 dark:bg-neutral-900/50"
      onmousemove="this.style.setProperty('--faq-x',event.clientX-this.getBoundingClientRect().left+'px');this.style.setProperty('--faq-y',event.clientY-this.getBoundingClientRect().top+'px')"
@@ -809,7 +889,7 @@
 </div>
 </section>
 
-<footer class="border-t border-neutral-200 dark:border-white/5 py-12 bg-slate-100 dark:bg-neutral-950">
+<footer class="home-footer border-t border-neutral-200 dark:border-white/5 py-12 bg-slate-100 dark:bg-neutral-950">
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
 <div class="flex items-center gap-2">
 <span class="material-icons-round text-primary">code</span>
@@ -958,6 +1038,51 @@
             ping.classList.add('animate-ping');
         }
     }
+
+    // Scroll progress bar
+    (function() {
+        var bar = document.getElementById('home-progress-bar');
+        if (!bar) return;
+        function updateProgress() {
+            var scrolled = window.scrollY;
+            var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (maxScroll > 0 ? (scrolled / maxScroll) * 100 : 0) + '%';
+        }
+        window.addEventListener('scroll', updateProgress, { passive: true });
+        updateProgress();
+    })();
+
+    // Animated stat counters
+    (function() {
+        var statEls = document.querySelectorAll('.home-stat-number[data-target]');
+        if (!statEls.length) return;
+        var observed = false;
+        function animateCounter(el) {
+            var target = parseInt(el.getAttribute('data-target'), 10);
+            var suffix = el.getAttribute('data-suffix') || '';
+            var duration = 1800;
+            var start = null;
+            function step(ts) {
+                if (!start) start = ts;
+                var progress = Math.min((ts - start) / duration, 1);
+                var ease = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(ease * target) + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+        var io = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting && !observed) {
+                    observed = true;
+                    statEls.forEach(function(el) { animateCounter(el); });
+                    io.disconnect();
+                }
+            });
+        }, { threshold: 0.4 });
+        var statsBar = document.querySelector('.home-stats-bar');
+        if (statsBar) io.observe(statsBar);
+    })();
 
     // Intro pill animation on scroll (all section pills)
     ['faq-intro', 'testimonials-intro', 'process-intro', 'benefits-intro', 'demo-intro'].forEach(function(id) {

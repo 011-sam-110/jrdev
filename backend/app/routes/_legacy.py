@@ -5,7 +5,7 @@ Uses shared helpers from app.utils and app.signup_helpers to keep handlers thin 
 """
 import logging
 import os
-from flask import Blueprint, render_template, url_for, flash, redirect, request, session, jsonify, current_app, Response
+from flask import render_template, url_for, flash, redirect, request, session, jsonify, current_app, Response
 from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail, limiter
 from app.forms import RegistrationForm, LoginForm
@@ -60,7 +60,7 @@ try:
 except ImportError:
     stripe = None
 
-main = Blueprint('main', __name__)
+from app.routes import main  # noqa: E402 — must come after Blueprint is created in __init__
 
 
 @main.route('/robots.txt')

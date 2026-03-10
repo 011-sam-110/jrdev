@@ -174,8 +174,8 @@ def create_app():
 
     @app.context_processor
     def inject_csrf_token():
-        from app.decorators import can_manage_prize_pools
-        return {'csrf_token': generate_csrf(), 'can_manage_prize_pools': can_manage_prize_pools}
+        from app.decorators import can_manage_prize_pools, is_platform_admin
+        return {'csrf_token': generate_csrf(), 'can_manage_prize_pools': can_manage_prize_pools, 'is_platform_admin': is_platform_admin}
 
     with app.app_context():
         from app import models  # noqa: F401 - load models so db.create_all() sees them
