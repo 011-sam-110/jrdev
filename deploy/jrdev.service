@@ -1,0 +1,22 @@
+[Unit]
+Description=JrDev Flask Application
+After=network.target
+
+[Service]
+User=jrdev
+Group=www-data
+WorkingDirectory=/var/www/jrdev/backend
+Environment="FLASK_ENV=production"
+EnvironmentFile=/var/www/jrdev/.env
+ExecStart=/var/www/jrdev/venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --timeout 120 \
+    --access-logfile /var/log/jrdev/access.log \
+    --error-logfile /var/log/jrdev/error.log \
+    "app:create_app()"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

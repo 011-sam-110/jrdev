@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html class="scroll-smooth h-full" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}"/>
+    <title>{% block title %}JrDev Admin{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}"/>
+    <style type="text/tailwindcss">
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .admin-sidebar {
+            background: rgba(15, 23, 42, 0.95);
+            border-right: 1px solid rgba(255,255,255,0.06);
+        }
+        .admin-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgb(148, 163, 184);
+            transition: all 0.15s;
+        }
+        .admin-nav-link:hover {
+            background: rgba(255,255,255,0.06);
+            color: white;
+        }
+        .admin-nav-link.active {
+            background: rgba(79, 70, 229, 0.15);
+            color: #818cf8;
+            border: 1px solid rgba(79,70,229,0.2);
+        }
+        .admin-nav-link .material-symbols-outlined { font-size: 1.125rem; }
+        .stat-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 0.75rem;
+            padding: 1.25rem 1.5rem;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#4f46e5",
+                        navy: { 950: "#0a0f1e", 900: "#0F172A", 800: "#1E293B", 700: "#334155" },
+                    },
+                    fontFamily: {
+                        display: ["'Space Grotesk'", "sans-serif"],
+                        body: ["'Inter'", "sans-serif"],
+                        mono: ["'JetBrains Mono'", "monospace"],
+                    }
+                }
+            }
+        };
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-[#0a0f1e] text-slate-100 font-body h-full min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar fixed inset-y-0 left-0 w-56 flex flex-col z-40 hidden md:flex">
+        <!-- Logo + badge -->
+        <div class="flex items-center gap-2 px-4 py-5 border-b border-white/5">
+            <span class="font-bold text-2xl text-indigo-500">&lt;&gt;</span>
+            <span class="font-display font-bold text-lg tracking-tight text-white">JrDev</span>
+            <span class="ml-auto text-[10px] font-bold uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded">Admin</span>
+        </div>
+
+        <!-- Nav links -->
+        <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+            <a href="{{ url_for('main.admin_dashboard') }}" class="admin-nav-link {% if admin_section == 'dashboard' %}active{% endif %}">
+                <span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+            <a href="{{ url_for('main.admin_users') }}" class="admin-nav-link {% if admin_section == 'users' %}active{% endif %}">
+                <span class="material-symbols-outlined">group</span>
+                Users
+            </a>
+            <a href="{{ url_for('main.admin_sprints') }}" class="admin-nav-link {% if admin_section == 'sprints' %}active{% endif %}">
+                <span class="material-symbols-outlined">rocket_launch</span>
+                Sprints
+            </a>
+            <a href="{{ url_for('main.admin_prize_pools') }}" class="admin-nav-link {% if admin_section == 'prize_pools' %}active{% endif %}">
+                <span class="material-symbols-outlined">emoji_events</span>
+                Prize Pools
+            </a>
+
+            <div class="pt-3 pb-1 px-1">
+                <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-600">Database</p>
+            </div>
+            {% for model_name in ['users', 'sprint_listings', 'listing_signups', 'prize_pools', 'prize_pool_entries', 'prize_pool_payouts'] %}
+            <a href="{{ url_for('main.admin_database', model=model_name) }}" class="admin-nav-link text-xs {% if admin_section == 'db_' + model_name %}active{% endif %}">
+                <span class="material-symbols-outlined" style="font-size:1rem">table</span>
+                {{ model_name.replace('_', ' ').title() }}
+            </a>
+            {% endfor %}
+        </nav>
+
+        <!-- Bottom: current user + link back to site -->
+        <div class="border-t border-white/5 px-4 py-4 space-y-2">
+            <p class="text-xs text-slate-500 truncate">{{ current_user.email }}</p>
+            <a href="{{ url_for('main.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-colors">
+                <span class="material-symbols-outlined" style="font-size:0.875rem">arrow_back</span>
+                Back to site
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main area -->
+    <div class="flex-1 flex flex-col md:ml-56 min-h-screen">
+        <!-- Top bar (mobile + page title) -->
+        <header class="sticky top-0 z-30 flex items-center gap-4 px-6 py-3 bg-[#0a0f1e]/90 backdrop-blur border-b border-white/5">
+            <button id="admin-menu-btn" class="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10" aria-label="Toggle menu">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <h1 class="font-display font-semibold text-slate-100 text-base flex-1">
+                {% block page_title %}Admin{% endblock %}
+            </h1>
+            <span class="text-xs font-bold uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded">ADMIN</span>
+        </header>
+
+        <!-- Mobile sidebar overlay -->
+        <div id="admin-overlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden"></div>
+        <aside id="admin-mobile-sidebar" class="admin-sidebar fixed inset-y-0 left-0 w-56 flex flex-col z-40 md:hidden translate-x-[-100%] transition-transform duration-200">
+            <div class="flex items-center gap-2 px-4 py-5 border-b border-white/5">
+                <span class="font-bold text-2xl text-indigo-500">&lt;&gt;</span>
+                <span class="font-display font-bold text-lg text-white">JrDev</span>
+                <span class="ml-auto text-[10px] font-bold uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded">Admin</span>
+            </div>
+            <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+                <a href="{{ url_for('main.admin_dashboard') }}" class="admin-nav-link {% if admin_section == 'dashboard' %}active{% endif %}">
+                    <span class="material-symbols-outlined">dashboard</span>Dashboard
+                </a>
+                <a href="{{ url_for('main.admin_users') }}" class="admin-nav-link {% if admin_section == 'users' %}active{% endif %}">
+                    <span class="material-symbols-outlined">group</span>Users
+                </a>
+                <a href="{{ url_for('main.admin_sprints') }}" class="admin-nav-link {% if admin_section == 'sprints' %}active{% endif %}">
+                    <span class="material-symbols-outlined">rocket_launch</span>Sprints
+                </a>
+                <a href="{{ url_for('main.admin_prize_pools') }}" class="admin-nav-link {% if admin_section == 'prize_pools' %}active{% endif %}">
+                    <span class="material-symbols-outlined">emoji_events</span>Prize Pools
+                </a>
+                {% for model_name in ['users', 'sprint_listings', 'listing_signups', 'prize_pools', 'prize_pool_entries', 'prize_pool_payouts'] %}
+                <a href="{{ url_for('main.admin_database', model=model_name) }}" class="admin-nav-link text-xs">
+                    <span class="material-symbols-outlined" style="font-size:1rem">table</span>
+                    {{ model_name.replace('_', ' ').title() }}
+                </a>
+                {% endfor %}
+            </nav>
+            <div class="border-t border-white/5 px-4 py-4">
+                <a href="{{ url_for('main.dashboard') }}" class="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1">
+                    <span class="material-symbols-outlined" style="font-size:0.875rem">arrow_back</span>Back to site
+                </a>
+            </div>
+        </aside>
+
+        <!-- Flash messages -->
+        <div class="px-6 pt-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="mb-3 px-4 py-3 rounded-lg text-sm font-medium border
+                {% if category == 'success' %}bg-emerald-500/10 border-emerald-500/30 text-emerald-400
+                {% elif category == 'danger' %}bg-red-500/10 border-red-500/30 text-red-400
+                {% elif category == 'warning' %}bg-amber-500/10 border-amber-500/30 text-amber-400
+                {% else %}bg-indigo-500/10 border-indigo-500/30 text-indigo-400{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Page content -->
+        <main class="flex-1 px-6 py-6">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+    (function() {
+        var btn = document.getElementById('admin-menu-btn');
+        var sidebar = document.getElementById('admin-mobile-sidebar');
+        var overlay = document.getElementById('admin-overlay');
+        function open() {
+            sidebar && sidebar.classList.remove('translate-x-[-100%]');
+            overlay && overlay.classList.remove('hidden');
+        }
+        function close() {
+            sidebar && sidebar.classList.add('translate-x-[-100%]');
+            overlay && overlay.classList.add('hidden');
+        }
+        btn && btn.addEventListener('click', open);
+        overlay && overlay.addEventListener('click', close);
+    })();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

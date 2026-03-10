@@ -1,0 +1,133 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}JrDev Admin – Prize Pools{% endblock %}
+{% block page_title %}Prize Pools{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl space-y-6">
+
+    <!-- Create prize pool -->
+    <details class="rounded-xl border border-white/6 bg-[#111827]/50" open>
+        <summary class="px-5 py-4 cursor-pointer font-display font-semibold text-white text-sm flex items-center gap-2 select-none">
+            <span class="material-symbols-outlined text-amber-400" style="font-size:1.1rem">add_circle</span>
+            Create Prize Pool
+        </summary>
+        <div class="px-5 pb-5 border-t border-white/5 pt-4">
+            <form method="POST" action="{{ url_for('main.admin_prize_pools') }}" class="space-y-4 max-w-2xl">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Title *</label>
+                    <input type="text" name="title" required class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="March 2026 Build Challenge"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Pool type</label>
+                    <select id="pool_type" name="pool_type" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm">
+                        <option value="paid">Paid (entry fee + voting)</option>
+                        <option value="free">Free</option>
+                    </select>
+                </div>
+                <div id="entry-fee-row">
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Entry fee (£ GBP)</label>
+                    <input type="number" id="entry_fee_gbp" name="entry_fee_gbp" min="0" step="0.01" value="10" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Description (markdown)</label>
+                    <textarea name="description" rows="4" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="What should participants build?"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Technologies (comma-separated)</label>
+                    <input type="text" name="technologies_required" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="React, Python, Flask"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Essential deliverables (one per line)</label>
+                    <textarea name="essential_deliverables" rows="3" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="Working demo&#10;GitHub repo with README&#10;Deployed URL"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Optional deliverables (one per line)</label>
+                    <textarea name="optional_deliverables" rows="2" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm" placeholder="Unit tests&#10;Documentation"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Signup ends *</label>
+                        <input type="date" name="signup_ends_at" required id="pp-signup" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Submission ends *</label>
+                        <input type="date" name="submission_ends_at" required id="pp-submission" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                    </div>
+                    <div id="voting-ends-row">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Voting ends</label>
+                        <input type="date" name="voting_ends_at" id="pp-voting" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Max participants (blank = unlimited)</label>
+                    <input type="number" name="max_participants" min="1" class="liquid-glass-input w-full rounded-lg px-3 py-2 text-slate-200 text-sm"/>
+                </div>
+                <button type="submit" class="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold transition-colors">
+                    Create Prize Pool
+                </button>
+            </form>
+        </div>
+    </details>
+
+    <!-- All prize pools -->
+    <div>
+        <p class="text-sm text-slate-400 mb-3">{{ pools|length }} total pools</p>
+        <div class="space-y-3">
+            {% for pool in pools %}
+            <div class="rounded-xl border border-white/6 bg-[#111827]/40 px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+                <div class="min-w-0 flex-1">
+                    <p class="font-display font-semibold text-white text-sm">{{ pool.title }}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        {{ pool.pool_type|capitalize }}
+                        {% if pool.entry_fee_pence %} · £{{ "%.2f"|format(pool.entry_fee_pence / 100) }} entry{% endif %}
+                        · {{ pool.entry_count }} joined
+                        · created by {{ pool.created_by.username if pool.created_by else '—' }}
+                    </p>
+                    {% if pool.status == 'closed' and pool.payouts %}
+                    <p class="text-xs text-slate-500 mt-1">
+                        Payouts: {% for p in pool.payouts %}{{ p.user.username }} £{{ "%.2f"|format(p.amount_pence / 100) }}{% if not loop.last %}, {% endif %}{% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold
+                        {% if pool.status == 'open' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                        {% elif pool.status == 'voting' %}bg-purple-500/20 text-purple-400 border border-purple-500/30
+                        {% else %}bg-slate-600/40 text-slate-300 border border-slate-600/30{% endif %}">
+                        {{ pool.status|capitalize }}
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-slate-500 text-sm">No prize pools yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    var poolType = document.getElementById('pool_type');
+    var entryFeeRow = document.getElementById('entry-fee-row');
+    var votingEndsRow = document.getElementById('voting-ends-row');
+    function toggle() {
+        var isPaid = poolType && poolType.value === 'paid';
+        if (entryFeeRow) entryFeeRow.style.display = isPaid ? '' : 'none';
+        if (votingEndsRow) votingEndsRow.style.display = isPaid ? '' : 'none';
+    }
+    if (poolType) poolType.addEventListener('change', toggle);
+    toggle();
+    var today = new Date().toISOString().slice(0,10);
+    function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString().slice(0,10); }
+    var s = document.getElementById('pp-signup');
+    var sub = document.getElementById('pp-submission');
+    var v = document.getElementById('pp-voting');
+    if (s && !s.value) s.value = today;
+    if (sub && !sub.value) sub.value = addDays(today, 7);
+    if (v && !v.value) v.value = addDays(today, 14);
+})();
+</script>
+{% endblock %}

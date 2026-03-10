@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}JrDev{% endblock %}</title>
+<!--[if mso]><style>table,td{font-family:Arial,Helvetica,sans-serif!important;}</style><![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#0F172A;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+{# Preheader text (hidden preview text in inbox) #}
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
+  {% block preheader %}{% endblock %}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+</div>
+
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0F172A;">
+  <tr>
+    <td align="center" style="padding:24px 16px;">
+
+      {# Main card #}
+      <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#1E293B;border-radius:8px;overflow:hidden;">
+
+        {# Header bar #}
+        <tr>
+          <td style="background-color:#4f46e5;padding:20px 32px;">
+            <span style="font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">&lt;&gt; JrDev</span>
+          </td>
+        </tr>
+
+        {# Content area #}
+        <tr>
+          <td style="padding:32px 32px 16px 32px;color:#e2e8f0;font-size:16px;line-height:1.6;">
+            {% block content %}{% endblock %}
+          </td>
+        </tr>
+
+        {# CTA button #}
+        {% set cta_url = self.cta_url() | trim %}
+        {% set cta_text = self.cta_text() | trim %}
+        {% if cta_url and cta_text %}
+        <tr>
+          <td align="center" style="padding:8px 32px 32px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background-color:#4f46e5;border-radius:6px;">
+                  <a href="{{ cta_url }}" target="_blank" style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;">{{ cta_text }}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        {# Footer #}
+        <tr>
+          <td style="padding:16px 32px 24px 32px;border-top:1px solid #334155;color:#94a3b8;font-size:13px;line-height:1.5;">
+            &mdash; JrDev Team
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+{# Hidden blocks for CTA values #}
+{% block cta_url %}{% endblock %}
+{% block cta_text %}{% endblock %}
+</body>
+</html>

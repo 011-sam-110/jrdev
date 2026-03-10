@@ -26,7 +26,7 @@
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h2 class="font-display text-xl font-bold text-white mb-1">{{ pool.title }}</h2>
-                    <p class="text-slate-500 text-sm">Joined {{ entry.joined_at.strftime('%d %b %Y') }}{% if pool.entry_fee_gbp %} · £{{ pool.entry_fee_gbp }} entry fee{% endif %}</p>
+                    <p class="text-slate-500 text-sm">Joined {{ entry.joined_at.strftime('%d %b %Y') }}{% if pool.entry_fee_pence %} · £{{ "%.2f"|format(pool.entry_fee_pence / 100) }} entry fee{% endif %}{% if pool.status in ('open', 'voting') %}{% if pool.submission_ends_at %} · Voting begins {{ pool.submission_ends_at.strftime('%d %b %Y') }}{% endif %}{% if pool.voting_ends_at %} · Voting ends {{ pool.voting_ends_at.strftime('%d %b %Y') }}{% endif %}{% endif %}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     {% if entry.is_winner %}

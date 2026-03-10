@@ -1,2 +1,37 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-md w-full pointer-events-none" id="flash-container" aria-live="polite">
+    {% for category, message in messages %}
+    <div role="alert" class="pointer-events-auto flash-msg rounded-xl px-4 py-3 text-sm font-medium shadow-lg border backdrop-blur-md flex items-start gap-3 animate-[slideIn_0.3s_ease-out]
+        {% if category == 'success' %}bg-emerald-500/15 border-emerald-500/30 text-emerald-300
+        {% elif category == 'danger' %}bg-red-500/15 border-red-500/30 text-red-300
+        {% elif category == 'warning' %}bg-amber-500/15 border-amber-500/30 text-amber-300
+        {% else %}bg-sky-500/15 border-sky-500/30 text-sky-300{% endif %}">
+        <span class="material-symbols-outlined text-lg mt-0.5 flex-shrink-0">
+            {% if category == 'success' %}check_circle{% elif category == 'danger' %}error{% elif category == 'warning' %}warning{% else %}info{% endif %}
+        </span>
+        <span class="flex-1">{{ message }}</span>
+        <button type="button" onclick="this.parentElement.remove()" class="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity" aria-label="Dismiss">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+<style>
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+<script>
+setTimeout(function() {
+    var msgs = document.querySelectorAll('.flash-msg');
+    msgs.forEach(function(el, i) {
+        setTimeout(function() {
+            el.style.transition = 'opacity 0.4s, transform 0.4s';
+            el.style.opacity = '0';
+            el.style.transform = 'translateX(100%)';
+            setTimeout(function() { el.remove(); }, 400);
+        }, 4000 + i * 500);
+    });
+}, 0);
+</script>
+{% endif %}
 {% endwith %}

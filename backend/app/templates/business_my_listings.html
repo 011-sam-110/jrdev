@@ -26,7 +26,7 @@
                 <div>
                     <h2 class="font-display text-lg font-bold text-white">{{ listing.company_name }}</h2>
                     <p class="text-slate-500 text-sm mt-1">Created {{ listing.created_at.strftime('%d %b %Y') }} · Sprint {{ listing.sprint_begins_at.strftime('%d %b') }} – {{ listing.sprint_ends_at.strftime('%d %b %Y') }}</p>
-                    <p class="text-slate-400 text-sm mt-2">£{{ listing.pay_for_prototype }} total · {{ listing.sprint_timeline_days }} days · {{ listing.technologies_required or 'No techs specified' }}</p>
+                    <p class="text-slate-400 text-sm mt-2">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }} total · {{ listing.sprint_timeline_days }} days · {{ listing.technologies_required or 'No techs specified' }}</p>
                 </div>
                 <div class="flex items-center gap-4 sm:flex-col sm:items-end">
                     <div class="flex items-center gap-2">

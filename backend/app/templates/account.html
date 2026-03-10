@@ -47,6 +47,17 @@
             {% endif %}
             <a href="{{ url_for('main.dashboard') }}" class="px-5 py-2.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Dashboard</a>
         </div>
+
+        {% if impersonation_enabled and dev_test_users %}
+        <div class="mt-8 pt-6 border-t border-white/10">
+            <p class="text-slate-500 text-xs font-medium uppercase tracking-wider mb-2">Dev: Switch account</p>
+            <div class="flex flex-wrap gap-2">
+                {% for u in dev_test_users %}
+                <a href="{{ url_for('main.dev_impersonate', user_id=u.id) }}" class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white text-sm transition-colors">{{ u.username }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

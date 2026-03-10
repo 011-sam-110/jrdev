@@ -1,27 +1,28 @@
-# Core (add versions as needed)
-flask
-flask-sqlalchemy
-flask-login
-flask-wtf
-flask-bcrypt
-flask-mail
-flask-migrate
-reportlab
-pyotp
-qrcode
-markdown
+# Core
+flask==3.0.2
+flask-sqlalchemy==3.1.1
+flask-login==0.6.3
+flask-wtf==1.2.2
+flask-bcrypt==1.0.1
+flask-mail==0.10.0
+flask-migrate==4.1.0
+reportlab==4.4.10
+pyotp==2.9.0
+qrcode==8.2
+markdown==3.10
+pillow==11.2.1
 
 # Security: sanitize user markdown (XSS)
-bleach
+bleach==6.3.0
 
 # Optional: load .env for local development
-python-dotenv
+python-dotenv==1.2.1
 
 # Rate limiting (login / 2FA)
-flask-limiter
+flask-limiter==4.1.1
 
 # Payments
-stripe
+stripe==14.4.1
 
 # PostgreSQL (required for Vercel; SQLite does not persist on serverless)
 psycopg2-binary

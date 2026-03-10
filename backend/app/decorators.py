@@ -44,6 +44,29 @@ def require_prize_pool_admin(f):
     return inner
 
 
+def is_platform_admin():
+    """True if current user's email is in ADMIN_EMAILS env var (strict check, no fallback)."""
+    if not current_user.is_authenticated:
+        return False
+    admin_emails = _prize_pool_admin_emails()
+    if not admin_emails:
+        return False
+    return (current_user.email or '').strip().lower() in admin_emails
+
+
+def require_admin(f):
+    """Require current user to be a platform admin (email in ADMIN_EMAILS). No role fallback."""
+    @wraps(f)
+    def inner(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('main.login'))
+        if not is_platform_admin():
+            flash('Access denied. This area is restricted to platform admins.', 'danger')
+            return redirect(url_for('main.dashboard'))
+        return f(*args, **kwargs)
+    return inner
+
+
 def require_verified(f):
     """Require current_user to be email-verified; else redirect to verify_email_sent."""
     @wraps(f)
