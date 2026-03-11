@@ -36,6 +36,11 @@ from app.signup_helpers import (
 
 logger = logging.getLogger(__name__)
 from flask_login import login_user, current_user, logout_user, login_required
+
+try:
+    from gradient import Gradient as GradientClient
+except ImportError:
+    GradientClient = None
 from flask_mail import Message
 
 
@@ -179,6 +184,10 @@ def dashboard():
         stack_list = developer_stack_list(profile)
         avg_rating = developer_avg_rating(current_user.id)
         form = AddPinnedProjectForm()
+        pending_sign_signups = [
+            s for s in current_user.listing_signups
+            if s.status == 'accepted' and not s.developer_signed_at
+        ]
 
         return render_template('developer_dashboard.html',
                                title='Dashboard',
@@ -187,6 +196,8 @@ def dashboard():
                                stack_list=stack_list,
                                form=form,
                                avg_rating=avg_rating,
+                               pending_sign_signups=pending_sign_signups,
+                               now_utc=datetime.utcnow(),
                                nav_active='dashboard')
     elif current_user.role == 'BUSINESS':
         my_listings = SprintListing.query.filter_by(business_id=current_user.id).order_by(SprintListing.created_at.desc()).all()
@@ -771,7 +782,7 @@ def developer_joined_listings():
     prize_pool_entries = PrizePoolEntry.query.filter_by(user_id=current_user.id).order_by(PrizePoolEntry.joined_at.desc()).all()
     form = AddPinnedProjectForm()
     profile = current_user.developer_profile
-    return render_template('developer_joined_listings.html', title='Joined Listings', nav_active='joined', signups=signups, signup_review_deadlines=signup_review_deadlines, prize_pool_entries=prize_pool_entries, form=form, saved_signature=profile.saved_signature if profile else None, saved_contractor_address=profile.saved_contractor_address if profile else None)
+    return render_template('developer_joined_listings.html', title='Joined Listings', nav_active='joined', signups=signups, signup_review_deadlines=signup_review_deadlines, prize_pool_entries=prize_pool_entries, form=form, saved_signature=profile.saved_signature if profile else None, saved_contractor_address=profile.saved_contractor_address if profile else None, now_utc=datetime.utcnow())
 
 
 # ── Prize Pools ──
@@ -1349,6 +1360,92 @@ def prize_pool_results(pool_id):
     )
 
 
+# ── AI Sprint Improvement ──
+
+@main.route("/api/improve-sprint", methods=['POST'])
+@login_required
+@require_verified
+@require_role('BUSINESS', json_response=True)
+@limiter.limit("10 per hour")
+def improve_sprint():
+    api_key = os.environ.get('MODEL_ACCESS_KEY')
+    if not api_key or GradientClient is None:
+        return jsonify({'error': 'AI improvements are not available right now.'}), 503
+
+    data = request.get_json() or {}
+    idea = (data.get('idea') or '').strip()
+    essential_deliverables = data.get('essential_deliverables') or []
+    deliverables = data.get('deliverables') or []
+    technologies = data.get('technologies') or []
+    devs = int(data.get('devs') or 3)
+    investment_per_dev = int(data.get('investment_per_dev') or 50)
+    min_requirements = int(data.get('min_requirements') or 1)
+    essential_count = int(data.get('essential_count') or 0)
+
+    prompt = _build_improve_sprint_prompt(
+        idea, essential_deliverables, deliverables, technologies,
+        devs, investment_per_dev, min_requirements, essential_count
+    )
+    try:
+        client = GradientClient(model_access_key=api_key)
+        response = client.chat.completions.create(
+            model="llama3.3-70b-instruct",
+            messages=[
+                {"role": "system", "content": "You are an expert sprint advisor. Always respond with valid JSON only — no markdown, no explanation outside the JSON object."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1500,
+        )
+        raw = response.choices[0].message.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        import json as _json
+        result = _json.loads(raw)
+        return jsonify(result)
+    except Exception as e:
+        logger.error("OpenRouter improve-sprint error: %s", e)
+        return jsonify({'error': 'AI service error. Please try again.'}), 502
+
+
+def _build_improve_sprint_prompt(idea, essential_deliverables, deliverables,
+                                  technologies, devs, investment_per_dev,
+                                  min_requirements, essential_count):
+    return f"""Review this sprint listing and suggest improvements for clarity, specificity, and developer appeal.
+
+CURRENT SPRINT:
+- Idea/Description: {idea or '(empty)'}
+- Essential Deliverables: {essential_deliverables}
+- Optional Deliverables: {deliverables}
+- Technologies: {technologies}
+- Developer Allocation: {devs} (range 1-5)
+- Investment Per Dev: £{investment_per_dev} (range £50-£300, multiples of 5)
+- Total Deliverables (min_requirements): {min_requirements} (range 1-8)
+- Essential Count: {essential_count} (range 0 to floor(min_requirements/2))
+
+INSTRUCTIONS:
+1. Improve idea/description to be specific and action-oriented (2-4 sentences).
+2. Suggest clearer essential and optional deliverables as lists.
+3. Always suggest an appropriate technology stack based on the sprint description. Keep existing technologies where relevant, add/remove as needed.
+4. Suggest appropriate numeric values within stated ranges.
+5. Always include "technologies" in "changes". Only include other fields in "changes" if you are actually changing them.
+
+Respond ONLY with this JSON:
+{{
+  "idea": "improved description",
+  "essential_deliverables": ["item1", "item2"],
+  "deliverables": ["item1", "item2"],
+  "technologies": ["Tech1", "Tech2"],
+  "devs": 3,
+  "investment_per_dev": 100,
+  "min_requirements": 4,
+  "essential_count": 2,
+  "changes": ["idea", "technologies"]
+}}"""
+
+
 # ── Admin: Full Platform Dashboard ──
 
 _ADMIN_DB_MODELS = {
@@ -1812,6 +1909,7 @@ def signup_accept(id):
     if err:
         return err
     signup.status = 'accepted'
+    signup.signing_deadline_at = datetime.utcnow() + timedelta(days=2)
     db.session.commit()
     flash(f'{signup.user.username} accepted.', 'success')
     return redirect(url_for('main.review_gallery'))
@@ -1910,6 +2008,7 @@ def _apply_reviewed_state(signup):
     """Set reviewed_at and update developer profile stats (shared by mark-reviewed and auto-release). Caller must commit."""
     import json
     signup.reviewed_at = datetime.utcnow()
+    signup.flagged_for_review = False
     profile = signup.user.developer_profile
     if profile:
         profile.prototypes_completed = (profile.prototypes_completed or 0) + 1
@@ -1949,6 +2048,30 @@ def apply_auto_release(signup):
     if signup.reviewed_at is not None:
         return
     _apply_reviewed_state(signup)
+
+
+def process_signing_deadlines():
+    """Deny accepted signups where developer hasn't signed within 2 days. Auto-passes slot to next pending dev."""
+    now = datetime.utcnow()
+    overdue = ListingSignup.query.filter(
+        ListingSignup.status == 'accepted',
+        ListingSignup.developer_signed_at.is_(None),
+        ListingSignup.signing_deadline_at.isnot(None),
+        ListingSignup.signing_deadline_at <= now,
+    ).all()
+    for signup in overdue:
+        signup.status = 'denied'
+        # Auto-pass: accept next pending developer on same listing
+        next_pending = ListingSignup.query.filter_by(
+            listing_id=signup.listing_id,
+            status='pending',
+        ).order_by(ListingSignup.joined_at.asc()).first()
+        if next_pending:
+            next_pending.status = 'accepted'
+            next_pending.signing_deadline_at = now + timedelta(days=2)
+    if overdue:
+        db.session.commit()
+    return len(overdue)
 
 
 def process_review_deadlines():

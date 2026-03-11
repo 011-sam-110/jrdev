@@ -26,3 +26,6 @@ stripe==14.4.1
 
 # PostgreSQL (required for Vercel; SQLite does not persist on serverless)
 psycopg2-binary
+
+# AI improvements (DigitalOcean Gradient SDK)
+gradient

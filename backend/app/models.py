@@ -213,6 +213,7 @@ class ListingSignup(db.Model):
     requirements_met = db.Column(db.String(500), nullable=True)
     reviewed_at = db.Column(db.DateTime, nullable=True)
     flagged_for_review = db.Column(db.Boolean, default=False)
+    signing_deadline_at = db.Column(db.DateTime, nullable=True)  # 2 days after accepted
     business_rating_of_developer = db.Column(db.Integer, nullable=True)  # 1-5
     developer_rating_of_business = db.Column(db.Integer, nullable=True)  # 1-5
     developer_withdrew = db.Column(db.Boolean, default=False)

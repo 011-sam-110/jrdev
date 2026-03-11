@@ -21,40 +21,108 @@
 <div class="space-y-6">
     {% for listing in my_listings %}
     <div class="liquid-glass-panel rounded-2xl p-6 sm:p-8 border border-white/5 liquid-glass-in {% if listing.status == 'closed' %}opacity-80{% endif %}">
-        <div class="flex flex-col gap-4">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h2 class="font-display text-lg font-bold text-white">{{ listing.company_name }}</h2>
-                    <p class="text-slate-500 text-sm mt-1">Created {{ listing.created_at.strftime('%d %b %Y') }} · Sprint {{ listing.sprint_begins_at.strftime('%d %b') }} – {{ listing.sprint_ends_at.strftime('%d %b %Y') }}</p>
-                    <p class="text-slate-400 text-sm mt-2">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }} total · {{ listing.sprint_timeline_days }} days · {{ listing.technologies_required or 'No techs specified' }}</p>
-                </div>
-                <div class="flex items-center gap-4 sm:flex-col sm:items-end">
-                    <div class="flex items-center gap-2">
-                        <span class="text-slate-400 text-sm">Joined:</span>
-                        <span class="text-2xl font-display font-bold text-mint">{{ listing.joined_count }}</span>
-                        <span class="text-slate-500 text-sm">/ {{ listing.max_talent_pool }}</span>
-                    </div>
-                    {% if listing.status == 'closed' or listing.is_full %}
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-600/50 text-slate-300">Pool full</span>
-                    {% else %}
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Open</span>
-                    {% endif %}
-                    <button type="button" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 transition-colors text-sm font-medium js-listing-toggle" data-listing-id="{{ listing.id }}" aria-expanded="false" aria-controls="listing-developers-{{ listing.id }}">
-                        <span class="text-slate-400">Developers</span>
-                        <span class="material-symbols-outlined text-lg transition-transform js-chevron">expand_more</span>
-                    </button>
-                </div>
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+                <h2 class="font-display text-lg font-bold text-white">{{ listing.company_name }}</h2>
+                <p class="text-slate-500 text-sm mt-1">Created {{ listing.created_at.strftime('%d %b %Y') }}</p>
             </div>
-            <div id="listing-developers-{{ listing.id }}" class="hidden border-t border-white/10 pt-4 mt-2 js-listing-developers">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 text-sm">
+                    <span class="text-2xl font-display font-bold text-mint">{{ listing.joined_count }}</span>
+                    <span class="text-slate-500">/ {{ listing.max_talent_pool }} devs</span>
+                </div>
+                {% if listing.status == 'closed' or listing.is_full %}
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-600/50 text-slate-300">Pool full</span>
+                {% else %}
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Open</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2-column layout: Sprint Info & Legal | Developers -->
+        <div class="grid lg:grid-cols-5 gap-6">
+            <!-- Sprint Info & Legal (col-span-3) -->
+            <div class="lg:col-span-3 space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Sprint Info & Legal</h3>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-mint text-lg">payments</span>
+                        <div>
+                            <p class="text-slate-500 text-xs">Pay per dev</p>
+                            <p class="text-white font-medium">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-mint text-lg">schedule</span>
+                        <div>
+                            <p class="text-slate-500 text-xs">Duration</p>
+                            <p class="text-white font-medium">{{ listing.sprint_timeline_days }} days</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-mint text-lg">calendar_today</span>
+                        <div>
+                            <p class="text-slate-500 text-xs">Sprint dates</p>
+                            <p class="text-white font-medium">{{ listing.sprint_begins_at.strftime('%d %b') }} – {{ listing.sprint_ends_at.strftime('%d %b %Y') }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-mint text-lg">task_alt</span>
+                        <div>
+                            <p class="text-slate-500 text-xs">Min for pay</p>
+                            <p class="text-white font-medium">{{ listing.minimum_requirements_for_pay }} task{{ 's' if listing.minimum_requirements_for_pay != 1 else '' }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% if listing.technologies_required %}
+                <div>
+                    <p class="text-xs text-slate-500 mb-1.5">Technologies</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for tech in listing.technologies_required.split(',') %}
+                        {% if tech.strip() %}
+                        <span class="px-2.5 py-1 bg-navy-700/60 border border-white/10 rounded-lg text-xs text-slate-300">{{ tech.strip() }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if listing.essential_deliverables_list %}
+                <div>
+                    <p class="text-xs text-slate-500 mb-1.5">Essential deliverables</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for item in listing.essential_deliverables_list %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>{{ item }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if listing.optional_deliverables_list %}
+                <div>
+                    <p class="text-xs text-slate-500 mb-1.5">Optional deliverables</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for item in listing.optional_deliverables_list %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-navy-700/60 border border-white/10 text-slate-300">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0"></span>{{ item }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Developers (col-span-2) -->
+            <div class="lg:col-span-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Developers</h3>
                 {% if listing.signups %}
-                <p class="text-xs text-slate-500 mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-sm">lock</span> Contract details (including addresses) are kept confidential until both parties have e-signed.</p>
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Developers who joined</p>
-                <ul class="space-y-4">
+                <p class="text-xs text-slate-500 mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-sm">lock</span> Addresses confidential until both e-sign.</p>
+                <ul class="space-y-3">
                     {% for signup in listing.signups %}
-                    <li class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
-                        <div class="flex items-center gap-3">
-                            <span class="text-white font-medium">{{ signup.user.username }}</span>
-                            <span class="text-slate-500 text-sm">({{ signup.user.email }})</span>
+                    <li class="p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="text-white font-medium text-sm">{{ signup.user.username }}</span>
                             {% if signup.status == 'pending' %}
                             <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">Pending</span>
                             {% elif signup.status == 'accepted' %}
@@ -63,28 +131,28 @@
                             <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">Denied</span>
                             {% endif %}
                             {% if signup.is_fully_signed %}
-                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400">Contract signed</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400">Signed</span>
                             {% endif %}
                         </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <a href="{{ url_for('main.developer_profile_view', user_id=signup.user.id) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View profile</a>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ url_for('main.developer_profile_view', user_id=signup.user.id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-xs">View profile</a>
                             {% if signup.status == 'pending' %}
                             <form method="POST" action="{{ url_for('main.signup_accept', id=signup.id) }}" class="inline">
                                 {{ form.hidden_tag() }}
-                                <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-mint/20 text-mint border border-mint/40 hover:bg-mint/30 text-sm font-medium">Accept</button>
+                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-mint/20 text-mint border border-mint/40 hover:bg-mint/30 text-xs font-medium">Accept</button>
                             </form>
                             <form method="POST" action="{{ url_for('main.signup_deny', id=signup.id) }}" class="inline">
                                 {{ form.hidden_tag() }}
-                                <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 text-sm font-medium">Deny</button>
+                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 text-xs font-medium">Deny</button>
                             </form>
                             {% endif %}
                             {% if signup.status == 'accepted' %}
-                            <a href="{{ contract_view_url(signup.id) }}" target="_blank" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View contract</a>
+                            <a href="{{ contract_view_url(signup.id) }}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-xs">View contract</a>
                             {% if not signup.business_signed_at %}
                             <form id="sign-form-{{ signup.id }}" method="POST" action="{{ url_for('main.signup_sign_business', id=signup.id) }}" class="inline">
                                 {{ form.hidden_tag() }}
                                 <input type="hidden" name="signature_data" value=""/>
-                                <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}">E-sign contract</button>
+                                <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold text-xs" data-form-id="sign-form-{{ signup.id }}">E-sign</button>
                             </form>
                             {% endif %}
                             {% endif %}
@@ -93,7 +161,7 @@
                     {% endfor %}
                 </ul>
                 {% else %}
-                <p class="text-slate-500 text-sm">No developers have joined this listing yet.</p>
+                <p class="text-slate-500 text-sm">No developers have joined yet.</p>
                 {% endif %}
             </div>
         </div>
@@ -101,21 +169,5 @@
     {% endfor %}
 </div>
 {% include 'partials/signature_modal.html' %}
-<script>
-(function() {
-    document.querySelectorAll('.js-listing-toggle').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var id = this.getAttribute('data-listing-id');
-            var panel = document.getElementById('listing-developers-' + id);
-            var chevron = this.querySelector('.js-chevron');
-            if (!panel) return;
-            var isOpen = !panel.classList.contains('hidden');
-            panel.classList.toggle('hidden', isOpen);
-            btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-            if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
-        });
-    });
-})();
-</script>
 {% endif %}
 {% endblock %}

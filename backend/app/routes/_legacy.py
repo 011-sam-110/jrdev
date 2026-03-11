@@ -60,6 +60,11 @@ try:
 except ImportError:
     stripe = None
 
+try:
+    from gradient import Gradient as GradientClient
+except ImportError:
+    GradientClient = None
+
 from app.routes import main  # noqa: E402 — must come after Blueprint is created in __init__
 
 
