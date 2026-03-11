@@ -17,3 +17,4 @@ from app.routes import _legacy   # noqa: F401, E402
 # Expose helpers that app/__init__.py CLI commands import
 from app.routes._legacy import process_review_deadlines   # noqa: F401, E402
 from app.routes._legacy import process_prize_pool_winners  # noqa: F401, E402
+from app.routes._legacy import process_signing_deadlines   # noqa: F401, E402
