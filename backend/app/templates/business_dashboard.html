@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css"/>
 <style>
-  /* Material-inspired date picker: rounded-xl, shadow-border */
+  /* ── Flatpickr overrides ── */
   .flatpickr-calendar {
     border-radius: 1rem !important;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 8px 24px -8px rgba(0,0,0,0.4) !important;
@@ -17,6 +17,209 @@
   }
   .flatpickr-day:hover {
     background: rgba(79, 70, 229, 0.3) !important;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     Enhanced Interactivity Layer — Business Dashboard
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Stat cards: hover glow lift ── */
+  .stat-card-lift {
+    transition: transform 0.28s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.28s cubic-bezier(0.16,1,0.3,1),
+                border-color 0.28s ease;
+    cursor: default;
+  }
+  .stat-card-lift:hover {
+    transform: translateY(-5px);
+    box-shadow:
+      0 0 0 1px rgba(79,70,229,0.3),
+      0 24px 64px -16px rgba(79,70,229,0.22),
+      inset 0 1px 0 0 rgba(255,255,255,0.12) !important;
+    border-color: rgba(79,70,229,0.3) !important;
+  }
+
+  /* ── Range sliders: fully custom ── */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 5px;
+    border-radius: 9999px;
+    background: rgba(51,65,85,0.9);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #0d9488 100%);
+    border: 2.5px solid rgba(255,255,255,0.25);
+    box-shadow: 0 0 14px rgba(99,102,241,0.55);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.2s ease;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.35);
+    box-shadow: 0 0 22px rgba(99,102,241,0.75), 0 0 36px rgba(13,148,136,0.25);
+  }
+  input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 9px rgba(99,102,241,0.15);
+    transition-duration: 0.08s;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #0d9488 100%);
+    border: 2.5px solid rgba(255,255,255,0.25);
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(99,102,241,0.55);
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  input[type="range"]::-moz-range-thumb:hover { transform: scale(1.35); }
+
+  /* ── Section panels: hover border + depth glow ── */
+  section.liquid-glass-panel {
+    transition: box-shadow 0.35s ease, border-color 0.35s ease !important;
+  }
+  section.liquid-glass-panel:hover {
+    border-color: rgba(79,70,229,0.22) !important;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255,255,255,0.1),
+      0 0 0 1px rgba(79,70,229,0.13),
+      0 22px 64px -14px rgba(79,70,229,0.12),
+      0 20px 60px -10px rgba(0,0,0,0.5) !important;
+  }
+
+  /* ── Launch Sprint button: shimmer sweep ── */
+  #launch-sprint-form button[type="submit"] {
+    position: relative;
+    overflow: hidden;
+  }
+  #launch-sprint-form button[type="submit"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+    transform: skewX(-18deg);
+    animation: launchShimmer 2.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes launchShimmer {
+    0%        { left: -100%; }
+    38%, 100% { left: 160%; }
+  }
+
+  /* ── Investment amount: gradient text ── */
+  .investment-amount {
+    background: linear-gradient(118deg, #a5b4fc 0%, #2dd4bf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-feature-settings: 'tnum';
+  }
+
+  /* ── Sidebar: ambient mesh glow ── */
+  aside > div.liquid-glass-panel {
+    background-image:
+      radial-gradient(ellipse at 85% 5%,  rgba(79,70,229,0.13) 0%, transparent 55%),
+      radial-gradient(ellipse at 15% 90%, rgba(13,148,136,0.09) 0%, transparent 50%) !important;
+  }
+
+  /* ── AI improve button ── */
+  #improve-with-ai-btn {
+    background: linear-gradient(135deg, rgba(52,211,153,0.04) 0%, rgba(52,211,153,0.07) 100%) !important;
+    transition: all 0.3s cubic-bezier(0.16,1,0.3,1) !important;
+  }
+  #improve-with-ai-btn:hover {
+    background: linear-gradient(135deg, rgba(52,211,153,0.12) 0%, rgba(52,211,153,0.16) 100%) !important;
+    box-shadow: 0 0 24px rgba(52,211,153,0.3), 0 8px 28px -5px rgba(52,211,153,0.12) !important;
+    transform: translateY(-2px) !important;
+    border-color: rgba(52,211,153,0.5) !important;
+  }
+  #improve-with-ai-btn .ai-btn-icon {
+    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #improve-with-ai-btn:hover .ai-btn-icon {
+    transform: rotate(20deg) scale(1.15);
+  }
+
+  /* ── Mini listing rows in dashboard ── */
+  .mini-listing-row {
+    transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s cubic-bezier(0.16,1,0.3,1) !important;
+    cursor: default;
+  }
+  .mini-listing-row:hover {
+    background: rgba(79,70,229,0.07) !important;
+    border-color: rgba(79,70,229,0.22) !important;
+    transform: translateX(4px) !important;
+  }
+
+  /* ── Add buttons: pop on hover ── */
+  #essential-deliverables-add-btn:hover {
+    transform: translateY(-50%) scale(1.18) !important;
+  }
+  #technologies-add-btn:hover {
+    transform: translateY(-50%) scale(1.18) !important;
+  }
+
+  /* ── Date input wrapper focus glow ── */
+  .sprint-date-wrapper input:focus {
+    box-shadow: 0 0 0 2.5px rgba(79,70,229,0.38), 0 0 24px rgba(79,70,229,0.1) !important;
+  }
+
+  /* ── PDF generate button ── */
+  #post-contract-form button[type="submit"] {
+    transition: transform 0.22s ease, background 0.22s ease,
+                border-color 0.22s ease, color 0.22s ease !important;
+  }
+  #post-contract-form button[type="submit"]:hover {
+    transform: translateX(4px) !important;
+    border-color: rgba(79,70,229,0.35) !important;
+    background: rgba(79,70,229,0.09) !important;
+    color: #a5b4fc !important;
+  }
+
+  /* ── Help info panels: smooth reveal ── */
+  [id^="help-"] {
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+  }
+  [id^="help-"]:not(.hidden) {
+    animation: helpReveal 0.25s cubic-bezier(0.16,1,0.3,1) forwards;
+  }
+  @keyframes helpReveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Deliverable/tech tags (created by JS) ── */
+  /* Targets span tags JS creates inside the lists */
+  #essential-deliverables-list span,
+  #requirement-buffet-list span,
+  #technologies-tags-list span {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  #essential-deliverables-list span:hover,
+  #requirement-buffet-list span:hover,
+  #technologies-tags-list span:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.3);
+  }
+
+  /* ── Attention banner items ── */
+  section .flex.items-center.justify-between.gap-4 {
+    transition: background 0.18s ease, transform 0.18s ease !important;
+  }
+  section .flex.items-center.justify-between.gap-4:hover {
+    transform: translateX(3px) !important;
   }
 </style>
 {% endblock %}
@@ -44,20 +247,20 @@
 {% endif %}
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-    <div class="liquid-glass-panel liquid-glass-accent rounded-xl p-6 liquid-glass-in" style="opacity:0">
+    <div class="liquid-glass-panel liquid-glass-accent rounded-xl p-6 liquid-glass-in stat-card-lift" style="opacity:0">
         <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Active developers</p>
-        <p class="text-4xl lg:text-5xl font-display font-bold text-mint">{{ stats.active_developers }}</p>
+        <p class="text-4xl lg:text-5xl font-display font-bold text-mint stat-counter" data-target="{{ stats.active_developers }}">{{ stats.active_developers }}</p>
         {% if stats.active_developers == 0 %}
         <p class="text-slate-500 text-xs mt-2">Developers will appear here once they join and sign.</p>
         {% endif %}
     </div>
-    <div class="liquid-glass-panel rounded-xl p-6 liquid-glass-in liquid-glass-in-delay-1" style="opacity:0">
+    <div class="liquid-glass-panel rounded-xl p-6 liquid-glass-in liquid-glass-in-delay-1 stat-card-lift" style="opacity:0">
         <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Open listings</p>
-        <p class="text-2xl font-display font-bold text-white">{{ stats.open_listings }}</p>
+        <p class="text-2xl font-display font-bold text-white stat-counter" data-target="{{ stats.open_listings }}">{{ stats.open_listings }}</p>
     </div>
-    <div class="liquid-glass-panel rounded-xl p-6 liquid-glass-in liquid-glass-in-delay-1" style="opacity:0">
+    <div class="liquid-glass-panel rounded-xl p-6 liquid-glass-in liquid-glass-in-delay-1 stat-card-lift" style="opacity:0">
         <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Total listings</p>
-        <p class="text-2xl font-display font-bold text-white">{{ stats.total_listings }}</p>
+        <p class="text-2xl font-display font-bold text-white stat-counter" data-target="{{ stats.total_listings }}">{{ stats.total_listings }}</p>
     </div>
 </div>
 
@@ -242,7 +445,7 @@
             {% if my_listings %}
             <div class="space-y-3">
                 {% for listing in my_listings[:3] %}
-                <div class="flex items-center justify-between liquid-glass-input rounded-xl px-4 py-3 hover:bg-white/5 transition-colors">
+                <div class="flex items-center justify-between liquid-glass-input rounded-xl px-4 py-3 mini-listing-row">
                     <div>
                         <span class="text-sm font-medium text-slate-200">{{ listing.company_name }}</span>
                         <span class="text-xs text-slate-500 ml-2">{{ listing.sprint_timeline_days }} day sprint</span>
@@ -423,4 +626,43 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="{{ url_for('static', filename='js/business_dashboard.js') }}"></script>
+<script>
+(function() {
+    /* ── Slider filled-track (gradient background updated live) ── */
+    function updateSliderBg(el) {
+        var min = parseFloat(el.min) || 0;
+        var max = parseFloat(el.max) || 100;
+        var val = parseFloat(el.value);
+        var pct = ((val - min) / (max - min)) * 100;
+        el.style.background =
+            'linear-gradient(to right, #4f46e5 ' + pct + '%, rgba(51,65,85,0.9) ' + pct + '%)';
+    }
+    document.querySelectorAll('input[type="range"]').forEach(function(el) {
+        updateSliderBg(el);
+        el.addEventListener('input',  function() { updateSliderBg(this); });
+        el.addEventListener('change', function() { updateSliderBg(this); });
+    });
+
+    /* ── Stat counter animation ── */
+    function animateCount(el, target, duration) {
+        var start = performance.now();
+        function frame(now) {
+            var p = Math.min((now - start) / duration, 1);
+            var eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = Math.round(target * eased);
+            if (p < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    }
+    setTimeout(function() {
+        document.querySelectorAll('.stat-counter').forEach(function(el) {
+            var n = parseInt(el.getAttribute('data-target'), 10);
+            if (!isNaN(n) && n > 0) {
+                el.textContent = '0';
+                animateCount(el, n, 900);
+            }
+        });
+    }, 350);
+})();
+</script>
 {% endblock %}

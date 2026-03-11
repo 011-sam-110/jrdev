@@ -8,7 +8,8 @@ import os
 from flask import render_template, url_for, flash, redirect, request, session, jsonify, current_app, Response
 from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail, limiter
-from app.forms import RegistrationForm, LoginForm
+from app.forms import RegistrationForm, LoginForm, ForgotPasswordForm, ResetCodeForm, NewPasswordForm
+import random
 from app.profile_forms import EditProfileForm, EditMarkdownForm, AddPinnedProjectForm
 from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote, PrizePoolPairwiseVote, PrizePoolPayout, AdminEmail, AdminEmailTemplate, AdminEmailConfig
 from sqlalchemy.exc import IntegrityError
@@ -545,6 +546,154 @@ def login():
 def logout():
     logout_user()
     return redirect_after_action()
+
+# ── Password Reset ────────────────────────────────────────────────────────────
+
+def _send_magic_link_email(user):
+    token = user.get_reset_token(salt='password-reset-magic')
+    reset_url = url_for('main.reset_password_magic', token=token, _external=True)
+    msg = Message(
+        subject='Sign in to JrDev — your magic link',
+        sender=current_app.config.get('MAIL_DEFAULT_SENDER'),
+        recipients=[user.email],
+        body=(
+            f'Hi {user.username},\n\n'
+            f'Click the link below to sign in and set a new password:\n\n{reset_url}\n\n'
+            'This link expires in 15 minutes. If you did not request this, you can ignore it.\n\n— JrDev Team'
+        ),
+    )
+    msg.html = render_template('emails/magic_link.html', reset_url=reset_url, username=user.username)
+    try:
+        mail.send(msg)
+        return True
+    except Exception as e:
+        logger.exception('Magic link email failed for %s: %s', user.email, e)
+        return False
+
+
+def _send_reset_code_email(user, code):
+    msg = Message(
+        subject='Your JrDev password reset code',
+        sender=current_app.config.get('MAIL_DEFAULT_SENDER'),
+        recipients=[user.email],
+        body=(
+            f'Hi {user.username},\n\n'
+            f'Your password reset code is: {code}\n\n'
+            'It expires in 15 minutes. If you did not request this, you can ignore it.\n\n— JrDev Team'
+        ),
+    )
+    msg.html = render_template('emails/reset_code.html', code=code, username=user.username)
+    try:
+        mail.send(msg)
+        return True
+    except Exception as e:
+        logger.exception('Reset code email failed for %s: %s', user.email, e)
+        return False
+
+
+def _generate_captcha():
+    """Return (question_str, answer_str) for a simple server-side math check."""
+    a = random.randint(2, 9)
+    b = random.randint(2, 9)
+    if random.random() < 0.5:
+        return f"What is {a} + {b}?", str(a + b)
+    return f"What is {a} \u00d7 {b}?", str(a * b)
+
+
+@main.route("/forgot-password", methods=['GET', 'POST'])
+@limiter.limit("1 per 30 seconds")
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect_after_action()
+    form = ForgotPasswordForm()
+
+    if form.validate_on_submit():
+        # Validate captcha before doing anything else
+        captcha_input = request.form.get('captcha', '').strip()
+        expected = session.pop('captcha_answer', None)
+        if not expected or captcha_input != expected:
+            q, a = _generate_captcha()
+            session['captcha_answer'] = a
+            flash('Incorrect answer to the security question — please try again.', 'danger')
+            return render_template('forgot_password.html', form=form, captcha_question=q)
+
+        user = User.query.filter_by(email=form.email.data.lower().strip()).first()
+        if user and user.is_verified:
+            if form.method.data == 'magic':
+                _send_magic_link_email(user)
+                flash('Magic link sent — check your inbox.', 'success')
+                return redirect(url_for('main.forgot_password'))
+            else:
+                code = f"{random.randint(100000, 999999)}"
+                token = user.get_reset_token(salt='password-reset-otp', extra={'code': code})
+                session['reset_otp_token'] = token
+                _send_reset_code_email(user, code)
+                return redirect(url_for('main.reset_password_code'))
+        else:
+            flash("If that email is registered and verified, you'll receive instructions shortly.", 'info')
+            return redirect(url_for('main.forgot_password'))
+
+    # GET (or form field errors) — always issue a fresh captcha
+    q, a = _generate_captcha()
+    session['captcha_answer'] = a
+    return render_template('forgot_password.html', form=form, captcha_question=q)
+
+
+@main.route("/reset-password/magic/<token>")
+def reset_password_magic(token):
+    if current_user.is_authenticated:
+        return redirect_after_action()
+    user = User.verify_reset_token(token, salt='password-reset-magic')
+    if not user:
+        flash('That link is invalid or has expired.', 'danger')
+        return redirect(url_for('main.forgot_password'))
+    session['reset_user_id'] = user.id
+    return redirect(url_for('main.reset_password_new'))
+
+
+@main.route("/reset-password/code", methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
+def reset_password_code():
+    if current_user.is_authenticated:
+        return redirect_after_action()
+    if 'reset_otp_token' not in session:
+        flash('No active reset session. Please start again.', 'warning')
+        return redirect(url_for('main.forgot_password'))
+    form = ResetCodeForm()
+    if form.validate_on_submit():
+        data = User.load_reset_token(session['reset_otp_token'], salt='password-reset-otp')
+        if data is None:
+            session.pop('reset_otp_token', None)
+            flash('Your code has expired. Please request a new one.', 'danger')
+            return redirect(url_for('main.forgot_password'))
+        if form.code.data.strip() != data['code']:
+            flash('Incorrect code — please try again.', 'danger')
+        else:
+            session.pop('reset_otp_token', None)
+            session['reset_user_id'] = data['user_id']
+            return redirect(url_for('main.reset_password_new'))
+    return render_template('reset_password_code.html', form=form)
+
+
+@main.route("/reset-password/new", methods=['GET', 'POST'])
+def reset_password_new():
+    if current_user.is_authenticated:
+        return redirect_after_action()
+    if 'reset_user_id' not in session:
+        flash('No verified reset session. Please start again.', 'warning')
+        return redirect(url_for('main.forgot_password'))
+    form = NewPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.get(session.pop('reset_user_id'))
+        if not user:
+            flash('Something went wrong. Please try again.', 'danger')
+            return redirect(url_for('main.forgot_password'))
+        user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        db.session.commit()
+        flash('Password updated — you can now log in.', 'success')
+        return redirect(url_for('main.login'))
+    return render_template('reset_password_new.html', form=form)
+
 
 def _impersonation_enabled():
     """True if dev impersonation is allowed (development/testing only)."""
@@ -2095,7 +2244,7 @@ def signup_mark_reviewed(id):
         return err
     _apply_reviewed_state(signup)
     db.session.commit()
-    flash(f'Marked as reviewed. You have been charged £{signup.listing.pay_for_prototype / 100:.2f} for this developer.', 'success')
+    flash(f'Approved. Payment of £{signup.listing.pay_for_prototype / 100:.2f} released to the developer.', 'success')
     return redirect(url_for('main.review_gallery'))
 
 @main.route("/signup/<int:id>/flag", methods=['POST'])

@@ -38,18 +38,32 @@ npm run lint
 
 ## Architecture
 
-### Backend Structure
+> Full architecture reference (all routes, models, templates, file tree): `C:\Users\sampo\Documents\Obsidian Vault\Projects\JrDev\Architecture.md`
 
-- **`backend/app/__init__.py`** — Flask app factory. Initializes all extensions (SQLAlchemy, Bcrypt, LoginManager, Flask-Mail, Flask-Migrate, Flask-Limiter), registers blueprints, injects Jinja2 filters (markdown, initials, rating), and registers CLI commands.
-- **`backend/app/models.py`** — All SQLAlchemy models. Key models: `User`, `DeveloperProfile`, `SprintListing`, `ListingSignup`, `PrizePool`, `PrizePoolEntry`, `PrizePoolVote`.
-- **`backend/app/routes.py`** — Single large blueprint (~1800 lines) containing all route handlers. Sections: auth, dashboards, developer profiles, sprint listings, prize pools, billing (Stripe), admin.
-- **`backend/app/utils.py`** — Shared helpers: URL normalization, developer profile defaults, tech stack parsing, rating utilities.
-- **`backend/app/forms.py`** — WTForms for auth (registration, login). Email validators are defined here as a shared constant.
-- **`backend/app/profile_forms.py`** — WTForms for developer profile editing. Theme/animation/panel/background choices are defined here and must stay in sync with model defaults and `utils.py` constants.
-- **`backend/app/signup_helpers.py`** — Contract creation and signup logic extracted from routes.
-- **`backend/app/decorators.py`** — `@require_role('DEVELOPER'|'BUSINESS')`, `@require_verified`, `@require_prize_pool_admin`.
-- **`backend/app/contract_pdf.py`** — ReportLab PDF contract generation blueprint.
-- **`api/index.py`** — Vercel serverless entry point (imports `create_app()`, exposes `app`).
+### File Map
+
+> For the full file tree, all routes, and model columns see: `C:\Users\sampo\Documents\Obsidian Vault\Projects\JrDev\Architecture.md`
+> Read it at the start of any task involving new files, routes, or models.
+
+**Entry points:**
+- `api/index.py` — Vercel serverless entry
+- `backend/run.py` — Local dev server (loads .env, db.create_all())
+
+**`backend/app/` — Python files:**
+- `__init__.py` — App factory: all extensions, blueprints, Jinja2 filters, CLI commands, error handlers
+- `models.py` — All models: User, DeveloperProfile, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote, PrizePoolPairwiseVote, PrizePoolPayout, AdminEmail, PinnedProject
+- `forms.py` — Auth forms: RegistrationForm, LoginForm
+- `profile_forms.py` — Profile forms: EditProfileForm, EditMarkdownForm, AddPinnedProjectForm
+- `utils.py` — sanitize_markdown(), is_safe_url(), redirect_after_action(), youtube_embed_url()
+- `decorators.py` — @require_verified, @require_role, @require_admin, can_manage_prize_pools(), is_platform_admin()
+- `signup_helpers.py` — get_signup_for_business/developer(), apply_rating_and_redirect()
+- `admin_email.py` — sync_inbox(), send_admin_email() for 3 admin inboxes
+- `contract_pdf.py` — PDF contract blueprint (`contract`); GET /contract/view/<id>, POST /contract/generate
+
+**`backend/app/routes/` — Blueprint name `main`:**
+- `_legacy.py` — all route handlers (~2200 lines, Phase 7 backlog splits this)
+- `_helpers.py` — Stripe helpers, _fmt_rating
+- `pages.py` — static pages (home, about, privacy, terms, support, sitemap)
 
 ### Key Domain Flows
 
@@ -88,7 +102,7 @@ Every protected route uses `@require_verified` (email confirmed) plus optionally
 
 When adding a new prize pool or listing field:
 1. `models.py` — add column
-2. `routes.py` — read/write in relevant routes
+2. `routes/_legacy.py` — read/write in relevant routes
 3. `flask db migrate && flask db upgrade` — generate migration
 
 When changing developer profile appearance options:
@@ -97,6 +111,22 @@ When changing developer profile appearance options:
 ### Deployment
 
 Deployed on Vercel via `vercel.json`. All traffic rewrites to `api/index.py`. See `VERCEL_DEPLOYMENT.md` for full setup steps including PostgreSQL and cron job configuration.
+
+### Keeping Architecture.md Current
+
+`Architecture.md` in the Obsidian vault is the canonical reference. **Update it whenever you make a structural change:**
+
+| Change made | What to update in Architecture.md |
+|-------------|----------------------------------|
+| New file created or deleted | Directory tree section |
+| File moved or renamed | Directory tree section |
+| New route added | Routes table (correct group) |
+| Route deleted or URL changed | Routes table |
+| New model or column added | Models section |
+| New template created | Templates list |
+| New JS/CSS file | Static section |
+
+**Rule:** If you edit `models.py`, `routes/_legacy.py`, `routes/__init__.py`, or create/delete any file in `backend/app/` — update `Architecture.md` before considering the task done.
 
 ## Agent Roles
 

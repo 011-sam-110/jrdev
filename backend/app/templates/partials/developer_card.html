@@ -66,11 +66,11 @@
         </div>
         {% if developer.prototype_submitted_at and developer.signup %}
         {% if developer.reviewed_at %}
-        <p class="text-slate-500 text-xs mb-2">Reviewed {{ developer.reviewed_at.strftime('%d %b %Y') }} · You have been charged for this developer.</p>
+        <p class="text-slate-500 text-xs mb-2">Reviewed {{ developer.reviewed_at.strftime('%d %b %Y') }} · Payment released to developer.</p>
         {% elif developer.flagged_for_review %}
         <div class="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
             <p class="font-semibold mb-1">Flagged for review – what happens next</p>
-            <p>Our team will contact you and the developer to resolve the issue. No charge will be made until the sprint is marked complete. If the work is adjusted and accepted, you can then mark as reviewed.</p>
+            <p>Our team will contact you and the developer to resolve the issue. The escrowed payment is held until the dispute is resolved. If the work is adjusted and accepted, approve to release payment. If requirements aren't met, you'll receive a full refund.</p>
         </div>
         {% endif %}
         {% if not developer.reviewed_at and developer.review_deadline_at %}
@@ -89,7 +89,7 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                 <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-mint/40 bg-mint/20 text-mint hover:bg-mint/30 text-sm font-medium transition-colors">
                     <span class="material-symbols-outlined text-sm">check_circle</span>
-                    Mark complete (charge)
+                    Approve &amp; release payment
                 </button>
             </form>
             {% if developer.flagged_for_review %}

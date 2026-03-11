@@ -7,7 +7,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta name="description" content="JrDev connects businesses with student developers for rapid, affordable software prototyping. Launch a sprint, get an MVP built, pay only when deliverables are met."/>
 <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}"/>
-<title>JrDev | Rapid prototyping by emerging talent</title>
+<title>JrDev | Rapid prototyping by university talent</title>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -238,12 +238,12 @@
                 Launch your MVP with the <span class="home-hero-gradient-text">next generation</span> of developers
 </h1>
 <p class="fade-in delay-200 home-hero-subheadline mt-4 max-w-2xl mx-auto text-slate-100 font-medium">
-                Rapid prototyping by emerging talent. Post a sprint, get matched with hand-picked student developers, and ship in days—not months.
+                Rapid prototyping by university talent. Post a listing, receive your MVP in a week — or get a full refund.
             </p>
 <p class="fade-in delay-200 mt-2 max-w-xl mx-auto text-slate-300 text-base">Students: get paid to build real projects and grow your portfolio.</p>
 <div class="fade-in delay-300 mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
     <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-colorful inline-flex items-center gap-2 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl">Hire Talent <span class="btn-colorful-arrow material-icons-round text-xl">arrow_forward</span></a>
-    <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-secondary px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white/90 font-semibold border border-white/25 text-base transition-all">Join as Developer</a>
+    <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-primary btn-colorful inline-flex items-center gap-2 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl">Join as Developer <span class="btn-colorful-arrow material-icons-round text-xl">arrow_forward</span></a>
 </div>
 <p class="fade-in delay-300 mt-4 text-slate-500 text-sm" id="pricing">Starting at £50 per developer</p>
 </div>
@@ -793,7 +793,7 @@
                     <span class="inline-flex w-fit items-center rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.35em] sm:ml-auto border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-400">Billing</span>
                 </div>
                 <div class="faq-answer overflow-hidden text-sm leading-relaxed max-h-0 transition-[max-height] duration-500 ease-out text-neutral-600 dark:text-neutral-400">
-                    <p class="pr-2 pb-1">You set the investment per developer when you launch a sprint. If essential deliverables aren't met, you receive a full refund. See our <a href="{{ url_for('main.terms') }}" class="text-primary hover:underline">Terms</a> for details.</p>
+                    <p class="pr-2 pb-1">You set the investment per developer when you launch a sprint. When you accept a developer, the full fee is charged and held in escrow. If essential deliverables are met, you approve the work and payment is released. If not, you receive a full refund. See our <a href="{{ url_for('main.terms') }}" class="text-primary hover:underline">Terms</a> for details.</p>
                 </div>
             </div>
         </button>
@@ -880,8 +880,8 @@
                         <a href="{{ url_for('main.register', role='BUSINESS') }}" class="home-cta-primary btn-colorful inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-white font-bold shadow-lg">
                             Post a Sprint <span class="btn-colorful-arrow material-icons-round text-lg">arrow_forward</span>
                         </a>
-                        <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-secondary px-8 py-3.5 rounded-full border border-neutral-300 dark:border-white/20 bg-neutral-900/5 dark:bg-white/10 hover:bg-neutral-900/10 dark:hover:bg-white/20 text-neutral-900 dark:text-white font-bold transition-all">
-                            Join as Developer
+                        <a href="{{ url_for('main.register', role='DEVELOPER') }}" class="home-cta-primary btn-colorful inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-white font-bold shadow-lg">
+                            Join as Developer <span class="btn-colorful-arrow material-icons-round text-lg">arrow_forward</span>
                         </a>
                     </div>
 </div>

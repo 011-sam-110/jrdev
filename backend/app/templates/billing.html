@@ -3,6 +3,137 @@
 {% block title %}JrDev | Billing{% endblock %}
 {% block main_class %}pb-20 px-6 lg:px-12 max-w-[900px] mx-auto{% endblock %}
 
+{% block head_extra %}
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     Billing — Enhanced Interactivity Layer
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Section panels: hover depth glow ── */
+  .space-y-6 > section {
+    transition: transform 0.28s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.28s cubic-bezier(0.16,1,0.3,1),
+                border-color 0.28s ease;
+  }
+  .space-y-6 > section:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 0 0 1px rgba(79,70,229,0.18),
+      0 24px 64px -16px rgba(79,70,229,0.14),
+      inset 0 1px 0 0 rgba(255,255,255,0.09) !important;
+    border-color: rgba(79,70,229,0.18) !important;
+  }
+
+  /* ── "When you're charged" info banner ── */
+  section.border.border-mint\/20 {
+    transition: box-shadow 0.3s ease !important;
+  }
+  section.border.border-mint\/20:hover {
+    box-shadow: 0 0 0 1px rgba(79,70,229,0.35), 0 0 30px rgba(79,70,229,0.1) !important;
+  }
+
+  /* ── Card on file: reveal animation + card-brand icon glow ── */
+  .card-brand-badge {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-brand-badge:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+
+  /* ── Stripe card element container ── */
+  #card-element {
+    transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+  }
+  #card-element:focus-within,
+  #card-element.focused {
+    box-shadow: 0 0 0 2.5px rgba(79,70,229,0.4), 0 0 28px rgba(79,70,229,0.1) !important;
+    border-color: rgba(79,70,229,0.5) !important;
+  }
+
+  /* ── Save card button: shimmer ── */
+  #submit-btn {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.25s ease,
+                opacity 0.25s ease !important;
+  }
+  #submit-btn:not(:disabled)::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 55%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.16), transparent);
+    transform: skewX(-18deg);
+    animation: saveBtnShimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes saveBtnShimmer {
+    0%        { left: -100%; }
+    38%, 100% { left: 160%; }
+  }
+  #submit-btn:not(:disabled):hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 0 30px rgba(79,70,229,0.4), 0 12px 40px -10px rgba(79,70,229,0.25) !important;
+  }
+
+  /* ── Invoice table rows: hover highlight ── */
+  table tbody tr:not(:first-child) {
+    transition: background 0.18s ease;
+  }
+  table tbody tr:not(:first-child):hover {
+    background: rgba(79,70,229,0.05) !important;
+  }
+  table tbody tr td {
+    transition: color 0.18s ease;
+  }
+
+  /* ── "How billing works" list items ── */
+  .space-y-2 > li {
+    transition: transform 0.22s cubic-bezier(0.16,1,0.3,1), color 0.22s ease;
+  }
+  .space-y-2 > li:hover {
+    transform: translateX(4px);
+    color: #e2e8f0 !important;
+  }
+  .space-y-2 > li .material-symbols-outlined.text-primary {
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .space-y-2 > li:hover .material-symbols-outlined.text-primary {
+    transform: scale(1.2) rotate(-5deg);
+  }
+
+  /* ── Support email link ── */
+  a[href^="mailto"] {
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  }
+
+  /* ── Receipt icon in empty state ── */
+  .material-symbols-outlined.text-4xl.mb-2 {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  td:hover .material-symbols-outlined.text-4xl.mb-2 {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+
+  /* ── "Secured by Stripe" line: icon glow ── */
+  .material-symbols-outlined.text-primary.text-lg {
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  p:hover .material-symbols-outlined.text-primary.text-lg {
+    transform: scale(1.2);
+  }
+
+  /* ── Staggered section entrance ── */
+  .space-y-6 > section:nth-child(1) { animation-delay: 0s; }
+  .space-y-6 > section:nth-child(2) { animation-delay: 0.05s; }
+  .space-y-6 > section:nth-child(3) { animation-delay: 0.1s; }
+  .space-y-6 > section:nth-child(4) { animation-delay: 0.15s; }
+  .space-y-6 > section:nth-child(5) { animation-delay: 0.2s; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-12 liquid-glass-in">
     <h1 class="font-display text-4xl font-bold mb-3">Billing & payment</h1>
@@ -16,7 +147,7 @@
             <span class="material-symbols-outlined">schedule</span>
             When you're charged
         </h2>
-        <p class="text-slate-300 text-sm">Your card is charged when you launch a sprint. No recurring fees.</p>
+        <p class="text-slate-300 text-sm">Your card is charged when you accept a developer onto a sprint. Funds are held securely in escrow until you approve their work. No recurring fees.</p>
     </section>
 
     <!-- Current card on file -->
@@ -93,9 +224,9 @@
     <section class="liquid-glass-panel rounded-2xl p-8 border border-white/5">
         <h3 class="font-display text-lg font-semibold mb-4">How billing works</h3>
         <ul class="space-y-2 text-slate-400 text-sm">
-            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Your card is charged when you launch a sprint (funds held in escrow).</li>
-            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Developers are paid after you approve deliverables at sprint end.</li>
-            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Refunds are available if the prototype doesn’t meet the brief (within 48 hours).</li>
+            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Your card is charged when you accept a developer. Funds are held in escrow until you approve their work.</li>
+            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Approving the submission releases escrowed funds to the developer.</li>
+            <li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-lg flex-shrink-0">check_circle</span> Full refund if the prototype doesn't meet the agreed minimum requirements.</li>
         </ul>
     </section>
 </div>
@@ -121,6 +252,9 @@
         }
     });
     cardElement.mount('#card-element');
+    var cardEl = document.getElementById('card-element');
+    cardElement.on('focus', function() { if (cardEl) cardEl.classList.add('focused'); });
+    cardElement.on('blur',  function() { if (cardEl) cardEl.classList.remove('focused'); });
 
     var form = document.getElementById('payment-form');
     var submitBtn = document.getElementById('submit-btn');

@@ -4,7 +4,7 @@ Authentication forms: registration and login.
 Shared EMAIL_VALIDATORS keep email validation DRY across forms.
 """
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField, RadioField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, Regexp
 from app.models import User
 
@@ -51,3 +51,36 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
+
+
+class ForgotPasswordForm(FlaskForm):
+    """Request a password reset via magic link or 6-digit code."""
+    email = StringField('Email', validators=EMAIL_VALIDATORS)
+    method = RadioField(
+        'How would you like to reset?',
+        choices=[('magic', 'Magic link — click a link in your email'), ('code', 'Code — enter a 6-digit code')],
+        default='magic',
+        validators=[DataRequired()],
+    )
+    submit = SubmitField('Send Reset')
+
+
+class ResetCodeForm(FlaskForm):
+    """Enter the 6-digit OTP code sent to the user's email."""
+    code = StringField('6-Digit Code', validators=[
+        DataRequired(),
+        Length(min=6, max=6, message='Code must be exactly 6 digits.'),
+        Regexp(r'^\d{6}$', message='Code must be 6 digits.'),
+    ])
+    submit = SubmitField('Verify Code')
+
+
+class NewPasswordForm(FlaskForm):
+    """Set a new password after identity has been verified."""
+    password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=8, message='Password must be at least 8 characters.'),
+        Regexp(r'(?=.*[A-Za-z])(?=.*\d)', message='Password must contain at least one letter and one number.'),
+    ])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Set New Password')

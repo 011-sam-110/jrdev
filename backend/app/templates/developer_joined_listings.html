@@ -109,7 +109,7 @@
             {% if signup.reviewed_at %}
             <div class="mt-4 p-4 rounded-xl bg-mint/10 border border-mint/20">
                 <p class="text-mint font-medium mb-2">Project complete and reviewed successfully</p>
-                <p class="text-slate-400 text-sm mb-3">Your payment of £{{ "%.2f"|format(listing.pay_for_prototype / 100) }} will be processed for this sprint.</p>
+                <p class="text-slate-400 text-sm mb-3">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }} was held in escrow when you were accepted. It has now been released to you.</p>
                 {% if signup.developer_rating_of_business is none %}
                 <form method="POST" action="{{ url_for('main.signup_rate_business', id=signup.id) }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
@@ -130,7 +130,7 @@
                     <span class="material-symbols-outlined">warning</span>
                     Not enough completed – flagged for review
                 </p>
-                <p class="text-slate-400 text-sm mt-1">The business flagged this submission. Our team may contact you to resolve. Payment is not guaranteed until the sprint is marked complete.</p>
+                <p class="text-slate-400 text-sm mt-1">The business flagged this submission. The escrowed payment is on hold pending dispute resolution. Our team may contact you.</p>
             </div>
             {% elif signup.developer_withdrew %}
             <div class="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
@@ -153,7 +153,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-mint text-lg">payments</span>
-                        <span class="text-slate-400">Your payment (per developer):</span>
+                        <span class="text-slate-400">Escrowed payout on approval:</span>
                         <span class="text-white font-medium">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }}</span>
                     </div>
                 </div>

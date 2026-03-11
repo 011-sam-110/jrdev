@@ -2,6 +2,157 @@
 
 {% block title %}JrDev | My Listings{% endblock %}
 
+{% block head_extra %}
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     My Listings — Enhanced Interactivity Layer
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Listing card: hover lift + border glow ── */
+  .listing-card {
+    transition: transform 0.28s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.28s cubic-bezier(0.16,1,0.3,1),
+                border-color 0.28s ease;
+  }
+  .listing-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 0 0 1px rgba(79,70,229,0.22),
+      0 28px 70px -18px rgba(79,70,229,0.18),
+      inset 0 1px 0 0 rgba(255,255,255,0.1) !important;
+    border-color: rgba(79,70,229,0.2) !important;
+  }
+
+  /* ── Progress bar ── */
+  .listing-progress-track {
+    width: 6rem;
+    height: 5px;
+    background: rgba(51,65,85,0.7);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  .listing-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #4f46e5, #0d9488);
+    transform-origin: left;
+    animation: progressReveal 0.9s cubic-bezier(0.16,1,0.3,1) 0.2s both;
+  }
+  @keyframes progressReveal {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  /* ── "Open" badge pulse glow ── */
+  .badge-open {
+    animation: badgePulse 3s ease-in-out infinite;
+  }
+  @keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79,70,229,0); }
+    50%      { box-shadow: 0 0 0 4px rgba(79,70,229,0.15); }
+  }
+
+  /* ── Developer list items: hover highlight ── */
+  .dev-item {
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s cubic-bezier(0.16,1,0.3,1);
+  }
+  .dev-item:hover {
+    background: rgba(79,70,229,0.06) !important;
+    border-color: rgba(79,70,229,0.18) !important;
+    transform: translateX(3px);
+  }
+
+  /* ── Action buttons in dev items ── */
+  .dev-action-btn {
+    transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.18s ease,
+                background 0.18s ease !important;
+  }
+  .dev-action-btn:hover {
+    transform: translateY(-2px) scale(1.04) !important;
+    box-shadow: 0 4px 14px -4px rgba(0,0,0,0.35) !important;
+  }
+  .dev-action-btn:active {
+    transform: translateY(0) scale(0.96) !important;
+  }
+
+  /* ── View profile button ── */
+  a[href*="developer_profile_view"] {
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+  a[href*="developer_profile_view"]:hover {
+    background: rgba(79,70,229,0.1) !important;
+    border-color: rgba(79,70,229,0.3) !important;
+    color: #a5b4fc !important;
+  }
+
+  /* ── Status badges: subtle shimmer on "Signed" ── */
+  .badge-signed {
+    position: relative;
+    overflow: hidden;
+  }
+  .badge-signed::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: skewX(-15deg);
+    animation: badgeShimmer 3.5s ease-in-out infinite;
+  }
+  @keyframes badgeShimmer {
+    0%        { left: -100%; }
+    35%, 100% { left: 150%; }
+  }
+
+  /* ── Empty state: gentle float ── */
+  .empty-state-icon {
+    animation: gentleFloat 4s ease-in-out infinite;
+  }
+  @keyframes gentleFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
+
+  /* ── Tech tags ── */
+  .tech-badge {
+    transition: transform 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+  .tech-badge:hover {
+    transform: translateY(-2px);
+    border-color: rgba(79,70,229,0.35) !important;
+    color: #a5b4fc !important;
+  }
+
+  /* ── Deliverable chips ── */
+  .deliverable-chip {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .deliverable-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.3);
+  }
+
+  /* ── Go to Sprint Creator CTA ── */
+  a.liquid-glass-cta {
+    position: relative;
+    overflow: hidden;
+  }
+  a.liquid-glass-cta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 55%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: skewX(-18deg);
+    animation: ctaShimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes ctaShimmer {
+    0%        { left: -100%; }
+    40%, 100% { left: 160%; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-10 liquid-glass-in">
     <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">My Listings</h1>
@@ -10,7 +161,7 @@
 
 {% if not my_listings %}
 <div class="liquid-glass-panel rounded-2xl p-12 text-center liquid-glass-in liquid-glass-in-delay-1">
-    <span class="material-symbols-outlined text-5xl text-slate-500 mb-4">inbox</span>
+    <span class="material-symbols-outlined text-5xl text-slate-500 mb-4 empty-state-icon">inbox</span>
     <p class="text-slate-400 mb-4">You haven't created any listings yet.</p>
     <a href="{{ url_for('main.dashboard') }}" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
         Go to Sprint Creator
@@ -20,22 +171,30 @@
 {% else %}
 <div class="space-y-6">
     {% for listing in my_listings %}
-    <div class="liquid-glass-panel rounded-2xl p-6 sm:p-8 border border-white/5 liquid-glass-in {% if listing.status == 'closed' %}opacity-80{% endif %}">
+    <div class="liquid-glass-panel rounded-2xl p-6 sm:p-8 border border-white/5 liquid-glass-in listing-card {% if listing.status == 'closed' %}opacity-80{% endif %}">
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
                 <h2 class="font-display text-lg font-bold text-white">{{ listing.company_name }}</h2>
                 <p class="text-slate-500 text-sm mt-1">Created {{ listing.created_at.strftime('%d %b %Y') }}</p>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-1.5 text-sm">
-                    <span class="text-2xl font-display font-bold text-mint">{{ listing.joined_count }}</span>
-                    <span class="text-slate-500">/ {{ listing.max_talent_pool }} devs</span>
+            <div class="flex flex-col items-end gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1.5 text-sm">
+                        <span class="text-2xl font-display font-bold text-mint">{{ listing.joined_count }}</span>
+                        <span class="text-slate-500">/ {{ listing.max_talent_pool }} devs</span>
+                    </div>
+                    {% if listing.status == 'closed' or listing.is_full %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-600/50 text-slate-300">Pool full</span>
+                    {% else %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40 badge-open">Open</span>
+                    {% endif %}
                 </div>
-                {% if listing.status == 'closed' or listing.is_full %}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-600/50 text-slate-300">Pool full</span>
-                {% else %}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Open</span>
+                {% if listing.max_talent_pool > 0 %}
+                {% set fill_pct = ([listing.joined_count * 100 // listing.max_talent_pool, 100]|min) %}
+                <div class="listing-progress-track">
+                    <div class="listing-progress-fill" style="width: {{ fill_pct }}%"></div>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -81,7 +240,7 @@
                     <div class="flex flex-wrap gap-1.5">
                         {% for tech in listing.technologies_required.split(',') %}
                         {% if tech.strip() %}
-                        <span class="px-2.5 py-1 bg-navy-700/60 border border-white/10 rounded-lg text-xs text-slate-300">{{ tech.strip() }}</span>
+                        <span class="px-2.5 py-1 bg-navy-700/60 border border-white/10 rounded-lg text-xs text-slate-300 tech-badge">{{ tech.strip() }}</span>
                         {% endif %}
                         {% endfor %}
                     </div>
@@ -120,7 +279,7 @@
                 <p class="text-xs text-slate-500 mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-sm">lock</span> Addresses confidential until both e-sign.</p>
                 <ul class="space-y-3">
                     {% for signup in listing.signups %}
-                    <li class="p-3 rounded-xl bg-white/5 border border-white/5">
+                    <li class="p-3 rounded-xl bg-white/5 border border-white/5 dev-item">
                         <div class="flex flex-wrap items-center gap-2 mb-2">
                             <span class="text-white font-medium text-sm">{{ signup.user.username }}</span>
                             {% if signup.status == 'pending' %}
@@ -131,7 +290,7 @@
                             <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">Denied</span>
                             {% endif %}
                             {% if signup.is_fully_signed %}
-                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400">Signed</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400 badge-signed">Signed</span>
                             {% endif %}
                         </div>
                         <div class="flex flex-wrap gap-2">
@@ -139,11 +298,11 @@
                             {% if signup.status == 'pending' %}
                             <form method="POST" action="{{ url_for('main.signup_accept', id=signup.id) }}" class="inline">
                                 {{ form.hidden_tag() }}
-                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-mint/20 text-mint border border-mint/40 hover:bg-mint/30 text-xs font-medium">Accept</button>
+                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-mint/20 text-mint border border-mint/40 hover:bg-mint/30 text-xs font-medium dev-action-btn">Accept</button>
                             </form>
                             <form method="POST" action="{{ url_for('main.signup_deny', id=signup.id) }}" class="inline">
                                 {{ form.hidden_tag() }}
-                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 text-xs font-medium">Deny</button>
+                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 text-xs font-medium dev-action-btn">Deny</button>
                             </form>
                             {% endif %}
                             {% if signup.status == 'accepted' %}

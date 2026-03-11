@@ -54,6 +54,31 @@ class User(db.Model, UserMixin):
             return None
         return User.query.get(user_id)
 
+    def get_reset_token(self, salt, extra=None, expires_sec=900):
+        """Generate a signed password-reset token (15 min default). Pass extra={} for OTP payload."""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        payload = {'user_id': self.id}
+        if extra:
+            payload.update(extra)
+        return s.dumps(payload, salt=salt)
+
+    @staticmethod
+    def load_reset_token(token, salt, expires_sec=900):
+        """Load reset token payload dict; returns None if invalid or expired."""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            return s.loads(token, salt=salt, max_age=expires_sec)
+        except Exception:
+            return None
+
+    @staticmethod
+    def verify_reset_token(token, salt, expires_sec=900):
+        """Verify reset token and return User; returns None if invalid or expired."""
+        data = User.load_reset_token(token, salt, expires_sec)
+        if data is None:
+            return None
+        return User.query.get(data['user_id'])
+
     def get_totp_uri(self):
         return pyotp.totp.TOTP(self.two_factor_secret).provisioning_uri(
             name=self.email, 
