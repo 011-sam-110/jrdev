@@ -591,38 +591,18 @@ def _send_reset_code_email(user, code):
         return False
 
 
-def _generate_captcha():
-    """Return (question_str, answer_str) for a simple server-side math check."""
-    a = random.randint(2, 9)
-    b = random.randint(2, 9)
-    if random.random() < 0.5:
-        return f"What is {a} + {b}?", str(a + b)
-    return f"What is {a} \u00d7 {b}?", str(a * b)
-
-
 @main.route("/forgot-password", methods=['GET', 'POST'])
-@limiter.limit("1 per 30 seconds")
+@limiter.limit("5 per minute")
 def forgot_password():
     if current_user.is_authenticated:
         return redirect_after_action()
     form = ForgotPasswordForm()
-
     if form.validate_on_submit():
-        # Validate captcha before doing anything else
-        captcha_input = request.form.get('captcha', '').strip()
-        expected = session.pop('captcha_answer', None)
-        if not expected or captcha_input != expected:
-            q, a = _generate_captcha()
-            session['captcha_answer'] = a
-            flash('Incorrect answer to the security question — please try again.', 'danger')
-            return render_template('forgot_password.html', form=form, captcha_question=q)
-
         user = User.query.filter_by(email=form.email.data.lower().strip()).first()
         if user and user.is_verified:
             if form.method.data == 'magic':
                 _send_magic_link_email(user)
                 flash('Magic link sent — check your inbox.', 'success')
-                return redirect(url_for('main.forgot_password'))
             else:
                 code = f"{random.randint(100000, 999999)}"
                 token = user.get_reset_token(salt='password-reset-otp', extra={'code': code})
@@ -631,12 +611,7 @@ def forgot_password():
                 return redirect(url_for('main.reset_password_code'))
         else:
             flash("If that email is registered and verified, you'll receive instructions shortly.", 'info')
-            return redirect(url_for('main.forgot_password'))
-
-    # GET (or form field errors) — always issue a fresh captcha
-    q, a = _generate_captcha()
-    session['captcha_answer'] = a
-    return render_template('forgot_password.html', form=form, captcha_question=q)
+    return render_template('forgot_password.html', form=form)
 
 
 @main.route("/reset-password/magic/<token>")
