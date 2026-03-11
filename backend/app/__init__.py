@@ -76,12 +76,13 @@ def create_app():
             'pool_recycle': 300,
         }
 
-    # Mail (development/production: set EMAIL_USER, EMAIL_PASS in env)
-    app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
-    app.config['MAIL_PORT'] = 587
+    # Mail (development/production: set EMAIL_USER, EMAIL_PASS, MAIL_SERVER in env)
+    app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.ionos.co.uk')
+    app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', '587'))
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER')
     app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS')
+    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'JrDev <noreply@jr-dev.uk>')
     # Platform (JRDEV Ltd) for contract PDF
     app.config['PLATFORM_COMPANY_NUMBER'] = os.environ.get('PLATFORM_COMPANY_NUMBER', '[_______]')
     app.config['PLATFORM_ADDRESS'] = os.environ.get('PLATFORM_ADDRESS', '[Address]')

@@ -353,3 +353,55 @@ class PrizePoolPayout(db.Model):
     prize_pool = db.relationship('PrizePool', backref=db.backref('payouts', lazy=True))
     prize_pool_entry = db.relationship('PrizePoolEntry', backref=db.backref('payout', uselist=False, lazy=True))
     user = db.relationship('User', backref='prize_pool_payouts', foreign_keys=[user_id])
+
+
+class AdminEmail(db.Model):
+    """Stores inbound and outbound emails for the three admin inboxes."""
+    __tablename__ = 'admin_emails'
+    id          = db.Column(db.Integer, primary_key=True)
+    inbox       = db.Column(db.String(20), nullable=False, index=True)   # 'noreply' | 'support' | 'disputes'
+    direction   = db.Column(db.String(8), nullable=False)                # 'inbound' | 'outbound'
+    message_id  = db.Column(db.String(500), unique=True, nullable=True)  # email Message-ID header
+    in_reply_to = db.Column(db.String(500), nullable=True)               # In-Reply-To header
+    thread_id   = db.Column(db.String(500), nullable=True, index=True)   # = oldest message_id in thread
+    from_addr   = db.Column(db.String(255), nullable=False)
+    to_addrs    = db.Column(db.Text, nullable=False)                     # JSON list
+    cc_addrs    = db.Column(db.Text, nullable=True)                      # JSON list
+    bcc_addrs   = db.Column(db.Text, nullable=True)                      # JSON list (outbound only)
+    subject     = db.Column(db.String(500))
+    body_text   = db.Column(db.Text)
+    body_html   = db.Column(db.Text)
+    is_read     = db.Column(db.Boolean, default=False, nullable=False)
+    sent_at     = db.Column(db.DateTime, nullable=True, index=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class AdminEmailTemplate(db.Model):
+    """Reusable email templates with pre-filled subject and body content."""
+    __tablename__ = 'admin_email_templates'
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(100), nullable=False)
+    category    = db.Column(db.String(50), nullable=True)   # 'general' | 'support' | 'disputes' | 'billing'
+    subject     = db.Column(db.String(500), nullable=True)
+    body_html   = db.Column(db.Text, nullable=False)        # content area only; wrapped in branded layout on send
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at  = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class AdminEmailConfig(db.Model):
+    """Singleton config row for global email settings (signature, default inbox)."""
+    __tablename__ = 'admin_email_config'
+    id              = db.Column(db.Integer, primary_key=True)  # always 1
+    signature_html  = db.Column(db.Text, nullable=True)        # appended to every outbound email
+    default_inbox   = db.Column(db.String(20), default='noreply', nullable=False)
+    updated_at      = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    @classmethod
+    def get(cls):
+        """Return the singleton config row, creating it if it doesn't exist."""
+        row = cls.query.get(1)
+        if not row:
+            row = cls(id=1, signature_html='<p>Best regards,<br><strong>The JrDev Team</strong></p>', default_inbox='noreply')
+            db.session.add(row)
+            db.session.commit()
+        return row

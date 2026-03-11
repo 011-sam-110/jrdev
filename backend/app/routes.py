@@ -353,7 +353,7 @@ def _send_verification_email(user):
     verify_url = url_for('main.verify_email', token=token, _external=True)
     msg = Message(
         subject='Verify your JrDev account',
-        sender=username,
+        sender=current_app.config.get('MAIL_DEFAULT_SENDER', username),
         recipients=[user.email],
         body=f'''Welcome to JrDev. Please verify your email by clicking the link below.
 
@@ -1980,7 +1980,7 @@ def _notify_prize_pool_results(pool, winners, loser_entries, payout_by_entry_id)
         try:
             msg = Message(
                 subject=f'You won: {pool.title}',
-                sender=username,
+                sender=current_app.config.get('MAIL_DEFAULT_SENDER', username),
                 recipients=[entry.user.email],
                 body=f'''Congratulations! You placed in the top 10% for "{pool.title}".
 
@@ -1999,7 +1999,7 @@ View results: {results_url}
         try:
             msg = Message(
                 subject=f'{pool.title} — results are in',
-                sender=username,
+                sender=current_app.config.get('MAIL_DEFAULT_SENDER', username),
                 recipients=[entry.user.email],
                 body=f'''"{pool.title}" has closed. You didn't make the top 10% this time.
 

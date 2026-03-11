@@ -90,7 +90,7 @@
                 <a class="nav-link-animated {% if nav_active == 'listings' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_listings') }}">Listings</a>
                 <a class="nav-link-animated {% if nav_active == 'prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_prize_pools') }}">Prize Pools</a>
                 <a class="nav-link-animated {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">Your Listings</a>
-                {% if can_manage_prize_pools() %}
+                {% if is_platform_admin() %}
                 <a class="nav-link-animated {% if nav_active == 'admin_prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
                 {% endif %}
             </div>
@@ -117,7 +117,7 @@
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_listings') }}">Listings</a>
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_prize_pools') }}">Prize Pools</a>
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_joined_listings') }}">Your Listings</a>
-                {% if can_manage_prize_pools() %}
+                {% if is_platform_admin() %}
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
                 {% endif %}
                 <div class="pt-2 mt-2 border-t border-white/10 space-y-1">

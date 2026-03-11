@@ -95,6 +95,14 @@
                 <span class="material-symbols-outlined">emoji_events</span>
                 Prize Pools
             </a>
+            <a href="{{ url_for('main.admin_inbox') }}" class="admin-nav-link {% if admin_section == 'inbox' %}active{% endif %}">
+                <span class="material-symbols-outlined">mail</span>
+                Email Inbox
+            </a>
+            <a href="{{ url_for('main.admin_email_templates') }}" class="admin-nav-link pl-8 text-xs {% if admin_section == 'email_templates' %}active{% endif %}">
+                <span class="material-symbols-outlined" style="font-size:1rem">description</span>
+                Templates
+            </a>
 
             <div class="pt-3 pb-1 px-1">
                 <p class="text-[10px] font-semibold uppercase tracking-widest text-slate-600">Database</p>
@@ -150,6 +158,12 @@
                 </a>
                 <a href="{{ url_for('main.admin_prize_pools') }}" class="admin-nav-link {% if admin_section == 'prize_pools' %}active{% endif %}">
                     <span class="material-symbols-outlined">emoji_events</span>Prize Pools
+                </a>
+                <a href="{{ url_for('main.admin_inbox') }}" class="admin-nav-link {% if admin_section == 'inbox' %}active{% endif %}">
+                    <span class="material-symbols-outlined">mail</span>Email Inbox
+                </a>
+                <a href="{{ url_for('main.admin_email_templates') }}" class="admin-nav-link pl-8 text-xs {% if admin_section == 'email_templates' %}active{% endif %}">
+                    <span class="material-symbols-outlined" style="font-size:1rem">description</span>Templates
                 </a>
                 {% for model_name in ['users', 'sprint_listings', 'listing_signups', 'prize_pools', 'prize_pool_entries', 'prize_pool_payouts'] %}
                 <a href="{{ url_for('main.admin_database', model=model_name) }}" class="admin-nav-link text-xs">

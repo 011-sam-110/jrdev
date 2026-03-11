@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 from app import db, bcrypt, mail, limiter
 from app.forms import RegistrationForm, LoginForm
 from app.profile_forms import EditProfileForm, EditMarkdownForm, AddPinnedProjectForm
-from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote, PrizePoolPairwiseVote, PrizePoolPayout
+from app.models import User, DeveloperProfile, Project, PinnedProject, SprintListing, ListingSignup, PrizePool, PrizePoolEntry, PrizePoolVote, PrizePoolPairwiseVote, PrizePoolPayout, AdminEmail, AdminEmailTemplate, AdminEmailConfig
 from sqlalchemy.exc import IntegrityError
 from app.decorators import require_role, require_verified, require_prize_pool_admin, can_manage_prize_pools, require_admin, is_platform_admin
 from app.utils import (
@@ -353,7 +353,7 @@ def _send_verification_email(user):
     verify_url = url_for('main.verify_email', token=token, _external=True)
     msg = Message(
         subject='Verify your JrDev account',
-        sender=username,
+        sender=current_app.config.get('MAIL_DEFAULT_SENDER', username),
         recipients=[user.email],
         body=f'''Welcome to JrDev. Please verify your email by clicking the link below.
 
@@ -1980,7 +1980,7 @@ def _notify_prize_pool_results(pool, winners, loser_entries, payout_by_entry_id)
         try:
             msg = Message(
                 subject=f'You won: {pool.title}',
-                sender=username,
+                sender=current_app.config.get('MAIL_DEFAULT_SENDER', username),
                 recipients=[entry.user.email],
                 body=f'''Congratulations! You placed in the top 10% for "{pool.title}".
 
@@ -1999,7 +1999,7 @@ View results: {results_url}
         try:
             msg = Message(
                 subject=f'{pool.title} — results are in',
-                sender=username,
+                sender=current_app.config.get('MAIL_DEFAULT_SENDER', username),
                 recipients=[entry.user.email],
                 body=f'''"{pool.title}" has closed. You didn't make the top 10% this time.
 
@@ -2256,3 +2256,260 @@ def profile_by_username(username):
         return render_template('business_profile_view.html',
                                title=f'{user.username} - Profile',
                                profile_user=user)
+
+
+# ── Admin: Email Inbox ──────────────────────────────────────────────────────
+
+ADMIN_INBOXES = ('noreply', 'support', 'disputes')
+
+
+@main.route('/admin/inbox')
+@login_required
+@require_verified
+@require_admin
+def admin_inbox():
+    inbox_filter = request.args.get('inbox', '')
+    page = request.args.get('page', 1, type=int)
+    query = AdminEmail.query.order_by(AdminEmail.sent_at.desc().nullslast(), AdminEmail.created_at.desc())
+    if inbox_filter in ADMIN_INBOXES:
+        query = query.filter_by(inbox=inbox_filter)
+    emails = query.paginate(page=page, per_page=30, error_out=False)
+    unread_counts = {}
+    for name in ADMIN_INBOXES:
+        unread_counts[name] = AdminEmail.query.filter_by(inbox=name, is_read=False).count()
+    return render_template('admin/inbox.html',
+                           admin_section='inbox',
+                           inbox_filter=inbox_filter,
+                           emails=emails,
+                           unread_counts=unread_counts,
+                           inboxes=ADMIN_INBOXES)
+
+
+@main.route('/admin/inbox/sync', methods=['POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_inbox_sync():
+    from app.admin_email import sync_inbox
+    total = 0
+    errors = []
+    for name in ADMIN_INBOXES:
+        try:
+            total += sync_inbox(name)
+        except Exception as exc:
+            errors.append(f'{name}: {exc}')
+    if errors:
+        flash(f'Sync completed with errors: {"; ".join(errors)}', 'warning')
+    else:
+        flash(f'Sync complete — {total} new email(s) imported.', 'success')
+    return redirect(url_for('main.admin_inbox'))
+
+
+@main.route('/admin/inbox/compose', methods=['GET', 'POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_inbox_compose():
+    if request.method == 'POST':
+        from app.admin_email import send_admin_email
+        from_inbox = request.form.get('from_inbox', 'noreply')
+        to_raw = request.form.get('to', '')
+        cc_raw = request.form.get('cc', '')
+        bcc_raw = request.form.get('bcc', '')
+        subject = request.form.get('subject', '').strip()
+        body = request.form.get('body', '').strip()
+        to_list = [a.strip() for a in to_raw.split(',') if a.strip()]
+        cc_list = [a.strip() for a in cc_raw.split(',') if a.strip()]
+        bcc_list = [a.strip() for a in bcc_raw.split(',') if a.strip()]
+        if not to_list or not subject:
+            flash('To and Subject are required.', 'danger')
+            return render_template('admin/email_compose.html',
+                                   admin_section='inbox',
+                                   inboxes=ADMIN_INBOXES,
+                                   templates=AdminEmailTemplate.query.order_by(AdminEmailTemplate.name).all(),
+                                   default_inbox=AdminEmailConfig.get().default_inbox,
+                                   preload_template=None,
+                                   form_data=request.form)
+        try:
+            send_admin_email(from_inbox, to_list, subject, body_html=body,
+                             cc_list=cc_list, bcc_list=bcc_list)
+            flash('Email sent.', 'success')
+            return redirect(url_for('main.admin_inbox'))
+        except Exception as exc:
+            flash(f'Send failed: {exc}', 'danger')
+    preload_tid = request.args.get('template', type=int)
+    preload_template = AdminEmailTemplate.query.get(preload_tid) if preload_tid else None
+    config = AdminEmailConfig.get()
+    return render_template('admin/email_compose.html',
+                           admin_section='inbox',
+                           inboxes=ADMIN_INBOXES,
+                           templates=AdminEmailTemplate.query.order_by(AdminEmailTemplate.name).all(),
+                           default_inbox=config.default_inbox,
+                           preload_template=preload_template,
+                           form_data={})
+
+
+@main.route('/admin/inbox/<int:email_id>')
+@login_required
+@require_verified
+@require_admin
+def admin_inbox_detail(email_id):
+    import json as _json
+    em = AdminEmail.query.get_or_404(email_id)
+    if not em.is_read:
+        em.is_read = True
+        db.session.commit()
+    thread = []
+    if em.thread_id:
+        thread = AdminEmail.query.filter_by(thread_id=em.thread_id).order_by(AdminEmail.sent_at.asc().nullslast(), AdminEmail.created_at.asc()).all()
+    def _parse_addrs(field):
+        if not field:
+            return []
+        try:
+            return _json.loads(field)
+        except Exception:
+            return [field]
+    return render_template('admin/email_detail.html',
+                           admin_section='inbox',
+                           em=em,
+                           thread=thread,
+                           inboxes=ADMIN_INBOXES,
+                           parse_addrs=_parse_addrs)
+
+
+@main.route('/admin/inbox/<int:email_id>/reply', methods=['POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_inbox_reply(email_id):
+    from app.admin_email import send_admin_email
+    original = AdminEmail.query.get_or_404(email_id)
+    import json as _json
+    from_inbox = request.form.get('from_inbox', original.inbox)
+    to_raw = request.form.get('to', '')
+    cc_raw = request.form.get('cc', '')
+    bcc_raw = request.form.get('bcc', '')
+    subject = request.form.get('subject', f'Re: {original.subject or ""}').strip()
+    body = request.form.get('body', '').strip()
+    to_list = [a.strip() for a in to_raw.split(',') if a.strip()]
+    cc_list = [a.strip() for a in cc_raw.split(',') if a.strip()]
+    bcc_list = [a.strip() for a in bcc_raw.split(',') if a.strip()]
+    if not to_list:
+        flash('To field is required.', 'danger')
+        return redirect(url_for('main.admin_inbox_detail', email_id=email_id))
+    try:
+        send_admin_email(from_inbox, to_list, subject, body_html=body,
+                         cc_list=cc_list, bcc_list=bcc_list,
+                         reply_to_message_id=original.message_id)
+        flash('Reply sent.', 'success')
+    except Exception as exc:
+        flash(f'Send failed: {exc}', 'danger')
+    return redirect(url_for('main.admin_inbox_detail', email_id=email_id))
+
+
+# ── Admin: Email Templates + Settings ───────────────────────────────────────
+
+TEMPLATE_CATEGORIES = ('general', 'support', 'disputes', 'billing')
+
+
+@main.route('/admin/inbox/templates')
+@login_required
+@require_verified
+@require_admin
+def admin_email_templates():
+    templates = AdminEmailTemplate.query.order_by(AdminEmailTemplate.category, AdminEmailTemplate.name).all()
+    return render_template('admin/email_templates.html',
+                           admin_section='inbox',
+                           templates=templates,
+                           categories=TEMPLATE_CATEGORIES)
+
+
+@main.route('/admin/inbox/templates/new', methods=['GET', 'POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_email_template_new():
+    if request.method == 'POST':
+        t = AdminEmailTemplate(
+            name=request.form.get('name', '').strip(),
+            category=request.form.get('category', 'general') or 'general',
+            subject=request.form.get('subject', '').strip() or None,
+            body_html=request.form.get('body_html', '').strip(),
+        )
+        if not t.name or not t.body_html:
+            flash('Name and body are required.', 'danger')
+            return render_template('admin/email_template_edit.html',
+                                   admin_section='inbox',
+                                   categories=TEMPLATE_CATEGORIES,
+                                   template=None,
+                                   form_data=request.form)
+        db.session.add(t)
+        db.session.commit()
+        flash(f'Template "{t.name}" created.', 'success')
+        return redirect(url_for('main.admin_email_templates'))
+    return render_template('admin/email_template_edit.html',
+                           admin_section='inbox',
+                           categories=TEMPLATE_CATEGORIES,
+                           template=None,
+                           form_data={})
+
+
+@main.route('/admin/inbox/templates/<int:tid>/edit', methods=['GET', 'POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_email_template_edit(tid):
+    t = AdminEmailTemplate.query.get_or_404(tid)
+    if request.method == 'POST':
+        t.name = request.form.get('name', '').strip() or t.name
+        t.category = request.form.get('category', 'general') or 'general'
+        t.subject = request.form.get('subject', '').strip() or None
+        t.body_html = request.form.get('body_html', '').strip() or t.body_html
+        db.session.commit()
+        flash(f'Template "{t.name}" saved.', 'success')
+        return redirect(url_for('main.admin_email_templates'))
+    return render_template('admin/email_template_edit.html',
+                           admin_section='inbox',
+                           categories=TEMPLATE_CATEGORIES,
+                           template=t,
+                           form_data={})
+
+
+@main.route('/admin/inbox/templates/<int:tid>/delete', methods=['POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_email_template_delete(tid):
+    t = AdminEmailTemplate.query.get_or_404(tid)
+    name = t.name
+    db.session.delete(t)
+    db.session.commit()
+    flash(f'Template "{name}" deleted.', 'info')
+    return redirect(url_for('main.admin_email_templates'))
+
+
+@main.route('/admin/inbox/templates/<int:tid>/json')
+@login_required
+@require_verified
+@require_admin
+def admin_email_template_json(tid):
+    t = AdminEmailTemplate.query.get_or_404(tid)
+    return jsonify({'subject': t.subject or '', 'body_html': t.body_html or ''})
+
+
+@main.route('/admin/inbox/settings', methods=['GET', 'POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_email_settings():
+    config = AdminEmailConfig.get()
+    if request.method == 'POST':
+        config.signature_html = request.form.get('signature_html', '').strip() or None
+        config.default_inbox = request.form.get('default_inbox', 'noreply')
+        db.session.commit()
+        flash('Settings saved.', 'success')
+        return redirect(url_for('main.admin_email_settings'))
+    return render_template('admin/email_settings.html',
+                           admin_section='inbox',
+                           config=config,
+                           inboxes=ADMIN_INBOXES)
