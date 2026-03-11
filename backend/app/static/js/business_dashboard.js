@@ -70,6 +70,8 @@
       investmentAmount: document.querySelector('.investment-amount'),
       postContractForm,
       launchForm,
+      improveBtn: document.getElementById('improve-with-ai-btn'),
+      ideaInput: document.getElementById('idea-input'),
     };
   }
 
@@ -93,6 +95,333 @@
     const div = document.createElement('div');
     div.textContent = s;
     return div.innerHTML;
+  }
+
+  // ── AI Toast Notification ──
+  function showAIToast(message, type) {
+    var existing = document.getElementById('ai-toast');
+    if (existing) existing.remove();
+    var toast = document.createElement('div');
+    toast.id = 'ai-toast';
+    var isError = type === 'error';
+    toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all ' +
+      (isError
+        ? 'bg-red-500/20 border border-red-500/40 text-red-300'
+        : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300');
+    var icon = isError ? 'error' : 'check_circle';
+    toast.innerHTML = '<span class="material-symbols-outlined text-[18px]">' + icon + '</span>' + escapeHtml(message);
+    document.body.appendChild(toast);
+    setTimeout(function() { if (toast.parentNode) toast.remove(); }, 5000);
+  }
+
+  // ── AI Improvement State ──
+  var aiState = { items: [] };
+
+  /**
+   * Collect all current form field values into a plain object.
+   */
+  function collectFormData(el) {
+    return {
+      idea: el.ideaInput ? el.ideaInput.value : '',
+      essential_deliverables: el.essentialList
+        ? Array.from(el.essentialList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
+        : [],
+      deliverables: el.reqList
+        ? Array.from(el.reqList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
+        : [],
+      technologies: el.techList
+        ? Array.from(el.techList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
+        : [],
+      devs: parseInt(el.devSlider?.value || DEFAULT_DEVS, 10),
+      investment_per_dev: parseInt(el.investmentPerDevSlider?.value || DEFAULT_PER_DEV, 10),
+      min_requirements: parseInt(el.minReqSlider?.value || DEFAULT_MIN_REQUIREMENTS, 10),
+      essential_count: el.essentialSlider ? parseInt(el.essentialSlider.value, 10) : 0,
+    };
+  }
+
+  /**
+   * Add/remove green highlight ring on a field element.
+   */
+  function setFieldHighlight(fieldEl, on) {
+    if (!fieldEl) return;
+    if (on) {
+      fieldEl.classList.add('ring-2', 'ring-emerald-400/50', 'bg-emerald-400/5');
+    } else {
+      fieldEl.classList.remove('ring-2', 'ring-emerald-400/50', 'bg-emerald-400/5');
+    }
+  }
+
+  /**
+   * Rebuild a tag list (clear + re-add from array).
+   */
+  function rebuildTagList(listEl, items, baseClass, dotClass) {
+    if (!listEl) return;
+    listEl.querySelectorAll('.tech-tag').forEach(function(t) { t.remove(); });
+    items.forEach(function(text) {
+      listEl.appendChild(createTag(text, baseClass, dotClass));
+    });
+  }
+
+  /**
+   * Open the AI suggestions panel.
+   */
+  function openAIPanel() {
+    var panel = document.getElementById('ai-suggestions-panel');
+    var backdrop = document.getElementById('ai-panel-backdrop');
+    if (panel) { panel.classList.remove('hidden'); panel.classList.add('flex'); }
+    if (backdrop) backdrop.classList.remove('hidden');
+  }
+
+  /**
+   * Close the AI suggestions panel.
+   */
+  function closeAIPanel() {
+    var panel = document.getElementById('ai-suggestions-panel');
+    var backdrop = document.getElementById('ai-panel-backdrop');
+    if (panel) { panel.classList.add('hidden'); panel.classList.remove('flex'); }
+    if (backdrop) backdrop.classList.add('hidden');
+  }
+
+  const FIELD_LABELS = {
+    idea: 'Sprint Idea',
+    essential_deliverables: 'Essential Deliverables',
+    deliverables: 'Optional Deliverables',
+    technologies: 'Technologies',
+    devs: 'Developer Allocation',
+    investment_per_dev: 'Investment Per Dev',
+    min_requirements: 'Total Deliverables',
+    essential_count: 'Essential Count',
+  };
+
+  /**
+   * Apply AI suggestions to the DOM and build the review panel.
+   */
+  function applyAISuggestions(el, original, suggestions) {
+    var listEl = document.getElementById('ai-suggestions-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    aiState.items = [];
+
+    var changes = suggestions.changes || [];
+    if (changes.length === 0) return;
+
+    changes.forEach(function(field) {
+      var newVal = suggestions[field];
+      if (newVal === undefined) return;
+
+      var fieldEl = null;
+      var originalVal = original[field];
+
+      // Apply new value to DOM
+      if (field === 'idea') {
+        fieldEl = el.ideaInput;
+        if (el.ideaInput) el.ideaInput.value = newVal;
+      } else if (field === 'essential_deliverables') {
+        fieldEl = el.essentialList;
+        var maxE = getEssentialMax(el);
+        newVal = newVal.slice(0, Math.min(newVal.length, maxE));
+        if (el.essentialSlider) {
+          el.essentialSlider.value = String(newVal.length);
+          el.essentialSlider.dispatchEvent(new Event('input'));
+        }
+        rebuildTagList(el.essentialList, newVal, ESSENTIAL_TAG_CLASS, 'bg-amber-400');
+        syncContractTasks(el);
+        updateCapHints(el);
+      } else if (field === 'deliverables') {
+        fieldEl = el.reqList;
+        rebuildTagList(el.reqList, newVal, TAG_BASE_CLASS);
+        syncContractTasks(el);
+        updateCapHints(el);
+      } else if (field === 'technologies') {
+        fieldEl = el.techList;
+        rebuildTagList(el.techList, newVal, TAG_BASE_CLASS);
+      } else if (field === 'devs') {
+        fieldEl = el.devSlider;
+        if (el.devSlider) {
+          var clamped = Math.min(Math.max(parseInt(el.devSlider.min || 1), parseInt(newVal, 10)), parseInt(el.devSlider.max || 5));
+          el.devSlider.value = String(clamped);
+          el.devSlider.dispatchEvent(new Event('input'));
+        }
+      } else if (field === 'investment_per_dev') {
+        fieldEl = el.investmentPerDevSlider;
+        if (el.investmentPerDevSlider) {
+          var clamped = Math.min(Math.max(parseInt(el.investmentPerDevSlider.min || 50), parseInt(newVal, 10)), parseInt(el.investmentPerDevSlider.max || 300));
+          el.investmentPerDevSlider.value = String(clamped);
+          el.investmentPerDevSlider.dispatchEvent(new Event('input'));
+        }
+      } else if (field === 'min_requirements') {
+        fieldEl = el.minReqSlider;
+        if (el.minReqSlider) {
+          var clamped = Math.min(Math.max(parseInt(el.minReqSlider.min || 1), parseInt(newVal, 10)), parseInt(el.minReqSlider.max || 8));
+          el.minReqSlider.value = String(clamped);
+          el.minReqSlider.dispatchEvent(new Event('input'));
+        }
+      } else if (field === 'essential_count') {
+        fieldEl = el.essentialSlider;
+        if (el.essentialSlider) {
+          var maxE = getEssentialMax(el);
+          var clamped = Math.min(Math.max(0, parseInt(newVal, 10)), maxE);
+          el.essentialSlider.value = String(clamped);
+          el.essentialSlider.dispatchEvent(new Event('input'));
+        }
+      }
+
+      if (fieldEl) setFieldHighlight(fieldEl, true);
+
+      // Build panel item
+      var item = document.createElement('div');
+      item.className = 'rounded-xl bg-white/5 border border-white/10 p-3 space-y-2';
+
+      var label = FIELD_LABELS[field] || field;
+      var previewNew = Array.isArray(newVal) ? newVal.join(', ') : String(newVal);
+      var previewOld = Array.isArray(originalVal) ? originalVal.join(', ') : String(originalVal || '');
+
+      item.innerHTML =
+        '<p class="text-xs font-bold text-slate-300">' + escapeHtml(label) + '</p>' +
+        (previewOld ? '<p class="text-xs text-slate-500 line-through">' + escapeHtml(previewOld) + '</p>' : '') +
+        '<p class="text-xs text-emerald-400">' + escapeHtml(previewNew) + '</p>' +
+        '<div class="flex gap-2 pt-1">' +
+          '<button type="button" class="ai-item-approve flex-1 py-1.5 rounded-lg text-xs font-bold bg-emerald-400/10 border border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/20 transition-colors">Approve</button>' +
+          '<button type="button" class="ai-item-deny flex-1 py-1.5 rounded-lg text-xs font-bold bg-red-400/10 border border-red-400/30 text-red-400 hover:bg-red-400/20 transition-colors">Deny</button>' +
+        '</div>';
+
+      listEl.appendChild(item);
+
+      var approveBtn = item.querySelector('.ai-item-approve');
+      var denyBtn = item.querySelector('.ai-item-deny');
+
+      var stateEntry = {
+        onApprove: function() {
+          setFieldHighlight(fieldEl, false);
+          item.remove();
+        },
+        onDeny: function() {
+          // Revert to original
+          if (field === 'idea') {
+            if (el.ideaInput) el.ideaInput.value = originalVal || '';
+          } else if (field === 'essential_deliverables') {
+            rebuildTagList(el.essentialList, originalVal || [], ESSENTIAL_TAG_CLASS, 'bg-amber-400');
+            if (el.essentialSlider) { el.essentialSlider.value = String(original.essential_count || 0); el.essentialSlider.dispatchEvent(new Event('input')); }
+            syncContractTasks(el); updateCapHints(el);
+          } else if (field === 'deliverables') {
+            rebuildTagList(el.reqList, originalVal || [], TAG_BASE_CLASS);
+            syncContractTasks(el); updateCapHints(el);
+          } else if (field === 'technologies') {
+            rebuildTagList(el.techList, originalVal || [], TAG_BASE_CLASS);
+          } else if (field === 'devs') {
+            if (el.devSlider) { el.devSlider.value = String(originalVal); el.devSlider.dispatchEvent(new Event('input')); }
+          } else if (field === 'investment_per_dev') {
+            if (el.investmentPerDevSlider) { el.investmentPerDevSlider.value = String(originalVal); el.investmentPerDevSlider.dispatchEvent(new Event('input')); }
+          } else if (field === 'min_requirements') {
+            if (el.minReqSlider) { el.minReqSlider.value = String(originalVal); el.minReqSlider.dispatchEvent(new Event('input')); }
+          } else if (field === 'essential_count') {
+            if (el.essentialSlider) { el.essentialSlider.value = String(originalVal); el.essentialSlider.dispatchEvent(new Event('input')); }
+          }
+          setFieldHighlight(fieldEl, false);
+          item.remove();
+        },
+      };
+
+      aiState.items.push(stateEntry);
+
+      approveBtn.addEventListener('click', function() {
+        var idx = aiState.items.indexOf(stateEntry);
+        if (idx !== -1) aiState.items.splice(idx, 1);
+        stateEntry.onApprove();
+      });
+      denyBtn.addEventListener('click', function() {
+        var idx = aiState.items.indexOf(stateEntry);
+        if (idx !== -1) aiState.items.splice(idx, 1);
+        stateEntry.onDeny();
+      });
+    });
+  }
+
+  /**
+   * Bind the "Improve with AI" button and panel controls.
+   */
+  function bindAIImprove(el) {
+    var closeBtn = document.getElementById('ai-panel-close');
+    var backdrop = document.getElementById('ai-panel-backdrop');
+    var approveAllBtn = document.getElementById('ai-approve-all');
+    var denyAllBtn = document.getElementById('ai-deny-all');
+    var csrfInput = document.getElementById('csrf-token-ai');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeAIPanel);
+    if (backdrop) backdrop.addEventListener('click', closeAIPanel);
+
+    if (approveAllBtn) {
+      approveAllBtn.addEventListener('click', function() {
+        var items = aiState.items.slice();
+        aiState.items = [];
+        items.forEach(function(item) { item.onApprove(); });
+        closeAIPanel();
+      });
+    }
+
+    if (denyAllBtn) {
+      denyAllBtn.addEventListener('click', function() {
+        var items = aiState.items.slice();
+        aiState.items = [];
+        items.forEach(function(item) { item.onDeny(); });
+        closeAIPanel();
+      });
+    }
+
+    if (!el.improveBtn) return;
+
+    el.improveBtn.addEventListener('click', function() {
+      var btn = el.improveBtn;
+      var icon = btn.querySelector('.ai-btn-icon');
+      var label = btn.querySelector('.ai-btn-label');
+      var spinner = btn.querySelector('.ai-btn-spinner');
+      var csrfToken = csrfInput ? csrfInput.value : '';
+
+      // Loading state
+      if (icon) icon.classList.add('hidden');
+      if (spinner) spinner.classList.remove('hidden');
+      if (label) label.textContent = 'Improving…';
+      btn.disabled = true;
+
+      var formData = collectFormData(el);
+
+      fetch('/api/improve-sprint', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(result) {
+          // Restore button
+          if (icon) icon.classList.remove('hidden');
+          if (spinner) spinner.classList.add('hidden');
+          if (label) label.textContent = 'Improve with AI';
+          btn.disabled = false;
+
+          if (result.data.error) {
+            showAIToast(result.data.error, 'error');
+            return;
+          }
+          var changes = result.data.changes || [];
+          if (changes.length === 0) {
+            showAIToast('No improvements suggested. Try adding more details to your sprint.', 'error');
+            return;
+          }
+          applyAISuggestions(el, formData, result.data);
+          openAIPanel();
+        })
+        .catch(function(err) {
+          if (icon) icon.classList.remove('hidden');
+          if (spinner) spinner.classList.add('hidden');
+          if (label) label.textContent = 'Improve with AI';
+          btn.disabled = false;
+          showAIToast('Could not reach the AI service. Please try again.', 'error');
+        });
+    });
   }
 
   /**
@@ -554,6 +883,7 @@
     bindHelpToggles();
     bindLaunchForm(el);
     bindPostContractForm(el);
+    bindAIImprove(el);
   }
 
   if (document.readyState === 'loading') {

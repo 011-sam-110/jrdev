@@ -78,7 +78,7 @@
             </div>
             <div id="help-idea-box" class="hidden mb-3 p-2 rounded-lg bg-white/5 text-xs text-slate-400 leading-relaxed">Describe the core problem you want solved. Be as specific as possible — what does the prototype need to do? The more detail you give, the better prototypes you'll receive.</div>
             <label class="block text-xs text-slate-400 mb-1">Describe the core concept of your sprint</label>
-            <textarea class="w-full h-28 liquid-glass-input rounded-lg p-3 text-slate-200 text-sm focus:ring-2 focus:ring-purple focus:border-transparent transition-all placeholder:text-slate-600" placeholder="e.g. A decentralized marketplace for university textbooks with real-time bidding..."></textarea>
+            <textarea id="idea-input" class="w-full h-28 liquid-glass-input rounded-lg p-3 text-slate-200 text-sm focus:ring-2 focus:ring-purple focus:border-transparent transition-all placeholder:text-slate-600" placeholder="e.g. A decentralized marketplace for university textbooks with real-time bidding..."></textarea>
             <div class="mt-2 flex gap-2 text-xs text-slate-500">
                 <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">info</span> At least 50 words recommended</span>
             </div>
@@ -330,6 +330,24 @@
                 </div>
             </div>
 
+            <div class="mb-6 p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
+                <p class="text-slate-400 mb-2 font-medium">Each developer works independently, building a unique solution — you get multiple approaches to compare.</p>
+                <ul class="space-y-1.5 text-slate-500">
+                    <li class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-mint text-[14px] mt-0.5">compare_arrows</span>
+                        Diverse solutions to compare
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-mint text-[14px] mt-0.5">shield</span>
+                        Reduced single-point-of-failure risk
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-mint text-[14px] mt-0.5">emoji_events</span>
+                        Healthy competition drives quality
+                    </li>
+                </ul>
+            </div>
+
             <!-- Total Investment -->
             <div class="pt-4 border-t border-white/5 mb-4">
                 <div class="flex flex-col gap-1">
@@ -342,9 +360,49 @@
                     </span>
                 </div>
             </div>
+
+            <!-- ── AI Improvement Button ── -->
+            <div class="pt-2 border-t border-white/5">
+                <button type="button" id="improve-with-ai-btn"
+                    class="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-emerald-400/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-400/10 transition-all">
+                    <span class="material-symbols-outlined text-[18px] ai-btn-icon">auto_awesome</span>
+                    <span class="ai-btn-label">Improve with AI</span>
+                    <span class="ai-btn-spinner hidden">
+                        <span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                    </span>
+                </button>
+                <input type="hidden" id="csrf-token-ai" value="{{ csrf_token }}"/>
+            </div>
         </div>
     </aside>
 </div>
+<!-- ── AI Suggestions Panel ── -->
+<div id="ai-suggestions-panel"
+    class="fixed top-0 right-0 h-full w-full sm:w-96 z-50 hidden flex-col
+           liquid-glass-panel border-l border-white/10 shadow-2xl overflow-y-auto">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-white/10 sticky top-0 bg-navy-900/80 backdrop-blur-md">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-emerald-400">auto_awesome</span>
+            <h3 class="font-display text-base font-bold text-white">AI Suggestions — Review Changes</h3>
+        </div>
+        <button type="button" id="ai-panel-close"
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+    </div>
+    <div class="px-5 py-3 flex gap-2 border-b border-white/5">
+        <button type="button" id="ai-approve-all"
+            class="flex-1 py-2 rounded-lg text-xs font-bold bg-emerald-400/10 border border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/20 transition-colors">
+            Approve All
+        </button>
+        <button type="button" id="ai-deny-all"
+            class="flex-1 py-2 rounded-lg text-xs font-bold bg-red-400/10 border border-red-400/30 text-red-400 hover:bg-red-400/20 transition-colors">
+            Deny All
+        </button>
+    </div>
+    <div id="ai-suggestions-list" class="flex-1 p-4 space-y-3"></div>
+</div>
+<div id="ai-panel-backdrop" class="fixed inset-0 bg-black/40 z-40 hidden backdrop-blur-sm"></div>
 {% endblock %}
 
 {% block footer %}

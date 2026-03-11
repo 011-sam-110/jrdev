@@ -36,6 +36,11 @@ from app.signup_helpers import (
 
 logger = logging.getLogger(__name__)
 from flask_login import login_user, current_user, logout_user, login_required
+
+try:
+    from gradient import Gradient as GradientClient
+except ImportError:
+    GradientClient = None
 from flask_mail import Message
 
 
@@ -1347,6 +1352,92 @@ def prize_pool_results(pool_id):
         title='Results',
         nav_active='prize_pools_joined',
     )
+
+
+# ── AI Sprint Improvement ──
+
+@main.route("/api/improve-sprint", methods=['POST'])
+@login_required
+@require_verified
+@require_role('BUSINESS', json_response=True)
+@limiter.limit("10 per hour")
+def improve_sprint():
+    api_key = os.environ.get('MODEL_ACCESS_KEY')
+    if not api_key or GradientClient is None:
+        return jsonify({'error': 'AI improvements are not available right now.'}), 503
+
+    data = request.get_json() or {}
+    idea = (data.get('idea') or '').strip()
+    essential_deliverables = data.get('essential_deliverables') or []
+    deliverables = data.get('deliverables') or []
+    technologies = data.get('technologies') or []
+    devs = int(data.get('devs') or 3)
+    investment_per_dev = int(data.get('investment_per_dev') or 50)
+    min_requirements = int(data.get('min_requirements') or 1)
+    essential_count = int(data.get('essential_count') or 0)
+
+    prompt = _build_improve_sprint_prompt(
+        idea, essential_deliverables, deliverables, technologies,
+        devs, investment_per_dev, min_requirements, essential_count
+    )
+    try:
+        client = GradientClient(model_access_key=api_key)
+        response = client.chat.completions.create(
+            model="llama3.3-70b-instruct",
+            messages=[
+                {"role": "system", "content": "You are an expert sprint advisor. Always respond with valid JSON only — no markdown, no explanation outside the JSON object."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1500,
+        )
+        raw = response.choices[0].message.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        import json as _json
+        result = _json.loads(raw)
+        return jsonify(result)
+    except Exception as e:
+        logger.error("OpenRouter improve-sprint error: %s", e)
+        return jsonify({'error': 'AI service error. Please try again.'}), 502
+
+
+def _build_improve_sprint_prompt(idea, essential_deliverables, deliverables,
+                                  technologies, devs, investment_per_dev,
+                                  min_requirements, essential_count):
+    return f"""Review this sprint listing and suggest improvements for clarity, specificity, and developer appeal.
+
+CURRENT SPRINT:
+- Idea/Description: {idea or '(empty)'}
+- Essential Deliverables: {essential_deliverables}
+- Optional Deliverables: {deliverables}
+- Technologies: {technologies}
+- Developer Allocation: {devs} (range 1-5)
+- Investment Per Dev: £{investment_per_dev} (range £50-£300, multiples of 5)
+- Total Deliverables (min_requirements): {min_requirements} (range 1-8)
+- Essential Count: {essential_count} (range 0 to floor(min_requirements/2))
+
+INSTRUCTIONS:
+1. Improve idea/description to be specific and action-oriented (2-4 sentences).
+2. Suggest clearer essential and optional deliverables as lists.
+3. Always suggest an appropriate technology stack based on the sprint description. Keep existing technologies where relevant, add/remove as needed.
+4. Suggest appropriate numeric values within stated ranges.
+5. Always include "technologies" in "changes". Only include other fields in "changes" if you are actually changing them.
+
+Respond ONLY with this JSON:
+{{
+  "idea": "improved description",
+  "essential_deliverables": ["item1", "item2"],
+  "deliverables": ["item1", "item2"],
+  "technologies": ["Tech1", "Tech2"],
+  "devs": 3,
+  "investment_per_dev": 100,
+  "min_requirements": 4,
+  "essential_count": 2,
+  "changes": ["idea", "technologies"]
+}}"""
 
 
 # ── Admin: Full Platform Dashboard ──
