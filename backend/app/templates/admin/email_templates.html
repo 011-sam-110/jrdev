@@ -1,0 +1,68 @@
+{% extends "admin_layout.html" %}
+{% block title %}JrDev Admin – Email Templates{% endblock %}
+{% block page_title %}Email Templates{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-6">
+
+    <div class="flex items-center justify-between">
+        <div class="flex gap-2">
+            <a href="{{ url_for('main.admin_inbox') }}" class="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors">
+                <span class="material-symbols-outlined" style="font-size:1rem">arrow_back</span>
+                Inbox
+            </a>
+            <span class="text-slate-600">/</span>
+            <span class="text-sm text-slate-300">Templates</span>
+        </div>
+        <div class="flex gap-2">
+            <a href="{{ url_for('main.admin_email_settings') }}" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm text-slate-200 border border-white/10 transition-colors">
+                <span class="material-symbols-outlined" style="font-size:1rem">settings</span>
+                Signature & Settings
+            </a>
+            <a href="{{ url_for('main.admin_email_template_new') }}" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm text-white transition-colors">
+                <span class="material-symbols-outlined" style="font-size:1rem">add</span>
+                New Template
+            </a>
+        </div>
+    </div>
+
+    {% if templates %}
+    <!-- Group by category -->
+    {% set ns = namespace(current_cat=None) %}
+    {% for t in templates %}
+        {% if t.category != ns.current_cat %}
+            {% if not loop.first %}</div>{% endif %}
+            {% set ns.current_cat = t.category %}
+            <div class="space-y-2">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 px-1">{{ t.category or 'general' }}</h3>
+        {% endif %}
+
+        <div class="flex items-center gap-4 bg-slate-900/60 border border-white/5 rounded-xl px-5 py-4 hover:border-white/10 transition-colors">
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-white text-sm truncate">{{ t.name }}</p>
+                {% if t.subject %}<p class="text-xs text-slate-500 truncate mt-0.5">Subject: {{ t.subject }}</p>{% endif %}
+                <p class="text-xs text-slate-600 mt-1">Updated {{ t.updated_at.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+                <a href="{{ url_for('main.admin_inbox_compose') }}?template={{ t.id }}" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 transition-colors">Use</a>
+                <a href="{{ url_for('main.admin_email_template_edit', tid=t.id) }}" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 transition-colors">Edit</a>
+                <form method="POST" action="{{ url_for('main.admin_email_template_delete', tid=t.id) }}" onsubmit="return confirm('Delete this template?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-xs text-red-400 border border-red-500/20 transition-colors">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        {% if loop.last %}</div>{% endif %}
+    {% endfor %}
+
+    {% else %}
+    <div class="bg-slate-900/60 border border-white/5 rounded-xl px-6 py-16 text-center text-slate-500">
+        <span class="material-symbols-outlined text-4xl block mb-3">description</span>
+        No templates yet.
+        <a href="{{ url_for('main.admin_email_template_new') }}" class="text-indigo-400 hover:text-indigo-300 ml-1">Create one →</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

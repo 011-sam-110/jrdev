@@ -1,0 +1,112 @@
+{% extends "admin_layout.html" %}
+{% block title %}JrDev Admin – Compose Email{% endblock %}
+{% block page_title %}Compose Email{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-6">
+
+    <a href="{{ url_for('main.admin_inbox') }}" class="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors">
+        <span class="material-symbols-outlined" style="font-size:1rem">arrow_back</span>
+        Back to Inbox
+    </a>
+
+    <div class="bg-slate-900/60 border border-white/6 rounded-xl p-6 space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="font-display font-semibold text-white text-base">New Email</h2>
+            {% if templates %}
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-slate-500">Load template:</label>
+                <select id="template-picker" class="bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="">— select —</option>
+                    {% for t in templates %}
+                    <option value="{{ t.id }}" {% if preload_template and preload_template.id == t.id %}selected{% endif %}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </div>
+
+        <form method="POST" action="{{ url_for('main.admin_inbox_compose') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">From inbox</label>
+                <select name="from_inbox" class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    {% for name in inboxes %}
+                    <option value="{{ name }}" {% if (form_data.get('from_inbox') or default_inbox) == name %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">To <span class="text-red-400">*</span></label>
+                <input type="text" name="to" value="{{ form_data.get('to', '') }}" placeholder="comma-separated addresses"
+                       class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500" required/>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">CC</label>
+                    <input type="text" name="cc" value="{{ form_data.get('cc', '') }}" placeholder="comma-separated"
+                           class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"/>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">BCC</label>
+                    <input type="text" name="bcc" value="{{ form_data.get('bcc', '') }}" placeholder="comma-separated"
+                           class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"/>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">Subject <span class="text-red-400">*</span></label>
+                <input type="text" name="subject" value="{{ form_data.get('subject', '') }}"
+                       class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500" required/>
+            </div>
+
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">Body (HTML or plain text)</label>
+                <textarea name="body" rows="10"
+                          class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono">{{ form_data.get('body', '') }}</textarea>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <a href="{{ url_for('main.admin_email_templates') }}" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Manage templates →</a>
+                <div class="flex gap-3">
+                    <a href="{{ url_for('main.admin_inbox') }}" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors">Cancel</a>
+                    <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+                        <span class="material-symbols-outlined" style="font-size:1rem">send</span>
+                        Send Email
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var picker = document.getElementById('template-picker');
+    if (!picker) return;
+    var subjectEl = document.querySelector('input[name="subject"]');
+    var bodyEl = document.querySelector('textarea[name="body"]');
+
+    function loadTemplate(id) {
+        if (!id) return;
+        fetch('/admin/inbox/templates/' + id + '/json')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.subject && subjectEl) subjectEl.value = data.subject;
+                if (data.body_html && bodyEl) bodyEl.value = data.body_html;
+            });
+    }
+
+    picker.addEventListener('change', function() { loadTemplate(this.value); });
+
+    // Auto-load if a template was pre-selected via ?template=
+    if (picker.value) loadTemplate(picker.value);
+})();
+</script>
+{% endblock %}

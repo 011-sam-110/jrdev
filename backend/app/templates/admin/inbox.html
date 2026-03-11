@@ -1,0 +1,123 @@
+{% extends "admin_layout.html" %}
+{% block title %}JrDev Admin – Email Inbox{% endblock %}
+{% block page_title %}Email Inbox{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl space-y-6">
+
+    <!-- Toolbar -->
+    <div class="flex flex-wrap items-center gap-3">
+        <!-- Inbox tabs -->
+        <div class="flex gap-1 bg-slate-800/60 rounded-lg p-1 border border-white/5">
+            <a href="{{ url_for('main.admin_inbox') }}"
+               class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+                      {% if not inbox_filter %}bg-indigo-600 text-white{% else %}text-slate-400 hover:text-white{% endif %}">
+                All
+            </a>
+            {% for name in inboxes %}
+            <a href="{{ url_for('main.admin_inbox', inbox=name) }}"
+               class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5
+                      {% if inbox_filter == name %}bg-indigo-600 text-white{% else %}text-slate-400 hover:text-white{% endif %}">
+                {{ name }}
+                {% if unread_counts.get(name, 0) > 0 %}
+                <span class="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 leading-4">{{ unread_counts[name] }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Actions -->
+        <div class="ml-auto flex gap-2">
+            <form method="POST" action="{{ url_for('main.admin_inbox_sync') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm text-slate-200 border border-white/10 transition-colors">
+                    <span class="material-symbols-outlined" style="font-size:1rem">sync</span>
+                    Sync Inbox
+                </button>
+            </form>
+            <a href="{{ url_for('main.admin_inbox_compose') }}"
+               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm text-white transition-colors">
+                <span class="material-symbols-outlined" style="font-size:1rem">edit</span>
+                Compose
+            </a>
+        </div>
+    </div>
+
+    <!-- Email list -->
+    <div class="bg-slate-900/60 border border-white/6 rounded-xl overflow-hidden">
+        {% if emails.items %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-white/5 text-slate-500 text-xs uppercase tracking-wider">
+                    <th class="px-4 py-3 text-left w-4"></th>
+                    <th class="px-4 py-3 text-left">From / To</th>
+                    <th class="px-4 py-3 text-left">Subject</th>
+                    <th class="px-4 py-3 text-left">Inbox</th>
+                    <th class="px-4 py-3 text-left whitespace-nowrap">Date</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+            {% for em in emails.items %}
+            <tr class="hover:bg-white/3 transition-colors {% if not em.is_read %}bg-indigo-950/20{% endif %}">
+                <td class="px-4 py-3">
+                    {% if not em.is_read %}
+                    <span class="inline-block w-2 h-2 rounded-full bg-indigo-400"></span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 max-w-[200px] truncate text-slate-300">
+                    {% if em.direction == 'inbound' %}
+                    {{ em.from_addr }}
+                    {% else %}
+                    <span class="text-slate-500 text-xs mr-1">To:</span>{{ em.to_addrs | replace('["', '') | replace('"]', '') | replace('", "', ', ') }}
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 max-w-xs">
+                    <a href="{{ url_for('main.admin_inbox_detail', email_id=em.id) }}"
+                       class="hover:text-indigo-300 transition-colors {% if not em.is_read %}font-semibold text-white{% else %}text-slate-300{% endif %}">
+                        {{ em.subject or '(no subject)' }}
+                    </a>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="text-xs px-2 py-0.5 rounded-full border
+                        {% if em.inbox == 'support' %}bg-emerald-500/10 border-emerald-500/30 text-emerald-400
+                        {% elif em.inbox == 'disputes' %}bg-red-500/10 border-red-500/30 text-red-400
+                        {% else %}bg-slate-500/10 border-slate-500/30 text-slate-400{% endif %}">
+                        {{ em.inbox }}
+                    </span>
+                    {% if em.direction == 'outbound' %}
+                    <span class="text-xs px-1.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 ml-1">sent</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
+                    {{ (em.sent_at or em.created_at).strftime('%d %b %Y %H:%M') if (em.sent_at or em.created_at) else '—' }}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if emails.pages > 1 %}
+        <div class="flex items-center justify-between px-4 py-3 border-t border-white/5 text-sm text-slate-500">
+            <span>Page {{ emails.page }} of {{ emails.pages }}</span>
+            <div class="flex gap-2">
+                {% if emails.has_prev %}
+                <a href="{{ url_for('main.admin_inbox', inbox=inbox_filter, page=emails.prev_num) }}" class="px-3 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors">Prev</a>
+                {% endif %}
+                {% if emails.has_next %}
+                <a href="{{ url_for('main.admin_inbox', inbox=inbox_filter, page=emails.next_num) }}" class="px-3 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="px-6 py-16 text-center text-slate-500">
+            <span class="material-symbols-outlined text-4xl block mb-3">inbox</span>
+            No emails yet. Click <strong>Sync Inbox</strong> to pull messages from IMAP.
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
