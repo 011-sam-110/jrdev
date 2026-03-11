@@ -184,6 +184,14 @@ def create_app():
         from app import models  # noqa: F401 - load models so db.create_all() sees them
         db.create_all()
 
+    @app.cli.command('process-signing-deadlines')
+    def process_signing_deadlines_cmd():
+        """Deny accepted signups where developer hasn't signed within 2 days. Run via cron (e.g. hourly): flask process-signing-deadlines"""
+        from app.routes import process_signing_deadlines
+        n = process_signing_deadlines()
+        import click
+        click.echo(f'Signing deadlines processed: {n} signup(s) denied.')
+
     @app.cli.command('process-review-deadlines')
     def process_review_deadlines_cmd():
         """Process 48-hour review deadlines: auto-release payment for signups past the deadline. Run via cron (e.g. hourly): flask process-review-deadlines"""
