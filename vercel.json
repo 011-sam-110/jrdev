@@ -11,6 +11,5 @@
       "source": "/(.*)",
       "destination": "/api/index"
     }
-  ],
-  "installCommand": "pip install -r backend/requirements.txt"
+  ]
 }

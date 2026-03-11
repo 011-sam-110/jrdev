@@ -14,7 +14,6 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
-from flask_wtf.csrf import generate_csrf
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -175,7 +174,8 @@ def create_app():
     @app.context_processor
     def inject_csrf_token():
         from app.decorators import can_manage_prize_pools, is_platform_admin
-        return {'csrf_token': generate_csrf(), 'can_manage_prize_pools': can_manage_prize_pools, 'is_platform_admin': is_platform_admin}
+        from flask_wtf.csrf import generate_csrf
+        return {'csrf_token': generate_csrf, 'can_manage_prize_pools': can_manage_prize_pools, 'is_platform_admin': is_platform_admin}
 
     with app.app_context():
         from app import models  # noqa: F401 - load models so db.create_all() sees them
