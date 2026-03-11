@@ -44,7 +44,10 @@ def create_app():
     except ImportError:
         pass
 
-    app = Flask(__name__)
+    # Vercel's filesystem is read-only except /tmp; Flask-SQLAlchemy always
+    # calls os.makedirs(instance_path) on init, so we must point it at /tmp.
+    _instance_path = '/tmp' if os.environ.get('VERCEL') else None
+    app = Flask(__name__, **({"instance_path": _instance_path} if _instance_path else {}))
     is_production = os.environ.get('FLASK_ENV') == 'production'
     secret_key = os.environ.get('SECRET_KEY')
     if not secret_key:
