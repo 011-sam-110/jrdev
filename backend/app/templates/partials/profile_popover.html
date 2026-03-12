@@ -29,6 +29,12 @@
                 View Profile
             </a>
             {% endif %}
+            {% if earnings_url is defined and earnings_url %}
+            <a href="{{ earnings_url }}" class="profile-popover-item flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white text-sm font-medium transition-colors" role="menuitem">
+                <span class="material-symbols-outlined text-lg">payments</span>
+                Earnings
+            </a>
+            {% endif %}
             <a href="{{ settings_url }}" class="profile-popover-item flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-slate-300 hover:bg-white/10 hover:text-white text-sm font-medium transition-colors" role="menuitem">
                 <span class="material-symbols-outlined text-lg">settings</span>
                 {{ settings_label }}

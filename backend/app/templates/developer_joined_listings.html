@@ -96,6 +96,15 @@
                     </button>
                 </form>
                 {% endif %}
+                {% set signup_unread = signup.messages | selectattr('sender_id', 'ne', current_user.id) | selectattr('is_read', 'equalto', false) | list | length %}
+                <a href="{{ url_for('main.sprint_messages', id=signup.id) }}"
+                   class="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
+                    <span class="material-symbols-outlined text-lg">chat</span>
+                    Messages
+                    {% if signup_unread > 0 %}
+                    <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center">{{ signup_unread }}</span>
+                    {% endif %}
+                </a>
                 <button type="button" class="js-contact-toggle inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium" data-signup-id="{{ signup.id }}">
                     <span class="material-symbols-outlined text-lg">mail</span>
                     Contact
@@ -192,7 +201,7 @@
                 {% if signup.prototype_submitted_at %}
                 <p class="text-slate-400 text-sm mb-3">Your prototype has been uploaded and delivered to the client. It is now under review.</p>
                 {% if signup_review_deadlines.get(signup.id) %}
-                <p class="text-slate-500 text-xs mb-3">Business has until <strong>{{ signup_review_deadlines[signup.id].strftime('%d %b %Y, %H:%M') }} UTC</strong> to review; then payment auto-releases to you.</p>
+                <p class="text-slate-500 text-xs mb-3">Business has until <strong>{{ signup_review_deadlines[signup.id].strftime('%d %b %Y, %H:%M') }} GMT</strong> to review; then payment auto-releases to you.</p>
                 {% endif %}
                 {% if signup.requirements_met %}
                 <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Requirements you marked as met</p>

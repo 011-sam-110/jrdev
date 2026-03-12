@@ -104,3 +104,7 @@ def terms():
 @main.route("/support")
 def support():
     return render_template('support.html', title='Support')
+
+@main.route("/reference")
+def reference():
+    return render_template('reference.html', title='The Team')

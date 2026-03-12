@@ -31,7 +31,7 @@
             <dt class="text-slate-500">CC</dt><dd class="text-slate-200 break-all">{{ cc | join(', ') }}</dd>
             {% endif %}
             <dt class="text-slate-500">Date</dt>
-            <dd class="text-slate-400 text-xs">{{ (em.sent_at or em.created_at).strftime('%A, %d %B %Y at %H:%M UTC') if (em.sent_at or em.created_at) else '—' }}</dd>
+            <dd class="text-slate-400 text-xs">{{ (em.sent_at or em.created_at).strftime('%A, %d %B %Y at %H:%M GMT') if (em.sent_at or em.created_at) else '—' }}</dd>
         </dl>
 
         <div class="border-t border-white/5 pt-4">

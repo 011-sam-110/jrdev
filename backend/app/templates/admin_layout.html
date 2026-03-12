@@ -91,6 +91,13 @@
                 <span class="material-symbols-outlined">rocket_launch</span>
                 Sprints
             </a>
+            <a href="{{ url_for('main.admin_disputes') }}" class="admin-nav-link {% if admin_section == 'disputes' %}active{% endif %}">
+                <span class="material-symbols-outlined">flag</span>
+                Disputes
+                {% if admin_disputed_count > 0 %}
+                <span class="ml-auto bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold">{{ admin_disputed_count }}</span>
+                {% endif %}
+            </a>
             <a href="{{ url_for('main.admin_prize_pools') }}" class="admin-nav-link {% if admin_section == 'prize_pools' %}active{% endif %}">
                 <span class="material-symbols-outlined">emoji_events</span>
                 Prize Pools

@@ -238,6 +238,10 @@ def terms():
 def support():
     return render_template('support.html', title='Support')
 
+@main.route("/reference")
+def reference():
+    return render_template('reference.html', title='The Team')
+
 @main.route("/edit-profile", methods=['GET', 'POST'])
 @login_required
 @require_verified
@@ -906,7 +910,46 @@ def developer_joined_listings():
     prize_pool_entries = PrizePoolEntry.query.filter_by(user_id=current_user.id).order_by(PrizePoolEntry.joined_at.desc()).all()
     form = AddPinnedProjectForm()
     profile = current_user.developer_profile
-    return render_template('developer_joined_listings.html', title='Joined Listings', nav_active='joined', signups=signups, signup_review_deadlines=signup_review_deadlines, prize_pool_entries=prize_pool_entries, form=form, saved_signature=profile.saved_signature if profile else None, saved_contractor_address=profile.saved_contractor_address if profile else None)
+    return render_template('developer_joined_listings.html', title='Joined Listings', nav_active='joined', signups=signups, signup_review_deadlines=signup_review_deadlines, prize_pool_entries=prize_pool_entries, form=form, saved_signature=profile.saved_signature if profile else None, saved_contractor_address=profile.saved_contractor_address if profile else None, now_utc=datetime.utcnow())
+
+
+@main.route("/developer/earnings")
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def developer_earnings():
+    from app.contract_pdf import contract_view_url
+    sprint_signups = ListingSignup.query.filter_by(
+        user_id=current_user.id,
+        status='accepted',
+        developer_withdrew=False,
+        flagged_for_review=False,
+    ).filter(ListingSignup.reviewed_at.isnot(None)).order_by(ListingSignup.reviewed_at.desc()).all()
+    sprint_total_pence = sum(s.listing.pay_for_prototype for s in sprint_signups)
+
+    prize_payouts = PrizePoolPayout.query.filter_by(user_id=current_user.id).order_by(PrizePoolPayout.created_at.desc()).all()
+    prize_paid_pence = sum(p.amount_pence for p in prize_payouts if p.paid_at and p.amount_pence)
+    prize_pending_pence = sum(p.amount_pence for p in prize_payouts if not p.paid_at and p.amount_pence)
+    total_earned_pence = sprint_total_pence + prize_paid_pence
+
+    contract_urls = {
+        s.id: contract_view_url(s.id)
+        for s in sprint_signups
+        if s.developer_signed_at and s.business_signed_at
+    }
+
+    return render_template(
+        'developer_earnings.html',
+        sprint_signups=sprint_signups,
+        prize_payouts=prize_payouts,
+        sprint_total_pence=sprint_total_pence,
+        prize_paid_pence=prize_paid_pence,
+        prize_pending_pence=prize_pending_pence,
+        total_earned_pence=total_earned_pence,
+        contract_urls=contract_urls,
+        title='Earnings',
+        nav_active='earnings',
+    )
 
 
 # ── Prize Pools ──
@@ -1520,6 +1563,7 @@ def admin_dashboard():
         'closed_pools': PrizePool.query.filter_by(status='closed').count(),
         'pool_entries': PrizePoolEntry.query.count(),
         'total_payouts_pence': db.session.query(func.sum(PrizePoolPayout.amount_pence)).scalar() or 0,
+        'disputed_signups': ListingSignup.query.filter_by(flagged_for_review=True).count(),
     }
     recent_users = User.query.order_by(User.id.desc()).limit(10).all()
     recent_listings = SprintListing.query.order_by(SprintListing.created_at.desc()).limit(8).all()
@@ -1704,6 +1748,51 @@ def admin_sprint_close(listing_id):
     db.session.commit()
     flash(f'Sprint #{listing_id} ({listing.company_name}) closed.', 'success')
     return redirect(url_for('main.admin_sprints'))
+
+
+@main.route("/admin/disputes")
+@login_required
+@require_verified
+@require_admin
+def admin_disputes():
+    """Platform admin: list all signups flagged for review (disputes queue)."""
+    signups = ListingSignup.query.filter_by(flagged_for_review=True).order_by(ListingSignup.joined_at.desc()).all()
+    return render_template('admin/disputes.html', title='Admin – Disputes',
+                           admin_section='disputes', signups=signups)
+
+
+@main.route("/admin/disputes/<int:signup_id>/resolve", methods=['POST'])
+@login_required
+@require_verified
+@require_admin
+def admin_disputes_resolve(signup_id):
+    """Platform admin: resolve a dispute — release payment or clear the flag."""
+    signup = ListingSignup.query.get_or_404(signup_id)
+    action = request.form.get('action')
+    if action == 'release':
+        if signup.reviewed_at:
+            flash('Already resolved — payment was already released.', 'warning')
+            return redirect(url_for('main.admin_disputes'))
+        _apply_reviewed_state(signup)
+        signup.flagged_for_review = False
+        db.session.commit()
+        _send_sprint_email(
+            subject=f'Payment released — {signup.listing.company_name} approved your work',
+            recipient_email=signup.user.email,
+            template='emails/sprint_approved.html',
+            username=signup.user.username,
+            company_name=signup.listing.company_name,
+            amount_str=f'£{signup.listing.pay_for_prototype / 100:.2f}',
+            dashboard_url=url_for('main.developer_earnings', _external=True),
+        )
+        flash(f'Payment of £{signup.listing.pay_for_prototype / 100:.2f} released to {signup.user.username}.', 'success')
+    elif action == 'unflag':
+        signup.flagged_for_review = False
+        db.session.commit()
+        flash(f'Flag cleared for {signup.user.username} / {signup.listing.company_name}.', 'info')
+    else:
+        flash('Unknown action.', 'danger')
+    return redirect(url_for('main.admin_disputes'))
 
 
 @main.route("/admin/database/<model>")
@@ -1949,6 +2038,14 @@ def signup_accept(id):
     signup.status = 'accepted'
     signup.signing_deadline_at = datetime.utcnow() + timedelta(days=2)
     db.session.commit()
+    _send_sprint_email(
+        subject=f"You've been accepted — {signup.listing.company_name}",
+        recipient_email=signup.user.email,
+        template='emails/sprint_accepted.html',
+        username=signup.user.username,
+        company_name=signup.listing.company_name,
+        dashboard_url=url_for('main.developer_joined_listings', _external=True),
+    )
     flash(f'{signup.user.username} accepted.', 'success')
     return redirect(url_for('main.review_gallery'))
 
@@ -1963,6 +2060,14 @@ def signup_deny(id):
         return err
     signup.status = 'denied'
     db.session.commit()
+    _send_sprint_email(
+        subject=f'Application update — {signup.listing.company_name}',
+        recipient_email=signup.user.email,
+        template='emails/sprint_denied.html',
+        username=signup.user.username,
+        company_name=signup.listing.company_name,
+        listings_url=url_for('main.developer_listings', _external=True),
+    )
     flash(f'{signup.user.username} denied.', 'info')
     return redirect(url_for('main.review_gallery'))
 
@@ -2001,6 +2106,24 @@ def signup_sign_business(id):
         signup.business_signature_image = signature_data
     signup.business_signed_at = datetime.utcnow()
     db.session.commit()
+    _send_sprint_email(
+        subject=f'Contract signed — your sprint with {signup.listing.company_name} is now active',
+        recipient_email=signup.user.email,
+        template='emails/sprint_contract_active.html',
+        username=signup.user.username,
+        company_name=signup.listing.company_name,
+        sprint_ends_at=signup.listing.sprint_ends_at,
+        dashboard_url=url_for('main.developer_joined_listings', _external=True),
+    )
+    _send_sprint_email(
+        subject=f'Sprint contract active — {signup.user.username} is ready to start',
+        recipient_email=signup.listing.business.email,
+        template='emails/sprint_contract_active.html',
+        username=signup.listing.business.first_name or signup.listing.business.username,
+        company_name=signup.listing.company_name,
+        sprint_ends_at=signup.listing.sprint_ends_at,
+        dashboard_url=url_for('main.review_gallery', _external=True),
+    )
     flash('Contract countersigned. Sprint is now active!', 'success')
     return redirect(url_for('main.review_gallery'))
 
@@ -2037,6 +2160,14 @@ def signup_submit_deliverables(id):
     signup.requirements_met = ', '.join(reqs) if reqs else None
     signup.prototype_submitted_at = datetime.utcnow()
     db.session.commit()
+    _send_sprint_email(
+        subject=f'New prototype submitted — {signup.user.username}',
+        recipient_email=signup.listing.business.email,
+        template='emails/sprint_submitted.html',
+        developer_username=signup.user.username,
+        company_name=signup.listing.company_name,
+        dashboard_url=url_for('main.review_gallery', _external=True),
+    )
     flash('Prototype submitted! The business will review your work.', 'success')
     return redirect(url_for('main.developer_joined_listings'))
 
@@ -2100,6 +2231,53 @@ def process_review_deadlines():
     for signup in overdue:
         apply_auto_release(signup)
         db.session.commit()
+        _send_sprint_email(
+            subject=f'Payment released — {signup.listing.company_name} review period elapsed',
+            recipient_email=signup.user.email,
+            template='emails/sprint_auto_released.html',
+            username=signup.user.username,
+            company_name=signup.listing.company_name,
+            amount_str=f'£{signup.listing.pay_for_prototype / 100:.2f}',
+            dashboard_url=url_for('main.developer_earnings', _external=True),
+        )
+
+
+def _send_sprint_email(subject, recipient_email, template, **kwargs):
+    """Send a sprint lifecycle notification email. Silent no-op if mail is not configured."""
+    sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+    if not sender:
+        logger.warning('Sprint email skipped (no MAIL_DEFAULT_SENDER): %s', template)
+        return
+    try:
+        msg = Message(subject=subject, sender=sender, recipients=[recipient_email])
+        msg.html = render_template(template, **kwargs)
+        mail.send(msg)
+        logger.info('Sprint email sent [%s] -> %s', template, recipient_email)
+    except Exception as e:
+        logger.exception('Sprint email failed [%s -> %s]: %s', template, recipient_email, e)
+
+
+def _send_dispute_email(signup):
+    """Send dispute-raised holding email to both parties, from disputes@ inbox."""
+    sender = current_app.config.get('DISPUTES_EMAIL') or current_app.config.get('MAIL_DEFAULT_SENDER')
+    if not sender:
+        return
+    try:
+        msg = Message(
+            subject=f'Dispute raised — {signup.listing.company_name} sprint',
+            sender=sender,
+            recipients=[signup.user.email, signup.listing.business.email],
+        )
+        msg.html = render_template(
+            'emails/sprint_disputed.html',
+            developer_username=signup.user.username,
+            business_name=signup.listing.company_name,
+            listing=signup.listing,
+        )
+        mail.send(msg)
+        logger.info('Dispute email sent for signup %s', signup.id)
+    except Exception as e:
+        logger.exception('Dispute email failed for signup %s: %s', signup.id, e)
 
 
 def _notify_prize_pool_results(pool, winners, loser_entries, payout_by_entry_id):
@@ -2162,6 +2340,16 @@ def process_prize_pool_winners():
         if pool.submission_ends_at and pool.submission_ends_at <= now:
             pool.status = 'voting'
             db.session.commit()
+            for entry in pool.entries:
+                _send_sprint_email(
+                    subject=f'Voting is open — {pool.title}',
+                    recipient_email=entry.user.email,
+                    template='emails/pool_voting_open.html',
+                    username=entry.user.username,
+                    pool_title=pool.title,
+                    voting_ends_at=pool.voting_ends_at,
+                    vote_url=url_for('main.prize_pool_vote_page', pool_id=pool.id, _external=True),
+                )
     # voting -> closed when voting_ends_at passes; compute top 10% winners, log payouts, notify
     voting_pools = PrizePool.query.filter_by(status='voting').all()
     for pool in voting_pools:
@@ -2226,6 +2414,15 @@ def signup_mark_reviewed(id):
         return err
     _apply_reviewed_state(signup)
     db.session.commit()
+    _send_sprint_email(
+        subject=f'Payment released — {signup.listing.company_name} approved your work',
+        recipient_email=signup.user.email,
+        template='emails/sprint_approved.html',
+        username=signup.user.username,
+        company_name=signup.listing.company_name,
+        amount_str=f'£{signup.listing.pay_for_prototype / 100:.2f}',
+        dashboard_url=url_for('main.developer_earnings', _external=True),
+    )
     flash(f'Approved. Payment of £{signup.listing.pay_for_prototype / 100:.2f} released to the developer.', 'success')
     return redirect(url_for('main.review_gallery'))
 
@@ -2239,6 +2436,7 @@ def signup_flag_for_review(id):
         return err
     signup.flagged_for_review = True
     db.session.commit()
+    _send_dispute_email(signup)
     flash('Flagged for review. Our team will contact you and the developer to resolve. No charge will be made until the sprint is marked complete.', 'info')
     return redirect(url_for('main.review_gallery'))
 
@@ -2301,6 +2499,206 @@ def signup_cannot_complete(id):
     db.session.commit()
     flash('You have indicated you cannot complete this project. The business has been notified.', 'info')
     return redirect(url_for('main.developer_joined_listings'))
+
+# ── Sprint Messaging ──
+
+def _get_signup_as_party(signup_id):
+    """Return (signup, role) if current_user is a party to this signup, else abort 403.
+    role is 'developer' or 'business'."""
+    signup = ListingSignup.query.get_or_404(signup_id)
+    if current_user.id == signup.user_id:
+        return signup, 'developer'
+    if current_user.id == signup.listing.business_id:
+        return signup, 'business'
+    abort(403)
+
+
+@main.route('/signup/<int:id>/messages', methods=['GET', 'POST'])
+@login_required
+@require_verified
+def sprint_messages(id):
+    from app.models import SprintMessage
+    signup, role = _get_signup_as_party(id)
+
+    if request.method == 'POST':
+        body = (request.form.get('body') or '').strip()
+        if not body:
+            flash('Message cannot be empty.', 'warning')
+            return redirect(url_for('main.sprint_messages', id=id))
+        if len(body) > 2000:
+            flash('Message is too long (max 2000 characters).', 'warning')
+            return redirect(url_for('main.sprint_messages', id=id))
+        msg = SprintMessage(signup_id=signup.id, sender_id=current_user.id, body=body, msg_type='message')
+        db.session.add(msg)
+        db.session.commit()
+        # Email the other party
+        recipient = signup.listing.business if role == 'developer' else signup.user
+        messages_url = url_for('main.sprint_messages', id=id, _external=True)
+        _send_sprint_email(
+            subject=f'New message — {signup.listing.company_name} sprint',
+            recipient_email=recipient.email,
+            template='emails/sprint_message.html',
+            sender_username=current_user.username,
+            company_name=signup.listing.company_name,
+            message_preview=body[:200],
+            messages_url=messages_url,
+        )
+        return redirect(url_for('main.sprint_messages', id=id))
+
+    # GET — mark incoming messages as read, then render
+    unread = SprintMessage.query.filter_by(signup_id=signup.id, is_read=False).filter(
+        SprintMessage.sender_id != current_user.id
+    ).all()
+    for m in unread:
+        m.is_read = True
+    if unread:
+        db.session.commit()
+
+    messages = SprintMessage.query.filter_by(signup_id=signup.id).order_by(SprintMessage.created_at.asc()).all()
+    has_pending_extension = any(
+        m.msg_type == 'extension_request' and m.extension_status is None for m in messages
+    )
+    can_extend = (
+        role == 'developer'
+        and signup.is_fully_signed
+        and not signup.reviewed_at
+        and not signup.developer_withdrew
+        and not has_pending_extension
+    )
+    layout = 'developer_layout.html' if role == 'developer' else 'business_layout.html'
+    nav_active = 'joined' if role == 'developer' else 'developers'
+    return render_template(
+        'sprint_messages.html',
+        signup=signup,
+        messages=messages,
+        role=role,
+        can_extend=can_extend,
+        layout=layout,
+        nav_active=nav_active,
+        title=f'Messages — {signup.listing.company_name}',
+    )
+
+
+@main.route('/signup/<int:id>/messages/extension', methods=['POST'])
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def sprint_messages_request_extension(id):
+    from app.models import SprintMessage
+    signup, role = _get_signup_as_party(id)
+    if role != 'developer':
+        abort(403)
+    if not signup.is_fully_signed or signup.reviewed_at or signup.developer_withdrew:
+        flash('Extension requests can only be made during an active sprint.', 'warning')
+        return redirect(url_for('main.sprint_messages', id=id))
+    # Check no pending extension already exists
+    existing = SprintMessage.query.filter_by(signup_id=signup.id, msg_type='extension_request').filter(
+        SprintMessage.extension_status.is_(None)
+    ).first()
+    if existing:
+        flash('You already have a pending extension request.', 'warning')
+        return redirect(url_for('main.sprint_messages', id=id))
+    try:
+        days = int(request.form.get('extension_days', 0))
+        if not 1 <= days <= 14:
+            raise ValueError
+    except (ValueError, TypeError):
+        flash('Extension must be between 1 and 14 days.', 'warning')
+        return redirect(url_for('main.sprint_messages', id=id))
+    reason = (request.form.get('reason') or '').strip()[:500] or 'No reason provided.'
+    msg = SprintMessage(
+        signup_id=signup.id,
+        sender_id=current_user.id,
+        body=reason,
+        msg_type='extension_request',
+        extension_days=days,
+    )
+    db.session.add(msg)
+    db.session.commit()
+    messages_url = url_for('main.sprint_messages', id=id, _external=True)
+    _send_sprint_email(
+        subject=f'Extension request — {signup.listing.company_name} sprint',
+        recipient_email=signup.listing.business.email,
+        template='emails/sprint_extension_request.html',
+        developer_username=current_user.username,
+        company_name=signup.listing.company_name,
+        extension_days=days,
+        reason=reason,
+        messages_url=messages_url,
+    )
+    flash(f'Extension request for {days} day(s) sent to the business.', 'success')
+    return redirect(url_for('main.sprint_messages', id=id))
+
+
+@main.route('/sprint-message/<int:msg_id>/extension-respond', methods=['POST'])
+@login_required
+@require_verified
+@require_role('BUSINESS')
+def sprint_message_extension_respond(msg_id):
+    from app.models import SprintMessage
+    msg = SprintMessage.query.get_or_404(msg_id)
+    if msg.msg_type != 'extension_request' or msg.extension_status is not None:
+        abort(400)
+    signup = msg.signup
+    if current_user.id != signup.listing.business_id:
+        abort(403)
+    response = request.form.get('response')
+    if response not in ('accepted', 'declined'):
+        abort(400)
+    msg.extension_status = response
+    if response == 'accepted':
+        signup.listing.sprint_ends_at += timedelta(days=msg.extension_days)
+        new_deadline = signup.listing.sprint_ends_at.strftime('%d %b %Y')
+        system_body = f'Extension of {msg.extension_days} day(s) accepted. New sprint deadline: {new_deadline}.'
+    else:
+        system_body = 'Extension request declined.'
+    system_msg = SprintMessage(
+        signup_id=signup.id,
+        sender_id=current_user.id,
+        body=system_body,
+        msg_type='system',
+        is_read=False,
+    )
+    db.session.add(system_msg)
+    db.session.commit()
+    messages_url = url_for('main.sprint_messages', id=signup.id, _external=True)
+    _send_sprint_email(
+        subject=f'Extension {response} — {signup.listing.company_name} sprint',
+        recipient_email=signup.user.email,
+        template='emails/sprint_extension_response.html',
+        username=signup.user.username,
+        company_name=signup.listing.company_name,
+        response=response,
+        extension_days=msg.extension_days,
+        new_deadline=signup.listing.sprint_ends_at.strftime('%d %b %Y') if response == 'accepted' else None,
+        messages_url=messages_url,
+    )
+    flash(f'Extension {response}.', 'success')
+    return redirect(url_for('main.sprint_messages', id=signup.id))
+
+
+@main.route('/admin/sprint-messages/<int:signup_id>')
+@login_required
+@require_verified
+def admin_sprint_messages(signup_id):
+    from app.models import SprintMessage
+    from app.decorators import is_platform_admin
+    if not is_platform_admin():
+        abort(403)
+    signup = ListingSignup.query.get_or_404(signup_id)
+    messages = SprintMessage.query.filter_by(signup_id=signup_id).order_by(SprintMessage.created_at.asc()).all()
+    return render_template(
+        'sprint_messages.html',
+        signup=signup,
+        messages=messages,
+        role='admin',
+        can_extend=False,
+        layout='admin_layout.html',
+        nav_active='',
+        admin_view=True,
+        title=f'Messages — {signup.listing.company_name} (Admin)',
+    )
+
 
 # ── Developer public profile view (for businesses) ──
 
@@ -2759,4 +3157,26 @@ def process_signing_deadlines():
             next_pending.signing_deadline_at = now + timedelta(days=2)
     if overdue:
         db.session.commit()
+    for signup in overdue:
+        _send_sprint_email(
+            subject=f'Sprint offer expired — {signup.listing.company_name}',
+            recipient_email=signup.user.email,
+            template='emails/sprint_denied.html',
+            username=signup.user.username,
+            company_name=signup.listing.company_name,
+            listings_url=url_for('main.developer_listings', _external=True),
+        )
+        next_promoted = ListingSignup.query.filter_by(
+            listing_id=signup.listing_id,
+            status='accepted',
+        ).filter(ListingSignup.developer_signed_at.is_(None)).order_by(ListingSignup.joined_at.asc()).first()
+        if next_promoted:
+            _send_sprint_email(
+                subject=f"You've been accepted — {next_promoted.listing.company_name}",
+                recipient_email=next_promoted.user.email,
+                template='emails/sprint_accepted.html',
+                username=next_promoted.user.username,
+                company_name=next_promoted.listing.company_name,
+                dashboard_url=url_for('main.developer_joined_listings', _external=True),
+            )
     return len(overdue)

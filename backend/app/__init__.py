@@ -176,6 +176,42 @@ def create_app():
     app.add_template_filter(youtube_embed_url, 'youtube_embed_url')
 
     @app.context_processor
+    def inject_unread_message_count():
+        from flask_login import current_user
+        try:
+            if current_user.is_authenticated and current_user.is_verified:
+                from app.models import SprintMessage, ListingSignup, SprintListing
+                if current_user.role == 'DEVELOPER':
+                    signup_ids = [s.id for s in ListingSignup.query.filter_by(user_id=current_user.id).all()]
+                else:
+                    listing_ids = [l.id for l in SprintListing.query.filter_by(business_id=current_user.id).all()]
+                    signup_ids = [s.id for s in ListingSignup.query.filter(ListingSignup.listing_id.in_(listing_ids)).all()] if listing_ids else []
+                if signup_ids:
+                    unread = SprintMessage.query.filter(
+                        SprintMessage.signup_id.in_(signup_ids),
+                        SprintMessage.sender_id != current_user.id,
+                        SprintMessage.is_read == False,
+                    ).count()
+                else:
+                    unread = 0
+                return {'unread_message_count': unread}
+        except Exception:
+            pass
+        return {'unread_message_count': 0}
+
+    @app.context_processor
+    def inject_admin_disputed_count():
+        from flask_login import current_user
+        try:
+            from app.decorators import is_platform_admin
+            if current_user.is_authenticated and is_platform_admin():
+                from app.models import ListingSignup
+                return {'admin_disputed_count': ListingSignup.query.filter_by(flagged_for_review=True).count()}
+        except Exception:
+            pass
+        return {'admin_disputed_count': 0}
+
+    @app.context_processor
     def inject_csrf_token():
         from app.decorators import can_manage_prize_pools, is_platform_admin
         from flask_wtf.csrf import generate_csrf

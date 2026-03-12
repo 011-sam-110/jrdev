@@ -89,7 +89,12 @@
                 <a class="nav-link-animated {% if nav_active == 'dashboard' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 <a class="nav-link-animated {% if nav_active == 'listings' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_listings') }}">Listings</a>
                 <a class="nav-link-animated {% if nav_active == 'prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_prize_pools') }}">Prize Pools</a>
-                <a class="nav-link-animated {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">Your Listings</a>
+                <a class="nav-link-animated relative {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">
+                    Your Listings
+                    {% if unread_message_count > 0 %}
+                    <span class="absolute -top-2 -right-3 min-w-[16px] h-[16px] px-0.5 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center">{{ unread_message_count }}</span>
+                    {% endif %}
+                </a>
                 {% if is_platform_admin() %}
                 <a class="nav-link-animated {% if nav_active == 'admin_prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
                 {% endif %}
@@ -101,6 +106,7 @@
                     {% set show_view_profile = true %}
                     {% set settings_url = url_for('main.developer_settings') %}
                     {% set settings_label = 'Settings' %}
+                    {% set earnings_url = url_for('main.developer_earnings') %}
                     {% include 'partials/profile_popover.html' %}
                 </div>
                 <div class="flex md:hidden items-center">

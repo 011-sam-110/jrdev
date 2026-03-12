@@ -351,6 +351,94 @@ def view_contract_for_signup(signup_id):
     return send_file(buf, mimetype='application/pdf', as_attachment=False, download_name='Sprint_Agreement.pdf')
 
 
+def _build_earnings_invoice(user, sprint_signups, prize_payouts):
+    """Generate a PDF earnings invoice for a developer."""
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    width, height = A4
+    margin = 50
+    y = height - 50
+
+    def line(text, font='Helvetica', size=11, gap=16):
+        nonlocal y
+        c.setFont(font, size)
+        c.drawString(margin, y, text)
+        y -= gap
+
+    def divider():
+        nonlocal y
+        c.setStrokeColorRGB(0.2, 0.2, 0.2)
+        c.line(margin, y, width - margin, y)
+        y -= 12
+
+    legal_name = ' '.join(filter(None, [user.first_name, user.last_name])).strip() or user.username
+
+    line('JrDev — Earnings Invoice', 'Helvetica-Bold', 16, 26)
+    line(f'Developer: {legal_name} (@{user.username})', gap=14)
+    line(f'Email: {user.email}', gap=14)
+    line(f'Generated: {datetime.utcnow().strftime("%d %b %Y")}', gap=22)
+    divider()
+
+    # Sprint payments
+    line('Sprint Payments', 'Helvetica-Bold', 13, 18)
+    if sprint_signups:
+        for s in sprint_signups:
+            date_str = s.reviewed_at.strftime('%d %b %Y') if s.reviewed_at else '—'
+            amt = f'£{s.listing.pay_for_prototype / 100:.2f}'
+            line(f'  {s.listing.company_name}   |   Reviewed: {date_str}   |   {amt}', gap=14)
+    else:
+        line('  No sprint payments recorded.', 'Helvetica', 10, 14)
+    y -= 4
+    sprint_total = sum(s.listing.pay_for_prototype for s in sprint_signups)
+    line(f'Sprint Subtotal: £{sprint_total / 100:.2f}', 'Helvetica-Bold', 11, 22)
+    divider()
+
+    # Prize pool payouts
+    line('Prize Pool Payouts', 'Helvetica-Bold', 13, 18)
+    paid = [p for p in prize_payouts if p.paid_at and p.amount_pence]
+    if paid:
+        for p in paid:
+            date_str = p.paid_at.strftime('%d %b %Y')
+            line(f'  {p.prize_pool.title}   |   Paid: {date_str}   |   £{p.amount_pence / 100:.2f}', gap=14)
+    else:
+        line('  No prize pool payouts recorded.', 'Helvetica', 10, 14)
+    y -= 4
+    prize_total = sum(p.amount_pence for p in paid)
+    line(f'Prize Pool Subtotal: £{prize_total / 100:.2f}', 'Helvetica-Bold', 11, 22)
+    divider()
+
+    line(f'TOTAL EARNED: £{(sprint_total + prize_total) / 100:.2f}', 'Helvetica-Bold', 14, 18)
+    line('This document is for personal records only and is not a tax invoice.', 'Helvetica', 9, 14)
+
+    c.showPage()
+    c.save()
+    buf.seek(0)
+    return buf
+
+
+@contract.route('/developer/earnings/invoice')
+@login_required
+@require_verified
+@require_role('DEVELOPER')
+def earnings_invoice():
+    """Download a PDF earnings invoice for the current developer."""
+    from app.models import ListingSignup, PrizePoolPayout
+    sprint_signups = ListingSignup.query.filter_by(
+        user_id=current_user.id,
+        status='accepted',
+        developer_withdrew=False,
+        flagged_for_review=False,
+    ).filter(ListingSignup.reviewed_at.isnot(None)).order_by(ListingSignup.reviewed_at.desc()).all()
+
+    prize_payouts = PrizePoolPayout.query.filter_by(
+        user_id=current_user.id,
+    ).filter(PrizePoolPayout.paid_at.isnot(None)).order_by(PrizePoolPayout.paid_at.desc()).all()
+
+    buf = _build_earnings_invoice(current_user, sprint_signups, prize_payouts)
+    return send_file(buf, mimetype='application/pdf', as_attachment=True,
+                     download_name='JrDev_Earnings_Invoice.pdf')
+
+
 @contract.route('/generate_contract', methods=['POST'])
 @login_required
 @require_verified

@@ -381,6 +381,23 @@ class PrizePoolPayout(db.Model):
     user = db.relationship('User', backref='prize_pool_payouts', foreign_keys=[user_id])
 
 
+class SprintMessage(db.Model):
+    """In-app message tied to a ListingSignup sprint thread.
+    msg_type: 'message' | 'extension_request' | 'system'"""
+    id = db.Column(db.Integer, primary_key=True)
+    signup_id = db.Column(db.Integer, db.ForeignKey('listing_signup.id'), nullable=False, index=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    body = db.Column(db.Text, nullable=False)
+    msg_type = db.Column(db.String(30), nullable=False, default='message')
+    extension_days = db.Column(db.Integer, nullable=True)       # extension_request only
+    extension_status = db.Column(db.String(20), nullable=True)  # null | 'accepted' | 'declined'
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    signup = db.relationship('ListingSignup', backref=db.backref('messages', lazy=True, order_by='SprintMessage.created_at'))
+    sender = db.relationship('User', backref='sprint_messages_sent', foreign_keys=[sender_id])
+
+
 class AdminEmail(db.Model):
     """Stores inbound and outbound emails for the three admin inboxes."""
     __tablename__ = 'admin_emails'

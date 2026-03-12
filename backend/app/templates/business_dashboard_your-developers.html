@@ -94,6 +94,17 @@
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <a href="{{ url_for('main.developer_profile_view', user_id=signup.user.id) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">View profile</a>
+                                    {% if signup.status == 'accepted' %}
+                                    {% set signup_unread = signup.messages | selectattr('sender_id', 'ne', current_user.id) | selectattr('is_read', 'equalto', false) | list | length %}
+                                    <a href="{{ url_for('main.sprint_messages', id=signup.id) }}"
+                                       class="relative inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 text-slate-300 hover:bg-white/10 text-sm">
+                                        <span class="material-symbols-outlined text-base">chat</span>
+                                        Messages
+                                        {% if signup_unread > 0 %}
+                                        <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center">{{ signup_unread }}</span>
+                                        {% endif %}
+                                    </a>
+                                    {% endif %}
                                     {% if signup.status == 'pending' %}
                                     <form method="POST" action="{{ url_for('main.signup_accept', id=signup.id) }}" class="inline">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>

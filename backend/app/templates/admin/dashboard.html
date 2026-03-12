@@ -45,6 +45,11 @@
             <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Payouts</p>
             <p class="font-display text-3xl font-bold text-rose-400">£{{ "%.2f"|format(stats.total_payouts_pence / 100) }}</p>
         </div>
+        <a href="{{ url_for('main.admin_disputes') }}" class="stat-card border-red-500/20 hover:border-red-500/40 transition-colors block">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Disputes</p>
+            <p class="font-display text-3xl font-bold {% if stats.disputed_signups > 0 %}text-red-400{% else %}text-slate-500{% endif %}">{{ stats.disputed_signups }}</p>
+            <p class="text-xs text-slate-500 mt-1">{% if stats.disputed_signups > 0 %}Needs attention{% else %}All clear{% endif %}</p>
+        </a>
     </div>
 
     <!-- Recent users -->
