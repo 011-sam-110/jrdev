@@ -114,8 +114,125 @@
     setTimeout(function() { if (toast.parentNode) toast.remove(); }, 5000);
   }
 
-  // ── AI Improvement State ──
-  var aiState = { items: [] };
+  // ── AI suggestion bubbles ──
+
+  /**
+   * Create a clickable suggestion bubble (emerald tinted, + icon).
+   * onClick is called when clicked; the bubble then removes itself.
+   */
+  function createSuggestionBubble(text, onClick) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ' +
+      'bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 ' +
+      'hover:bg-emerald-400/20 hover:border-emerald-400/50 transition-colors';
+    btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">add</span>' + escapeHtml(text);
+    btn.addEventListener('click', function() {
+      onClick();
+      btn.remove();
+      // Hide the container if no bubbles remain
+      var container = btn.closest('[id^="ai-suggestions-"]');
+      if (container && container.querySelector('button') === null) {
+        container.classList.add('hidden');
+      }
+    });
+    return btn;
+  }
+
+  /** Clear all AI suggestion containers. */
+  function clearAllSuggestions() {
+    ['ai-suggestions-idea', 'ai-suggestions-essential',
+     'ai-suggestions-deliverables', 'ai-suggestions-technologies'].forEach(function(id) {
+      var c = document.getElementById(id);
+      if (c) { c.classList.add('hidden'); }
+      var b = document.getElementById(id + '-bubbles');
+      if (b) b.innerHTML = '';
+    });
+  }
+
+  /**
+   * Render AI suggestions as inline clickable bubbles per section.
+   * Does NOT modify the form — user clicks to apply each suggestion.
+   */
+  function renderAISuggestions(el, suggestions) {
+    clearAllSuggestions();
+    var changes = suggestions.changes || [];
+    if (changes.length === 0) return;
+
+    changes.forEach(function(field) {
+      var newVal = suggestions[field];
+      if (newVal === undefined) return;
+
+      if (field === 'idea') {
+        var bubblesEl = document.getElementById('ai-suggestions-idea-bubbles');
+        var container = document.getElementById('ai-suggestions-idea');
+        if (!bubblesEl || !container) return;
+        // Show as a clickable block (text can be long)
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full text-left px-3 py-2.5 rounded-lg text-xs text-emerald-200 ' +
+          'bg-emerald-400/10 border border-emerald-400/30 hover:bg-emerald-400/20 ' +
+          'hover:border-emerald-400/50 transition-colors leading-relaxed';
+        btn.innerHTML = '<span class="material-symbols-outlined text-[13px] align-middle mr-1">add</span>' +
+          escapeHtml(newVal);
+        btn.addEventListener('click', function() {
+          if (el.ideaInput) el.ideaInput.value = newVal;
+          btn.remove();
+          if (!bubblesEl.querySelector('button')) container.classList.add('hidden');
+        });
+        bubblesEl.appendChild(btn);
+        container.classList.remove('hidden');
+
+      } else if (field === 'essential_deliverables') {
+        var bubblesEl = document.getElementById('ai-suggestions-essential-bubbles');
+        var container = document.getElementById('ai-suggestions-essential');
+        if (!bubblesEl || !container) return;
+        bubblesEl.innerHTML = '';
+        (Array.isArray(newVal) ? newVal : []).forEach(function(item) {
+          bubblesEl.appendChild(createSuggestionBubble(item, function() {
+            var cap = getEssentialCap(el);
+            var count = el.essentialList ? el.essentialList.querySelectorAll('.tech-tag').length : 0;
+            if (count < cap) {
+              if (el.essentialList) el.essentialList.appendChild(createTag(item, ESSENTIAL_TAG_CLASS, 'bg-amber-400'));
+              syncContractTasks(el);
+              updateCapHints(el);
+            }
+          }));
+        });
+        if (bubblesEl.children.length) container.classList.remove('hidden');
+
+      } else if (field === 'deliverables') {
+        var bubblesEl = document.getElementById('ai-suggestions-deliverables-bubbles');
+        var container = document.getElementById('ai-suggestions-deliverables');
+        if (!bubblesEl || !container) return;
+        bubblesEl.innerHTML = '';
+        (Array.isArray(newVal) ? newVal : []).forEach(function(item) {
+          bubblesEl.appendChild(createSuggestionBubble(item, function() {
+            var cap = getOptionalCap(el);
+            var count = el.reqList ? el.reqList.querySelectorAll('.tech-tag').length : 0;
+            if (count < cap) {
+              if (el.reqList) el.reqList.appendChild(createTag(item, TAG_BASE_CLASS));
+              syncContractTasks(el);
+              updateCapHints(el);
+            }
+          }));
+        });
+        if (bubblesEl.children.length) container.classList.remove('hidden');
+
+      } else if (field === 'technologies') {
+        var bubblesEl = document.getElementById('ai-suggestions-technologies-bubbles');
+        var container = document.getElementById('ai-suggestions-technologies');
+        if (!bubblesEl || !container) return;
+        bubblesEl.innerHTML = '';
+        (Array.isArray(newVal) ? newVal : []).forEach(function(item) {
+          bubblesEl.appendChild(createSuggestionBubble(item, function() {
+            if (el.techList) el.techList.appendChild(createTag(item, TAG_BASE_CLASS));
+          }));
+        });
+        if (bubblesEl.children.length) container.classList.remove('hidden');
+      }
+    });
+  }
 
   /**
    * Collect all current form field values into a plain object.
@@ -411,8 +528,8 @@
             showAIToast('No improvements suggested. Try adding more details to your sprint.', 'error');
             return;
           }
-          applyAISuggestions(el, formData, result.data);
-          openAIPanel();
+          renderAISuggestions(el, result.data);
+          showAIToast('Suggestions ready — click the bubbles in each section to apply.', 'success');
         })
         .catch(function(err) {
           if (icon) icon.classList.remove('hidden');
