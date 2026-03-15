@@ -1,4 +1,6 @@
-body, html, nav {
+body,
+html,
+nav {
     margin: 0px;
     scroll-behavior: smooth;
 }
@@ -8,6 +10,7 @@ body, html, nav {
     --bg-light: #f8fafc;
     --primary: #6366f1;
     --primary-light: #6366f133;
+    --purple: #714cee;
     --accent: #2dd4bf;
     --white: #ffffff;
     --black: #000000;
@@ -27,17 +30,35 @@ body, html, nav {
     font-weight: 500;
     height: 6%;
     transition: 0.5s;
-    z-index: 99999;
+    z-index: 999998;
 }
 
 .navbar a {
     text-decoration: none;
     color: var(--white);
     white-space: nowrap;
-    font-size: 100%;
+    font-size: 80%;
     padding: 1.5%;
     margin: 1.5%;
     transition: 0.5s;
+}
+
+.navbar a:hover {
+    border-bottom: none !important;
+}
+
+.progress-container {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999999;
+}
+
+.progress-bar {
+    height: 3px;
+    background-image: linear-gradient(to bottom right, var(--primary), var(--accent));
+    width: 0%;
 }
 
 .navLeft {
@@ -50,12 +71,36 @@ body, html, nav {
 }
 
 .navLeft i {
-    width: 4%;
+    width: 2%;
     color: var(--primary);
+    font-size: 80%;
 }
 
-.navMiddle, .navRight {
+.navMiddle,
+.navRight {
     display: none;
+}
+
+.navMiddle a {
+    position: relative;
+    text-decoration: none;
+}
+
+.navMiddle a::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -4px;
+    width: 100%;
+    height: 2px;
+    background: var(--primary);
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    transition: transform 0.25s ease;
+}
+
+.navMiddle a:hover::after {
+    transform: translateX(-50%) scaleX(1);
 }
 
 .menu {
@@ -119,11 +164,12 @@ dev {
     color: var(--primary);
 }
 
-.navbar.scrolled a, .navbar.scrolled .navLeft {
+.navbar.scrolled a,
+.navbar.scrolled .navLeft {
     color: var(--black);
 }
 
-.navbar.scrolled{
+.navbar.scrolled {
     background: var(--bg-light);
     box-shadow: 1px 1px 10px var(--gray);
 }
@@ -137,7 +183,7 @@ dev {
 }
 
 .homeLaunch {
-    background-image: 
+    background-image:
         radial-gradient(#ffffff08 1px, transparent 0),
         linear-gradient(to bottom, #1e1b4b, var(--bg-dark));
     background-size: 30px 30px, 100% 100%;
@@ -193,9 +239,13 @@ dev {
 }
 
 .nextGen {
-    background-image: linear-gradient(to right, var(--primary), var(--accent));
+    background-image: linear-gradient(to right, var(--accent), var(--purple), var(--primary), var(--accent));
+    background-size: 200% 100%;
+    background-position: right;
     color: transparent;
     background-clip: text;
+    -webkit-background-clip: text;
+    animation: scrollGradient 10s linear infinite;
 }
 
 .homeLaunch h2 {
@@ -205,26 +255,35 @@ dev {
     font-family: "Poppins";
 }
 
-.homeLaunch p, .section p, .section h2 {
+.homeLaunch p,
+.section p,
+.section h2 {
     margin-top: 1%;
     font-family: "Poppins";
     font-size: 80%;
     color: var(--lightgray);
 }
 
-#hire, #join {
+#hire,
+#join {
     border-radius: 50px;
     font-weight: 600;
-    background: var(--primary);
+    background-image: linear-gradient(120deg, var(--primary), var(--purple), var(--accent));
+    background-size: 150% 300%;
+    background-position: left center;
     margin: 0;
     padding: 3%;
     padding-left: 5%;
     padding-right: 5%;
     color: var(--white);
     transform: translateY(0);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.6s ease;
     text-decoration: none;
     font-family: "Poppins";
+}
+
+#hire i {
+    margin-left: 10%;
 }
 
 #join {
@@ -243,7 +302,8 @@ dev {
     margin-bottom: 2%;
 }
 
-.homeButtons #hire, .homeButtons #join {
+.homeButtons #hire,
+.homeButtons #join {
     padding: 3%;
     white-space: nowrap;
     margin: 3px;
@@ -269,7 +329,8 @@ dev {
     margin-top: 3%;
 }
 
-.stepChoice a, .stepNum {
+.stepChoice a,
+.stepNum {
     text-decoration: none;
     color: var(--darkgray);
     font-family: "Poppins";
@@ -312,12 +373,13 @@ dev {
     max-height: 300px;
     text-align: center;
     object-fit: contain;
-    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent),
-                        linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image:
+        linear-gradient(to right, transparent, black 5%, black 95%, transparent),
+        linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
     -webkit-mask-composite: intersect;
-
-    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent),
-                linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+    mask-image:
+        linear-gradient(to right, transparent, black 5%, black 95%, transparent),
+        linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
     mask-composite: intersect;
 }
 
@@ -326,9 +388,10 @@ dev {
     color: var(--darkgray);
 }
 
-.stepNum, #currentStep {
+.stepNum,
+#currentStep {
     background-color: var(--primary-light);
-    color: var(--primary)!important;
+    color: var(--primary) !important;
     border: solid 1px var(--primary);
     transition: 0.5s;
 }
@@ -340,10 +403,10 @@ dev {
     padding-right: 3%;
     text-transform: uppercase;
     background-color: var(--primary-light);
-    color: var(--primary)!important;
+    color: var(--primary) !important;
     letter-spacing: 1px;
     border: solid 1px var(--primary);
-    font-size: 70%!important;
+    font-size: 70% !important;
 }
 
 .threeBox {
@@ -355,7 +418,8 @@ dev {
     margin-left: 2.5%;
 }
 
-.pro, .review {
+.pro,
+.review {
     width: 28%;
     padding: 2%;
     background-color: var(--white);
@@ -365,7 +429,8 @@ dev {
     transition: 0.5s;
 }
 
-.pro i, .review i {
+.pro i,
+.review i {
     font-size: 150%;
     border-radius: 50%;
     padding: 5%;
@@ -373,12 +438,14 @@ dev {
     transition: 0.5s;
 }
 
-.fa-piggy-bank, .fa-building {
+.fa-piggy-bank,
+.fa-building {
     color: var(--primary);
     background-color: var(--primary-light);
 }
 
-.fa-graduation-cap, .fa-user {
+.fa-graduation-cap,
+.fa-user {
     color: #0d9488;
     background-color: #0d948833;
 }
@@ -390,7 +457,7 @@ dev {
 
 .section h2 {
     font-size: 100%;
-    color: var(--bg-dark)
+    color: var(--bg-dark);
 }
 
 .video {
@@ -440,30 +507,36 @@ q {
     margin-left: 3%;
 }
 
-.reviewText h2, .reviewText p {
+.reviewText h2,
+.reviewText p {
     margin: 0;
 }
 
 @media (min-width:1200px) {
     .navLeft i {
-        width: 10%;
+        width: 4%;
     }
 
-    .navMiddle, .navRight {
+    .navMiddle,
+    .navRight {
         white-space: nowrap;
-        margin-top: 0.8%;
-        padding: 0;
         font-family: "Poppins";
         display: flex;
         align-items: center;
     }
 
     .navMiddle {
-        width: 40%;
+        width: 45%;
+    }
+
+    .navRight #hire {
+        padding: 10%;
+        margin-left: 12%;
+        padding-right: 15%;
     }
 
     .navRight {
-        width: 28%;
+        width: 15%;
         margin-left: 10%;
     }
 
@@ -474,6 +547,7 @@ q {
     #hire:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px #4f46e577;
+        background-position: right center;
     }
 
     #join:hover {
@@ -494,15 +568,17 @@ q {
         width: auto;
     }
 
-    .homeButtons #hire, .homeButtons #join {
+    .homeButtons #hire,
+    .homeButtons #join {
         width: max-content !important;
         margin: 0;
         padding: 1.2% 2%;
     }
 
-    .stepChoice a:hover, #currentStep:hover {
+    .stepChoice a:hover,
+    #currentStep:hover {
         background-color: #6366f122;
-        color: var(--bg-dark)!important;
+        color: var(--bg-dark) !important;
         border-color: var(--primary-light);
     }
 
@@ -520,16 +596,19 @@ q {
         max-height: 500px;
     }
 
-    .pro:hover, .review:hover {
+    .pro:hover,
+    .review:hover {
         transform: translateY(-10px);
         box-shadow: 0px 0px 10px #94a3b833;
     }
 
-    .pro:hover .fa-piggy-bank, .review:hover .fa-building {
+    .pro:hover .fa-piggy-bank,
+    .review:hover .fa-building {
         box-shadow: 0px 0px 10px var(--primary-light);
     }
 
-    .pro:hover .fa-graduation-cap, .review:hover .fa-user {
+    .pro:hover .fa-graduation-cap,
+    .review:hover .fa-user {
         box-shadow: 0px 0px 10px #0d948833;
     }
 
@@ -538,11 +617,22 @@ q {
     }
 }
 
+@keyframes scrollGradient {
+    from {
+        background-position: 0% 0;
+    }
+
+    to {
+        background-position: 200% 0;
+    }
+}
+
 @keyframes fadeUp {
     from {
         opacity: 0;
         transform: translateY(25px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -558,3 +648,86 @@ q {
 .homeLaunch > *:nth-child(2) { animation-delay: 0.2s; }
 .homeLaunch > *:nth-child(3) { animation-delay: 0.3s; }
 .homeLaunch > *:nth-child(4) { animation-delay: 0.4s; }
+
+/* GLOBAL */
+
+body.light-mode {
+    background: var(--bg-light);
+    color: var(--bg-dark);
+}
+
+/* SECTIONS THAT WERE LIGHT IN DARK MODE -> DARK IN LIGHT MODE */
+
+body.light-mode .section {
+    background: var(--bg-dark);
+    color: var(--white);
+}
+
+body.light-mode .section h1,
+body.light-mode .section h2,
+body.light-mode .section p {
+    color: var(--white);
+}
+
+/* CARDS */
+
+body.light-mode .pro,
+body.light-mode .review {
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+
+body.light-mode .pro h2,
+body.light-mode .review h2 {
+    color: var(--white);
+}
+
+body.light-mode .pro p,
+body.light-mode .review p,
+body.light-mode q {
+    color: var(--lightgray);
+}
+
+/* STEP TEXT */
+
+body.light-mode .stepText p {
+    color: var(--lightgray);
+}
+
+/* STEP BUTTONS */
+
+body.light-mode .stepChoice a,
+body.light-mode .stepNum {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: var(--lightgray);
+}
+
+body.light-mode #currentStep {
+    background: var(--primary-light);
+    color: var(--primary) !important;
+}
+
+/* JOIN BUTTON */
+
+body.light-mode #join {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: var(--white);
+}
+
+/* MOBILE MENU */
+
+body.light-mode .menuList {
+    background: var(--bg-dark);
+}
+
+body.light-mode .menuList a {
+    color: var(--white);
+}
+
+/* VIDEO */
+
+body.light-mode .video {
+    box-shadow: 0 0 20px #00000033;
+}
