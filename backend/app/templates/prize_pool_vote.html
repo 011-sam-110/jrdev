@@ -1,0 +1,454 @@
+{% extends "developer_layout.html" %}
+
+{% block title %}JrDev | Complete reviews - {{ pool.title }}{% endblock %}
+
+{% block main_class %}max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12{% endblock %}
+
+{% block content %}
+<div class="mb-6 liquid-glass-in">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Complete reviews</h1>
+    <p class="text-slate-400">{{ pool.title }} — Watch each demo video and drag to rank them from best to worst.</p>
+</div>
+
+{% if not can_vote %}
+<div class="liquid-glass-panel rounded-2xl p-12 text-center liquid-glass-in liquid-glass-in-delay-1">
+    <span class="material-symbols-outlined text-5xl text-slate-500 mb-4">schedule</span>
+    <p class="text-slate-400 mb-4">Reviews are not ready yet. At least 2 participants must submit their work with demo videos before you can review.</p>
+    <a href="{{ url_for('main.developer_joined_prize_pools') }}" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+        Back to Joined Prize Pools
+        <span class="material-symbols-outlined">arrow_forward</span>
+    </a>
+</div>
+{% else %}
+<div id="review-container" class="liquid-glass-in"
+     data-rank-url="{{ url_for('main.prize_pool_review_rank_submit', pool_id=pool.id) }}"
+     data-csrf-token="{{ csrf_token|e }}"
+     data-entries='{{ entries_json }}'
+     data-progress-done="{{ progress_done }}"
+     data-progress-total="{{ progress_total }}">
+
+    <!-- Progress bar -->
+    <div class="liquid-glass-panel rounded-2xl p-6 mb-6 border border-white/5">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm text-slate-400">Review progress</span>
+            <span id="progress-label" class="text-sm font-mono font-bold text-mint">{{ progress_done }} / {{ progress_total }}</span>
+        </div>
+        <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+            <div id="progress-bar" class="h-full rounded-full bg-gradient-to-r from-mint to-emerald-400 transition-all duration-500 ease-out"
+                 style="width: {{ ((progress_done / progress_total * 100) if progress_total > 0 else 0)|int }}%"></div>
+        </div>
+    </div>
+
+    <!-- Main two-column layout -->
+    <div class="flex flex-col lg:flex-row gap-6">
+
+        <!-- Left: Ranking panel -->
+        <div class="w-full lg:w-[320px] lg:flex-shrink-0">
+            <div class="liquid-glass-panel rounded-2xl p-5 border border-white/5 lg:sticky lg:top-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-mint">format_list_numbered</span>
+                    <h2 class="text-white font-bold text-sm uppercase tracking-wider">Drag to rank</h2>
+                </div>
+                <p class="text-slate-500 text-xs mb-4">Best at top, worst at bottom. Click an entry to watch its video.</p>
+
+                <div id="rank-list" class="space-y-2">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div id="watch-status" class="mt-4 p-3 rounded-xl bg-white/5 text-center">
+                    <p class="text-slate-500 text-xs" id="watch-status-text">Watch at least 30s of each video before submitting</p>
+                </div>
+
+                <button type="button" id="submit-ranking-btn"
+                        class="mt-4 w-full py-3 rounded-xl liquid-glass-cta font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        disabled>
+                    <span class="material-symbols-outlined">check_circle</span>
+                    Submit ranking
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Video player -->
+        <div class="flex-1 min-w-0">
+            <div class="liquid-glass-panel rounded-2xl border border-white/5 overflow-hidden">
+                <div class="p-5 border-b border-white/5">
+                    <p class="text-slate-300 font-medium" id="video-title">Select an entry to watch its demo</p>
+                    <div id="video-timer" class="mt-2 hidden">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                <div id="timer-bar" class="h-full rounded-full bg-mint transition-all duration-1000 ease-linear" style="width: 0%"></div>
+                            </div>
+                            <span id="timer-text" class="text-xs font-mono text-slate-400 whitespace-nowrap">0 / 30s</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="aspect-video bg-black/50 relative">
+                    <div id="player-container" class="w-full h-full">
+                        <div id="video-placeholder" class="w-full h-full flex flex-col items-center justify-center text-slate-500">
+                            <span class="material-symbols-outlined text-6xl mb-3 opacity-40">play_circle</span>
+                            <p class="text-sm">Click an entry on the left to start watching</p>
+                        </div>
+                        <div id="player-wrapper" class="w-full h-full hidden">
+                            <div id="yt-player" class="w-full h-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Done state -->
+    <div id="review-done" class="hidden liquid-glass-panel rounded-2xl p-12 text-center mt-6 border border-white/5">
+        <span class="material-symbols-outlined text-5xl text-mint mb-4">check_circle</span>
+        <p class="text-slate-300 font-medium mb-2">Ranking submitted!</p>
+        <p id="done-summary" class="text-slate-500 text-sm mb-6">Thanks for helping rank the submissions.</p>
+        <a href="{{ url_for('main.developer_joined_prize_pools') }}" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+            Back to Joined Prize Pools
+            <span class="material-symbols-outlined">arrow_forward</span>
+        </a>
+    </div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(function() {
+    var root = document.getElementById('review-container');
+    var rankUrl = root.getAttribute('data-rank-url');
+    var csrfToken = root.getAttribute('data-csrf-token');
+    var entries = JSON.parse(root.getAttribute('data-entries'));
+
+    var rankList = document.getElementById('rank-list');
+    var submitBtn = document.getElementById('submit-ranking-btn');
+    var videoTitle = document.getElementById('video-title');
+    var videoTimer = document.getElementById('video-timer');
+    var timerBar = document.getElementById('timer-bar');
+    var timerText = document.getElementById('timer-text');
+    var placeholder = document.getElementById('video-placeholder');
+    var playerWrapper = document.getElementById('player-wrapper');
+    var progressLabel = document.getElementById('progress-label');
+    var progressBar = document.getElementById('progress-bar');
+    var watchStatusText = document.getElementById('watch-status-text');
+    var doneEl = document.getElementById('review-done');
+    var doneSummary = document.getElementById('done-summary');
+
+    var WATCH_SECONDS = 30;
+    var ytPlayer = null;
+    var ytReady = false;
+    var activeEntryId = null;
+    var watchedSeconds = {};  // entryId -> seconds watched
+    var timerInterval = null;
+    var isPlaying = false;
+    var dragSrcEl = null;
+
+    // Track watched seconds per entry
+    entries.forEach(function(e) { watchedSeconds[e.id] = 0; });
+
+    window.onYouTubeIframeAPIReady = function() { ytReady = true; };
+
+    function extractVideoId(url) {
+        if (!url) return '';
+        var m = url.match(/(?:v=|youtu\.be\/|\/embed\/)([\w-]+)/);
+        return m ? m[1] : '';
+    }
+
+    // ─── Build ranking cards ───
+    function renderRankList() {
+        rankList.innerHTML = '';
+        entries.forEach(function(entry, idx) {
+            var card = document.createElement('div');
+            card.className = 'rank-card group flex items-center gap-3 p-3 rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-200 '
+                + (entry.id === activeEntryId
+                    ? 'border-mint/50 bg-mint/10'
+                    : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.08]');
+            card.setAttribute('draggable', 'true');
+            card.setAttribute('data-entry-id', entry.id);
+            card.setAttribute('data-idx', idx);
+
+            var watched = (watchedSeconds[entry.id] || 0) >= WATCH_SECONDS;
+
+            card.innerHTML =
+                '<div class="flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold '
+                + (idx === 0 ? 'bg-amber-500/20 text-amber-400' : idx === 1 ? 'bg-slate-400/20 text-slate-300' : idx === 2 ? 'bg-orange-700/20 text-orange-400' : 'bg-white/10 text-slate-500')
+                + '">' + (idx + 1) + '</div>'
+                + '<div class="flex-1 min-w-0">'
+                + '  <p class="text-sm text-white font-medium truncate">' + entry.label + '</p>'
+                + '  <p class="text-xs ' + (watched ? 'text-mint' : 'text-slate-500') + '">'
+                + (watched ? '<span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">check_circle</span> Watched</span>' : 'Not yet watched') + '</p>'
+                + '</div>'
+                + '<span class="material-symbols-outlined text-slate-600 group-hover:text-slate-400 text-lg">drag_indicator</span>';
+
+            card.addEventListener('click', function(e) {
+                if (dragSrcEl) return;
+                selectEntry(entry);
+            });
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragover', handleDragOver);
+            card.addEventListener('dragenter', handleDragEnter);
+            card.addEventListener('dragleave', handleDragLeave);
+            card.addEventListener('drop', handleDrop);
+            card.addEventListener('dragend', handleDragEnd);
+            rankList.appendChild(card);
+        });
+        updateSubmitState();
+    }
+
+    // ─── Drag-and-drop handlers ───
+    function handleDragStart(e) {
+        dragSrcEl = this;
+        this.style.opacity = '0.4';
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.getAttribute('data-idx'));
+    }
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+    function handleDragEnter(e) {
+        this.classList.add('border-mint/40');
+    }
+    function handleDragLeave(e) {
+        this.classList.remove('border-mint/40');
+    }
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.remove('border-mint/40');
+        if (dragSrcEl === this) return;
+        var fromIdx = parseInt(dragSrcEl.getAttribute('data-idx'), 10);
+        var toIdx = parseInt(this.getAttribute('data-idx'), 10);
+        var moved = entries.splice(fromIdx, 1)[0];
+        entries.splice(toIdx, 0, moved);
+        renderRankList();
+    }
+    function handleDragEnd(e) {
+        this.style.opacity = '1';
+        dragSrcEl = null;
+        var cards = rankList.querySelectorAll('.rank-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].classList.remove('border-mint/40');
+        }
+    }
+
+    // ─── Touch drag support for mobile ───
+    var touchDragIdx = null;
+    var touchClone = null;
+
+    rankList.addEventListener('touchstart', function(e) {
+        var card = e.target.closest('.rank-card');
+        if (!card) return;
+        touchDragIdx = parseInt(card.getAttribute('data-idx'), 10);
+        // Delay to distinguish tap from drag
+        card._touchTimer = setTimeout(function() {
+            card.style.opacity = '0.4';
+            touchClone = card.cloneNode(true);
+            touchClone.style.position = 'fixed';
+            touchClone.style.pointerEvents = 'none';
+            touchClone.style.zIndex = '9999';
+            touchClone.style.width = card.offsetWidth + 'px';
+            touchClone.style.opacity = '0.8';
+            document.body.appendChild(touchClone);
+        }, 150);
+    }, { passive: true });
+
+    rankList.addEventListener('touchmove', function(e) {
+        if (touchDragIdx === null || !touchClone) return;
+        e.preventDefault();
+        var touch = e.touches[0];
+        touchClone.style.left = (touch.clientX - 40) + 'px';
+        touchClone.style.top = (touch.clientY - 20) + 'px';
+    }, { passive: false });
+
+    rankList.addEventListener('touchend', function(e) {
+        var card = rankList.querySelectorAll('.rank-card')[touchDragIdx];
+        if (card && card._touchTimer) clearTimeout(card._touchTimer);
+        if (touchDragIdx === null) return;
+        if (!touchClone) {
+            // Was a tap, not a drag
+            var entry = entries[touchDragIdx];
+            if (entry) selectEntry(entry);
+            touchDragIdx = null;
+            return;
+        }
+        var touch = e.changedTouches[0];
+        var cards = rankList.querySelectorAll('.rank-card');
+        var targetIdx = touchDragIdx;
+        for (var i = 0; i < cards.length; i++) {
+            var rect = cards[i].getBoundingClientRect();
+            if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                targetIdx = i;
+                break;
+            }
+        }
+        if (targetIdx !== touchDragIdx) {
+            var moved = entries.splice(touchDragIdx, 1)[0];
+            entries.splice(targetIdx, 0, moved);
+            renderRankList();
+        } else {
+            cards[touchDragIdx].style.opacity = '1';
+        }
+        if (touchClone && touchClone.parentNode) touchClone.parentNode.removeChild(touchClone);
+        touchClone = null;
+        touchDragIdx = null;
+    });
+
+    // ─── Video playback ───
+    function selectEntry(entry) {
+        activeEntryId = entry.id;
+        videoTitle.textContent = entry.label;
+        placeholder.classList.add('hidden');
+        playerWrapper.classList.remove('hidden');
+        videoTimer.classList.remove('hidden');
+
+        var videoId = extractVideoId(entry.demo_video_url);
+        if (!videoId) {
+            videoTitle.textContent = entry.label + ' — Invalid video URL';
+            return;
+        }
+
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        isPlaying = false;
+        updateTimerDisplay(entry.id);
+
+        if (ytPlayer) {
+            ytPlayer.destroy();
+            ytPlayer = null;
+        }
+        // Re-create the div the player replaces
+        var wrapper = document.getElementById('player-wrapper');
+        wrapper.innerHTML = '<div id="yt-player" class="w-full h-full"></div>';
+
+        if (ytReady) {
+            createPlayer(videoId, entry.id);
+        } else {
+            var checkReady = setInterval(function() {
+                if (ytReady) {
+                    clearInterval(checkReady);
+                    createPlayer(videoId, entry.id);
+                }
+            }, 200);
+        }
+        renderRankList();
+    }
+
+    function createPlayer(videoId, entryId) {
+        ytPlayer = new YT.Player('yt-player', {
+            videoId: videoId,
+            width: '100%',
+            height: '100%',
+            playerVars: { autoplay: 1, mute: 1 },
+            events: {
+                onStateChange: function(event) {
+                    isPlaying = (event.data === 1);
+                    if (isPlaying && !timerInterval) {
+                        startTimer(entryId);
+                    }
+                }
+            }
+        });
+    }
+
+    function startTimer(entryId) {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(function() {
+            if (!isPlaying) return;
+            if (activeEntryId !== entryId) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                return;
+            }
+            watchedSeconds[entryId] = (watchedSeconds[entryId] || 0) + 1;
+            updateTimerDisplay(entryId);
+            if (watchedSeconds[entryId] >= WATCH_SECONDS) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                renderRankList();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay(entryId) {
+        var secs = Math.min(watchedSeconds[entryId] || 0, WATCH_SECONDS);
+        var pct = Math.round(secs / WATCH_SECONDS * 100);
+        timerBar.style.width = pct + '%';
+        timerText.textContent = secs + ' / ' + WATCH_SECONDS + 's';
+        if (secs >= WATCH_SECONDS) {
+            timerBar.classList.remove('bg-mint');
+            timerBar.classList.add('bg-emerald-400');
+            timerText.classList.remove('text-slate-400');
+            timerText.classList.add('text-mint');
+        } else {
+            timerBar.classList.add('bg-mint');
+            timerBar.classList.remove('bg-emerald-400');
+            timerText.classList.add('text-slate-400');
+            timerText.classList.remove('text-mint');
+        }
+    }
+
+    // ─── Submit state ───
+    function updateSubmitState() {
+        var allWatched = entries.every(function(e) {
+            return (watchedSeconds[e.id] || 0) >= WATCH_SECONDS;
+        });
+        submitBtn.disabled = !allWatched;
+        var watchedCount = entries.filter(function(e) {
+            return (watchedSeconds[e.id] || 0) >= WATCH_SECONDS;
+        }).length;
+        watchStatusText.textContent = allWatched
+            ? 'All videos watched — ready to submit!'
+            : watchedCount + ' of ' + entries.length + ' videos watched (30s each)';
+        if (allWatched) {
+            watchStatusText.classList.remove('text-slate-500');
+            watchStatusText.classList.add('text-mint');
+        }
+    }
+
+    // ─── Submit ranking ───
+    submitBtn.addEventListener('click', function() {
+        if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Submitting...';
+        var ranking = entries.map(function(e) { return e.id; });
+        fetch(rankUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ ranking: ranking })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                alert(data.error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Submit ranking';
+                return;
+            }
+            // Show done state
+            var mainLayout = root.querySelector('.flex.flex-col.lg\\:flex-row');
+            var progressPanel = mainLayout.previousElementSibling;
+            if (mainLayout) mainLayout.classList.add('hidden');
+            if (progressPanel) progressPanel.classList.add('hidden');
+            doneEl.classList.remove('hidden');
+            if (data.progress) {
+                progressLabel.textContent = data.progress.done + ' / ' + data.progress.total;
+                var pct = data.progress.total > 0 ? Math.round(data.progress.done / data.progress.total * 100) : 0;
+                progressBar.style.width = pct + '%';
+                doneSummary.textContent = 'You completed ' + data.progress.done + ' of ' + data.progress.total + ' comparisons. Thanks for helping rank the submissions!';
+            }
+        })
+        .catch(function(err) {
+            alert(err.message || 'Failed to submit. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Submit ranking';
+        });
+    });
+
+    // Init
+    renderRankList();
+})();
+</script>
+{% endif %}
+{% endblock %}

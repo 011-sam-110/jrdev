@@ -1,0 +1,85 @@
+{% extends "developer_layout.html" %}
+
+{% block title %}JrDev | Results - {{ pool.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-10 liquid-glass-in">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Prize Pool Results</h1>
+    <p class="text-slate-400">{{ pool.title }} — Winners and all submissions.</p>
+</div>
+
+<div class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+    <p class="text-slate-500 text-sm mb-6">
+        Based on reviews from <strong class="text-slate-400">{{ voters_count }}</strong> of <strong class="text-slate-400">{{ participants_count }}</strong> participants.
+        {% if participants_count and voters_count < participants_count %}
+        <span class="text-amber-400/90">Not everyone completed their reviews before the deadline.</span>
+        {% endif %}
+    </p>
+    {% if my_payout is not none and my_payout > 0 %}
+    <div class="mb-6 p-4 rounded-xl bg-mint/10 border border-mint/30">
+        <p class="text-mint font-semibold">You won £{{ "%.2f"|format(my_payout) }}</p>
+        <p class="text-slate-400 text-sm mt-1">Prize recorded. Payout is processed separately.</p>
+    </div>
+    {% endif %}
+    {% if winners %}
+    <h2 class="font-display text-xl font-bold text-white mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-mint">emoji_events</span>
+        Top 10% Winners
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        {% for entry in winners %}
+        <div class="rounded-xl border border-mint/30 overflow-hidden bg-white/5">
+            <div class="aspect-video bg-black">
+                {% if entry.demo_video_url and entry.demo_video_url|youtube_embed_url %}
+                <iframe class="w-full h-full min-h-[200px]" src="{{ entry.demo_video_url|youtube_embed_url }}" title="Winner {{ loop.index }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                {% else %}
+                <div class="w-full h-full min-h-[200px] flex items-center justify-center text-slate-500 text-sm">No video</div>
+                {% endif %}
+            </div>
+            <div class="p-4">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Winner</span>
+                <p class="text-slate-300 text-sm mt-2">{{ entry.user.username }}</p>
+                {% if payout_by_entry.get(entry.id) %}
+                <p class="text-mint text-sm font-medium mt-1">£{{ "%.2f"|format(payout_by_entry[entry.id]) }}</p>
+                {% endif %}
+                {% if entry.github_submission_url %}
+                <a href="{{ entry.github_submission_url }}" target="_blank" rel="noopener" class="text-mint hover:underline text-sm">GitHub →</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <h2 class="font-display text-xl font-bold text-white mb-4">All Submissions</h2>
+    {% if submitted %}
+    <div class="space-y-4">
+        {% for entry in submitted %}
+        <div class="rounded-xl border border-white/10 p-4 flex flex-wrap items-center gap-4 {% if entry.is_winner %}bg-mint/5 border-mint/20{% endif %}">
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-white">{{ entry.user.username }}{% if entry.is_winner %} <span class="text-mint text-sm">(Winner)</span>{% endif %}</p>
+                <p class="text-slate-500 text-sm">Submitted {{ entry.submitted_at.strftime('%d %b %Y') }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                {% if entry.demo_video_url %}
+                <a href="{{ entry.demo_video_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/10 text-slate-300 hover:text-white text-sm">Watch demo</a>
+                {% endif %}
+                {% if entry.github_submission_url %}
+                <a href="{{ entry.github_submission_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/10 text-slate-300 hover:text-white text-sm">GitHub</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-500">No submissions yet.</p>
+    {% endif %}
+
+    <div class="mt-8 pt-6 border-t border-white/10">
+        <a href="{{ url_for('main.developer_joined_prize_pools') }}" class="liquid-glass-cta inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm">
+            Back to Joined Prize Pools
+            <span class="material-symbols-outlined">arrow_forward</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

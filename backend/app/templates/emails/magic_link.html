@@ -1,0 +1,20 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Sign in to JrDev{% endblock %}
+
+{% block preheader %}Your magic sign-in link is inside — expires in 15 minutes.{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 16px 0;color:#e2e8f0;">Hi {{ username }},</p>
+<p style="margin:0 0 16px 0;color:#e2e8f0;">
+    Someone (hopefully you) requested a password reset for your JrDev account.
+    Click the button below to sign in and set a new password.
+</p>
+<p style="margin:0 0 8px 0;color:#94a3b8;font-size:14px;">
+    This link expires in <strong style="color:#e2e8f0;">15 minutes</strong>.
+    If you didn't request this, you can safely ignore this email — your account is unchanged.
+</p>
+{% endblock %}
+
+{% block cta_url %}{{ reset_url }}{% endblock %}
+{% block cta_text %}Reset my password{% endblock %}

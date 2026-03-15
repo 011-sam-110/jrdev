@@ -2,9 +2,18 @@
 <html class="scroll-smooth" lang="en">
 <head>
     <meta charset="utf-8"/>
+    <script>(function(){var s=localStorage.getItem('theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');})();</script>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}"/>
     <title>JrDev Platform - {{ title if title else 'Home' }}</title>
+    <meta property="og:title" content="JrDev | Rapid prototyping by university talent"/>
+    <meta property="og:description" content="Connect businesses with student developers for rapid, affordable software prototyping."/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="JrDev"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="JrDev | Rapid prototyping by university talent"/>
+    <meta name="twitter:description" content="Connect businesses with student developers for rapid, affordable software prototyping."/>
+    <link rel="canonical" href="{{ request.url }}"/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -36,6 +45,7 @@
         };
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
     <style>
         .text-glow {
             text-shadow: 0 0 20px rgba(20, 241, 149, 0.3);
@@ -57,64 +67,13 @@
         }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-body transition-colors duration-300 min-h-screen flex flex-col">
-    
-    <!-- Navbar -->
-    <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-24">
-                <div class="flex-shrink-0 flex items-center gap-2">
-                    <span class="material-icons-round text-primary text-4xl">code</span>
-                    <span class="font-display font-bold text-2xl tracking-tight text-slate-900 dark:text-white">Jr<span class="text-primary text-glow">Dev</span></span>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-8">
-                        <a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#how-it-works">How it works</a>
-                        <a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#students">For Students</a>
-                        <a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#business">For Businesses</a>
-                        <a class="nav-link-animated hover:text-primary transition-colors text-base font-medium" href="#">Pricing</a>
-                    </div>
-                </div>
-                <div class="hidden md:flex items-center gap-6">
-                {% if current_user.is_authenticated %}
-                    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.account') }}">My Account</a>
-                    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
-                {% else %}
-                    <a class="text-base font-medium hover:text-primary transition-colors" href="{{ url_for('main.login') }}">Login</a>
-                    <a class="btn-gradient text-slate-900 hover:text-black px-6 py-3 rounded-full text-base font-bold shadow-lg transition-all duration-300" href="{{ url_for('main.register') }}">Get Started</a>
-                {% endif %}
-                </div>
-                <div class="flex md:hidden items-center">
-                    <button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
-                        <span class="material-icons-round nav-menu-icon-open">menu</span>
-                        <span class="material-icons-round nav-menu-icon-close hidden">close</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div id="nav-mobile-menu" class="nav-mobile-menu md:hidden" aria-hidden="true">
-            <div class="px-4 pb-4 pt-2 space-y-1 border-t border-white/10">
-                <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.home') }}">Home</a>
-                <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.home') }}#how-it-works">How it works</a>
-                <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.home') }}#students">For Students</a>
-                <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.home') }}#business">For Businesses</a>
-                <div class="pt-2 mt-2 border-t border-white/10">
-                {% if current_user.is_authenticated %}
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.account') }}">My Account</a>
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.logout') }}">Logout</a>
-                {% else %}
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.login') }}">Login</a>
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium mt-2 bg-primary text-white text-center" href="{{ url_for('main.register') }}">Get Started</a>
-                {% endif %}
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="bg-slate-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-body transition-colors duration-300 min-h-screen flex flex-col">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium">Skip to content</a>
+    {% set nav_variant = 'content' %}
+    {% include 'partials/public_nav.html' with context %}
 
     <!-- Content -->
-    <main class="app-main-in flex-grow pt-24"> <!-- pt-24 to offset fixed navbar -->
+    <main id="main-content" class="app-main-in flex-grow pt-28">
         <!-- Notification bar removed as requested -->
         
         {% block content %}{% endblock %}
@@ -132,6 +91,23 @@
     </svg>
 
     <script>
+    (function() {
+        var html = document.documentElement;
+        function updateDarkIcons() {
+            var isDark = html.classList.contains('dark');
+            document.querySelectorAll('.dark-mode-icon-light').forEach(function(el) { el.classList.toggle('hidden', isDark); });
+            document.querySelectorAll('.dark-mode-icon-dark').forEach(function(el) { el.classList.toggle('hidden', !isDark); });
+            document.querySelectorAll('.dark-mode-label').forEach(function(el) { if (el) el.textContent = isDark ? 'Light Mode' : 'Dark Mode'; });
+        }
+        function toggleDark() {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            updateDarkIcons();
+        }
+        updateDarkIcons();
+        document.getElementById('dark-mode-toggle')?.addEventListener('click', toggleDark);
+        document.getElementById('dark-mode-toggle-mobile')?.addEventListener('click', toggleDark);
+    })();
     (function() {
         var btn = document.getElementById('nav-menu-btn');
         var menu = document.getElementById('nav-mobile-menu');
@@ -174,5 +150,6 @@
         document.querySelectorAll('.reveal').forEach(function(el) { io.observe(el); });
     })();
     </script>
+    <script src="{{ url_for('static', filename='js/form-loading.js') }}"></script>
 </body>
 </html>

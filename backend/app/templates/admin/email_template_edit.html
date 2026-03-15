@@ -1,0 +1,100 @@
+{% extends "admin_layout.html" %}
+{% block title %}JrDev Admin – {% if template %}Edit{% else %}New{% endif %} Template{% endblock %}
+{% block page_title %}{% if template %}Edit Template{% else %}New Template{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+
+    <div class="flex gap-2 items-center">
+        <a href="{{ url_for('main.admin_email_templates') }}" class="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors">
+            <span class="material-symbols-outlined" style="font-size:1rem">arrow_back</span>
+            Templates
+        </a>
+    </div>
+
+    <div class="bg-slate-900/60 border border-white/6 rounded-xl p-6 space-y-5">
+        <form method="POST" class="space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">Template name <span class="text-red-400">*</span></label>
+                    <input type="text" name="name" value="{{ template.name if template else form_data.get('name', '') }}"
+                           placeholder="e.g. Welcome Email"
+                           class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500" required/>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">Category</label>
+                    <select name="category" class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if (template and template.category == cat) or form_data.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">Subject (pre-fills compose form — leave blank if variable)</label>
+                <input type="text" name="subject" value="{{ template.subject if template else form_data.get('subject', '') }}"
+                       placeholder="e.g. Welcome to JrDev"
+                       class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"/>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="text-xs text-slate-500">Body HTML <span class="text-red-400">*</span></label>
+                    <div class="flex gap-2">
+                        <button type="button" id="preview-btn" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+                            <span class="material-symbols-outlined" style="font-size:0.875rem">visibility</span>
+                            Preview
+                        </button>
+                    </div>
+                </div>
+                <textarea id="body-editor" name="body_html" rows="18"
+                          class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono">{{ template.body_html if template else form_data.get('body_html', '') }}</textarea>
+                <p class="text-xs text-slate-600 mt-1">This is the content area only. The JrDev branded header, footer, and your configured signature are added automatically on send.</p>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <a href="{{ url_for('main.admin_email_templates') }}" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition-colors">Cancel</a>
+                <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined" style="font-size:1rem">save</span>
+                    {% if template %}Save Changes{% else %}Create Template{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Preview panel (hidden by default) -->
+    <div id="preview-panel" class="hidden">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Preview (content area only)</h3>
+        <div class="bg-white rounded-xl overflow-hidden shadow-lg">
+            <!-- Branded header mock -->
+            <div style="background:#0f172a;padding:20px 28px;">
+                <span style="font-size:18px;font-weight:800;color:#fff;letter-spacing:-.5px;">&lt;&gt; Jr<span style="color:#818cf8;">Dev</span></span>
+            </div>
+            <div style="padding:28px;color:#1e293b;font-size:14px;line-height:1.7;" id="preview-body"></div>
+            <div style="background:#f8fafc;padding:14px 28px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;">
+                JrDev · jr-dev.uk
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var btn = document.getElementById('preview-btn');
+    var panel = document.getElementById('preview-panel');
+    var editor = document.getElementById('body-editor');
+    var previewBody = document.getElementById('preview-body');
+    btn.addEventListener('click', function() {
+        previewBody.innerHTML = editor.value;
+        panel.classList.toggle('hidden');
+        btn.textContent = panel.classList.contains('hidden') ? ' Preview' : ' Hide Preview';
+    });
+})();
+</script>
+{% endblock %}

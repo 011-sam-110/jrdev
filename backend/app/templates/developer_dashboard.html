@@ -10,6 +10,36 @@
 {% endblock %}
 
 {% block content %}
+{# Signing deadline banners — shown above dashboard for any accepted, unsigned contracts #}
+{% for signup in pending_sign_signups %}
+{% set hours_left = ((signup.signing_deadline_at - now_utc).total_seconds() / 3600)|int if signup.signing_deadline_at else None %}
+{% if hours_left is not none and hours_left <= 4 %}
+<div class="mb-4 p-4 rounded-xl bg-red-500/15 border border-red-500/40 flex items-center gap-3 liquid-glass-in">
+    <span class="material-symbols-outlined text-red-400">alarm</span>
+    <span class="text-red-300 text-sm font-medium">
+        Urgent: <strong>{{ signup.listing.company_name }}</strong> contract must be signed — <strong>{{ hours_left }}h remaining</strong>. After this your slot will be passed to another developer.
+    </span>
+    <a href="{{ url_for('main.developer_joined_listings') }}" class="ml-auto text-xs font-bold text-red-300 underline">Sign now</a>
+</div>
+{% elif hours_left is not none and hours_left <= 24 %}
+<div class="mb-4 p-4 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center gap-3 liquid-glass-in">
+    <span class="material-symbols-outlined text-amber-400">schedule</span>
+    <span class="text-amber-300 text-sm font-medium">
+        <strong>{{ signup.listing.company_name }}</strong> contract needs signing — <strong>{{ hours_left }}h remaining</strong>.
+    </span>
+    <a href="{{ url_for('main.developer_joined_listings') }}" class="ml-auto text-xs font-bold text-amber-300 underline">Sign now</a>
+</div>
+{% else %}
+<div class="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 liquid-glass-in">
+    <span class="material-symbols-outlined text-amber-400">edit_document</span>
+    <span class="text-amber-300 text-sm font-medium">
+        <strong>{{ signup.listing.company_name }}</strong> has accepted you — please sign the contract.{% if hours_left is not none %} <span class="text-amber-400/70">({{ hours_left }}h left)</span>{% endif %}
+    </span>
+    <a href="{{ url_for('main.developer_joined_listings') }}" class="ml-auto text-xs font-bold text-amber-300 underline">Sign now</a>
+</div>
+{% endif %}
+{% endfor %}
+
 <div class="dev-profile-wrap min-h-[60vh]" data-theme="{{ profile_theme }}" data-animation="{{ profile_animation }}" data-panel-style="{{ profile_panel_style }}" data-background="{{ profile_background }}">
 <div class="grid lg:grid-cols-12 gap-8">
     <div class="lg:col-span-4">
@@ -100,29 +130,25 @@
                 <span class="material-symbols-outlined dev-accent-text text-lg">analytics</span>
                 <h3 class="font-display font-semibold text-white">Stats</h3>
             </div>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-sm text-slate-400">
-                        <span class="material-symbols-outlined dev-accent-text text-lg">bolt</span>
-                        Prototypes Attempted
-                    </div>
-                    <span class="dev-stat-value font-display">{{ profile.contracts_attempted or 0 }}</span>
+            {% set attempted = profile.contracts_attempted or 0 %}
+            {% set completed = profile.prototypes_completed or 0 %}
+            {% set success_rate = ((completed / attempted * 100)|int) if attempted > 0 else 0 %}
+            <div class="grid grid-cols-2 gap-4">
+                <div class="dev-card rounded-xl p-4 text-center">
+                    <p class="dev-stat-value font-display text-2xl">{{ attempted }}</p>
+                    <p class="text-slate-500 text-xs mt-1">Attempted</p>
                 </div>
-                <div class="border-t border-white/5"></div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-sm text-slate-400">
-                        <span class="material-symbols-outlined dev-accent-text text-lg">verified</span>
-                        Prototypes Completed
-                    </div>
-                    <span class="dev-stat-value font-display">{{ profile.prototypes_completed or 0 }}</span>
+                <div class="dev-card rounded-xl p-4 text-center">
+                    <p class="dev-stat-value font-display text-2xl">{{ completed }}</p>
+                    <p class="text-slate-500 text-xs mt-1">Completed</p>
                 </div>
-                <div class="border-t border-white/5"></div>
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2 text-sm text-slate-400">
-                        <span class="material-symbols-outlined text-amber-400 text-lg">star</span>
-                        Avg Rating
-                    </div>
-                    <span class="dev-stat-value font-display">{{ avg_rating|format_rating }}</span>
+                <div class="dev-card rounded-xl p-4 text-center">
+                    <p class="text-amber-400 font-display font-bold text-2xl">{{ avg_rating|format_rating }}</p>
+                    <p class="text-slate-500 text-xs mt-1">Rating</p>
+                </div>
+                <div class="dev-card rounded-xl p-4 text-center">
+                    <p class="dev-stat-value font-display text-2xl">{{ success_rate }}%</p>
+                    <p class="text-slate-500 text-xs mt-1">Success rate</p>
                 </div>
             </div>
         </div>
@@ -163,9 +189,10 @@
             <!-- Edit Mode (hidden by default) -->
             <div id="markdown-edit" class="hidden">
                 <form method="POST" action="{{ url_for('main.update_markdown') }}">
-                    <textarea name="content" rows="8"
+                    <textarea name="content" rows="8" maxlength="600"
                         class="liquid-glass-input w-full rounded-xl p-4 text-sm font-mono"
-                        placeholder="Write in Markdown...">{{ profile.custom_markdown if profile.custom_markdown else '' }}</textarea>
+                        placeholder="Write in Markdown... (max 600 characters)" id="about-me-textarea">{{ profile.custom_markdown if profile.custom_markdown else '' }}</textarea>
+                    <p class="text-slate-500 text-xs mt-2"><span id="about-me-count">{{ (profile.custom_markdown or '')|length }}</span>/600 characters</p>
                     <div class="flex gap-3 mt-4">
                         <button type="submit" class="px-5 py-2 rounded-lg dev-cta font-bold text-sm transition-all">Save</button>
                         <button id="cancel-markdown-edit" type="button" class="px-5 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white text-sm font-medium transition-colors">Cancel</button>
@@ -180,10 +207,15 @@
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined dev-accent-text">push_pin</span>
                     <h3 class="font-display text-xl font-semibold text-white">Pinned Projects</h3>
+                    <span class="text-slate-500 text-xs">({{ profile.pinned_projects|length }}/3)</span>
                 </div>
+                {% if profile.pinned_projects|length < 3 %}
                 <button id="toggle-add-project" type="button" class="flex items-center gap-1.5 px-4 py-2 rounded-lg dev-cta font-bold text-xs transition-all">
                     <span class="material-symbols-outlined text-sm">add</span> Add Project
                 </button>
+                {% else %}
+                <p class="text-slate-500 text-xs">Limit reached (3 max). Remove a project to add another.</p>
+                {% endif %}
             </div>
 
             <!-- Add Project Form (hidden by default) -->

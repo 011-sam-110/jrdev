@@ -75,6 +75,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-navy-900 text-slate-100 font-body h-full min-h-screen flex flex-col relative">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium">Skip to content</a>
     <div class="liquid-glass-bg" aria-hidden="true"></div>
     <nav id="dev-nav" class="fixed top-0 w-full z-50 glass-card border-b border-white/5 bg-background-dark/80 backdrop-blur-md transition-shadow duration-300">
         <div class="max-w-[1600px] mx-auto px-6 lg:px-12 h-24 flex items-center justify-between">
@@ -87,23 +88,26 @@
             <div class="hidden md:flex items-center space-x-8 text-base font-medium text-slate-400">
                 <a class="nav-link-animated {% if nav_active == 'dashboard' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 <a class="nav-link-animated {% if nav_active == 'listings' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_listings') }}">Listings</a>
-                <a class="nav-link-animated {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">Joined Listings</a>
+                <a class="nav-link-animated {% if nav_active == 'prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_prize_pools') }}">Prize Pools</a>
+                <a class="nav-link-animated relative {% if nav_active == 'joined' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.developer_joined_listings') }}">
+                    Your Listings
+                    {% if unread_message_count > 0 %}
+                    <span class="absolute -top-2 -right-3 min-w-[16px] h-[16px] px-0.5 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center">{{ unread_message_count }}</span>
+                    {% endif %}
+                </a>
+                {% if is_platform_admin() %}
+                <a class="nav-link-animated {% if nav_active == 'admin_prize_pools' %}text-primary border-b-2 border-primary pb-1{% else %}hover:text-white transition-colors{% endif %}" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
+                {% endif %}
             </div>
             <div class="flex items-center gap-4">
                 <div class="hidden md:block relative">
-                    <button type="button" id="dev-profile-menu-btn" class="w-14 h-14 rounded-full bg-navy-700 border border-white/10 overflow-hidden flex items-center justify-center block hover:ring-2 hover:ring-mint/50 transition-all focus:outline-none focus:ring-2 focus:ring-mint/50 cursor-pointer" aria-expanded="false" aria-haspopup="true" aria-label="Profile menu" title="Profile">
-                        {% if current_user.is_authenticated and current_user.image_file and current_user.image_file != 'default.jpg' %}
-                        <img alt="Profile" class="w-full h-full object-cover" src="{{ url_for('static', filename='profile_pics/' + current_user.image_file) }}"/>
-                        {% else %}
-                        {% set size = 'nav-lg' %}{% include 'partials/avatar_fallback.html' with context %}
-                        {% endif %}
-                    </button>
-                    <div id="dev-profile-dropdown" class="nav-profile-dropdown absolute right-0 mt-2 py-2 w-48 rounded-xl bg-navy-800 border border-white/10 shadow-xl shadow-black/30 hidden z-50" role="menu" aria-orientation="vertical">
-                        <a href="{{ url_for('main.logout') }}" class="block px-4 py-3 text-base font-medium text-slate-300 hover:bg-white/10 hover:text-white rounded-lg mx-2 transition-colors flex items-center gap-2" role="menuitem">
-                            <span class="material-symbols-outlined text-lg">logout</span>
-                            Log out
-                        </a>
-                    </div>
+                    {% set trigger_id = 'dev-profile-menu-btn' %}
+                    {% set dropdown_id = 'dev-profile-dropdown' %}
+                    {% set show_view_profile = true %}
+                    {% set settings_url = url_for('main.developer_settings') %}
+                    {% set settings_label = 'Settings' %}
+                    {% set earnings_url = url_for('main.developer_earnings') %}
+                    {% include 'partials/profile_popover.html' %}
                 </div>
                 <div class="flex md:hidden items-center">
                     <button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
@@ -117,44 +121,28 @@
             <div class="px-4 pb-4 pt-2 space-y-1 border-t border-white/10">
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.dashboard') }}">Dashboard</a>
                 <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_listings') }}">Listings</a>
-                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_joined_listings') }}">Joined Listings</a>
-                <div class="pt-2 mt-2 border-t border-white/10">
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_prize_pools') }}">Prize Pools</a>
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_joined_listings') }}">Your Listings</a>
+                {% if is_platform_admin() %}
+                <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.admin_prize_pools') }}">Prize Pool Admin</a>
+                {% endif %}
+                <div class="pt-2 mt-2 border-t border-white/10 space-y-1">
+                    <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.profile_by_username', username=current_user.username) }}">View Profile</a>
+                    <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.developer_settings') }}">Settings</a>
                     <a class="nav-mobile-link block px-4 py-3.5 rounded-lg text-lg font-medium" href="{{ url_for('main.logout') }}">Log out</a>
                 </div>
             </div>
         </div>
     </nav>
-    {% block flash %}
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div id="flash-messages" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 space-y-2 max-w-md w-full px-4 flash-dismiss">
-        {% for category, message in messages %}
-        <div class="flash-item rounded-xl px-4 py-3 text-sm font-medium border transition-opacity duration-500 flex items-center gap-3 {% if category == 'success' %}bg-mint/20 border-mint/40 text-mint py-4 shadow-lg shadow-mint/10{% elif category == 'danger' %}bg-red-500/20 border-red-500/40 text-red-300{% else %}bg-slate-500/20 border-slate-400/40 text-slate-200{% endif %}">
-            {% if category == 'success' %}
-            <span class="material-symbols-outlined text-2xl flex-shrink-0">check_circle</span>
-            {% endif %}
-            <span>{{ message }}</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
-    {% endblock %}
+    {% block flash %}{% endblock %}
     <div class="pt-28"></div>
-    <main class="app-main-in flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12{% endblock %}">
+    <main id="main-content" class="app-main-in flex-grow {% block main_class %}max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12{% endblock %}">
+        {% include 'partials/flash_messages.html' %}
         {% block content %}{% endblock %}
     </main>
     {% block footer %}{% endblock %}
     <script>
         (function() {
-            var flash = document.getElementById('flash-messages');
-            if (flash) {
-                setTimeout(function() {
-                    var items = flash.querySelectorAll('.flash-item');
-                    items.forEach(function(el) { el.style.opacity = '0'; });
-                    setTimeout(function() { flash.remove(); }, 500);
-                }, 4500);
-            }
             var nav = document.getElementById('dev-nav');
             if (nav) {
                 function onScroll() { nav.classList.toggle('nav-bar-scrolled', window.scrollY > 20); }
@@ -229,6 +217,7 @@
         })();
     </script>
     {% block scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/form-loading.js') }}"></script>
     <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <filter id="glass-refraction" x="-5%" y="-5%" width="110%" height="110%">

@@ -1,0 +1,14 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Verify your JrDev account{% endblock %}
+
+{% block preheader %}Please verify your email to get started on JrDev.{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 16px 0;color:#e2e8f0;">Hi {{ username }},</p>
+<p style="margin:0 0 16px 0;color:#e2e8f0;">Welcome to JrDev! Please verify your email address by clicking the button below.</p>
+<p style="margin:0 0 8px 0;color:#94a3b8;font-size:14px;">This link expires in 30 minutes. If you did not create an account, you can safely ignore this email.</p>
+{% endblock %}
+
+{% block cta_url %}{{ verify_url }}{% endblock %}
+{% block cta_text %}Verify Email{% endblock %}

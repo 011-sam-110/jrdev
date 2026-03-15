@@ -6,6 +6,17 @@
 (function () {
   'use strict';
 
+  function showFormError(form, message) {
+    var existing = form.querySelector('.js-form-error');
+    if (existing) existing.remove();
+    var el = document.createElement('div');
+    el.className = 'js-form-error rounded-lg px-4 py-3 text-sm font-medium bg-red-500/15 border border-red-500/30 text-red-300 mb-4';
+    el.setAttribute('role', 'alert');
+    el.textContent = message;
+    form.prepend(el);
+    setTimeout(function() { el.remove(); }, 5000);
+  }
+
   const DEFAULT_DEVS = 3;
   const DEFAULT_PER_DEV = 50;
   const MIN_PER_DEV = 50;
@@ -25,7 +36,6 @@
     const techInput = document.getElementById('technologies-required-input');
     const techList = document.getElementById('technologies-tags-list');
     const devSlider = document.querySelector('.dev-allocation-slider') || document.querySelector('input[type="range"][max="5"]');
-    const timelineSlider = document.querySelector('.sprint-timeline-slider');
     const investmentPerDevSlider = document.querySelector('.investment-per-dev-slider');
     const minReqSlider = document.querySelector('.min-requirements-slider');
     const essentialSlider = document.querySelector('.essential-deliverables-slider');
@@ -47,9 +57,6 @@
       devSlider,
       devCount: document.querySelector('.dev-count'),
       devCountValue: document.querySelector('.dev-count-value'),
-      timelineSlider,
-      timelineDays: document.querySelector('.timeline-days'),
-      timelineDaysValue: document.querySelector('.timeline-days-value'),
       investmentPerDevSlider,
       investmentPerDevDisplay: document.querySelector('.investment-per-dev'),
       investmentPerDevValue: document.querySelector('.investment-per-dev-value'),
@@ -63,6 +70,8 @@
       investmentAmount: document.querySelector('.investment-amount'),
       postContractForm,
       launchForm,
+      improveBtn: document.getElementById('improve-with-ai-btn'),
+      ideaInput: document.getElementById('idea-input'),
     };
   }
 
@@ -86,6 +95,450 @@
     const div = document.createElement('div');
     div.textContent = s;
     return div.innerHTML;
+  }
+
+  // ── AI Toast Notification ──
+  function showAIToast(message, type) {
+    var existing = document.getElementById('ai-toast');
+    if (existing) existing.remove();
+    var toast = document.createElement('div');
+    toast.id = 'ai-toast';
+    var isError = type === 'error';
+    toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all ' +
+      (isError
+        ? 'bg-red-500/20 border border-red-500/40 text-red-300'
+        : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300');
+    var icon = isError ? 'error' : 'check_circle';
+    toast.innerHTML = '<span class="material-symbols-outlined text-[18px]">' + icon + '</span>' + escapeHtml(message);
+    document.body.appendChild(toast);
+    setTimeout(function() { if (toast.parentNode) toast.remove(); }, 5000);
+  }
+
+  // ── AI suggestion bubbles ──
+
+  /**
+   * Create a clickable suggestion bubble (emerald tinted, + icon).
+   * onClick is called when clicked; the bubble then removes itself.
+   */
+  function createSuggestionBubble(text, onClick) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ' +
+      'bg-emerald-400/10 border border-emerald-400/30 text-emerald-300 ' +
+      'hover:bg-emerald-400/20 hover:border-emerald-400/50 transition-colors';
+    btn.innerHTML = '<span class="material-symbols-outlined text-[13px]">add</span>' + escapeHtml(text);
+    btn.addEventListener('click', function() {
+      onClick();
+      btn.remove();
+      // Hide the container if no bubbles remain
+      var container = btn.closest('[id^="ai-suggestions-"]');
+      if (container && container.querySelector('button') === null) {
+        container.classList.add('hidden');
+      }
+    });
+    return btn;
+  }
+
+  /** Clear all AI suggestion containers. */
+  function clearAllSuggestions() {
+    ['ai-suggestions-idea', 'ai-suggestions-essential',
+     'ai-suggestions-deliverables', 'ai-suggestions-technologies'].forEach(function(id) {
+      var c = document.getElementById(id);
+      if (c) { c.classList.add('hidden'); }
+      var b = document.getElementById(id + '-bubbles');
+      if (b) b.innerHTML = '';
+    });
+  }
+
+  /**
+   * Render AI suggestions as inline clickable bubbles per section.
+   * Does NOT modify the form — user clicks to apply each suggestion.
+   */
+  function renderAISuggestions(el, suggestions) {
+    clearAllSuggestions();
+    var changes = suggestions.changes || [];
+    if (changes.length === 0) return;
+
+    changes.forEach(function(field) {
+      var newVal = suggestions[field];
+      if (newVal === undefined) return;
+
+      if (field === 'idea') {
+        var bubblesEl = document.getElementById('ai-suggestions-idea-bubbles');
+        var container = document.getElementById('ai-suggestions-idea');
+        if (!bubblesEl || !container) return;
+        // Show as a clickable block (text can be long)
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full text-left px-3 py-2.5 rounded-lg text-xs text-emerald-200 ' +
+          'bg-emerald-400/10 border border-emerald-400/30 hover:bg-emerald-400/20 ' +
+          'hover:border-emerald-400/50 transition-colors leading-relaxed';
+        btn.innerHTML = '<span class="material-symbols-outlined text-[13px] align-middle mr-1">add</span>' +
+          escapeHtml(newVal);
+        btn.addEventListener('click', function() {
+          if (el.ideaInput) el.ideaInput.value = newVal;
+          btn.remove();
+          if (!bubblesEl.querySelector('button')) container.classList.add('hidden');
+        });
+        bubblesEl.appendChild(btn);
+        container.classList.remove('hidden');
+
+      } else if (field === 'essential_deliverables') {
+        var bubblesEl = document.getElementById('ai-suggestions-essential-bubbles');
+        var container = document.getElementById('ai-suggestions-essential');
+        if (!bubblesEl || !container) return;
+        bubblesEl.innerHTML = '';
+        (Array.isArray(newVal) ? newVal : []).forEach(function(item) {
+          bubblesEl.appendChild(createSuggestionBubble(item, function() {
+            var cap = getEssentialCap(el);
+            var count = el.essentialList ? el.essentialList.querySelectorAll('.tech-tag').length : 0;
+            if (count < cap) {
+              if (el.essentialList) el.essentialList.appendChild(createTag(item, ESSENTIAL_TAG_CLASS, 'bg-amber-400'));
+              syncContractTasks(el);
+              updateCapHints(el);
+            }
+          }));
+        });
+        if (bubblesEl.children.length) container.classList.remove('hidden');
+
+      } else if (field === 'deliverables') {
+        var bubblesEl = document.getElementById('ai-suggestions-deliverables-bubbles');
+        var container = document.getElementById('ai-suggestions-deliverables');
+        if (!bubblesEl || !container) return;
+        bubblesEl.innerHTML = '';
+        (Array.isArray(newVal) ? newVal : []).forEach(function(item) {
+          bubblesEl.appendChild(createSuggestionBubble(item, function() {
+            var cap = getOptionalCap(el);
+            var count = el.reqList ? el.reqList.querySelectorAll('.tech-tag').length : 0;
+            if (count < cap) {
+              if (el.reqList) el.reqList.appendChild(createTag(item, TAG_BASE_CLASS));
+              syncContractTasks(el);
+              updateCapHints(el);
+            }
+          }));
+        });
+        if (bubblesEl.children.length) container.classList.remove('hidden');
+
+      } else if (field === 'technologies') {
+        var bubblesEl = document.getElementById('ai-suggestions-technologies-bubbles');
+        var container = document.getElementById('ai-suggestions-technologies');
+        if (!bubblesEl || !container) return;
+        bubblesEl.innerHTML = '';
+        (Array.isArray(newVal) ? newVal : []).forEach(function(item) {
+          bubblesEl.appendChild(createSuggestionBubble(item, function() {
+            if (el.techList) el.techList.appendChild(createTag(item, TAG_BASE_CLASS));
+          }));
+        });
+        if (bubblesEl.children.length) container.classList.remove('hidden');
+      }
+    });
+  }
+
+  /**
+   * Collect all current form field values into a plain object.
+   */
+  function collectFormData(el) {
+    return {
+      idea: el.ideaInput ? el.ideaInput.value : '',
+      essential_deliverables: el.essentialList
+        ? Array.from(el.essentialList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
+        : [],
+      deliverables: el.reqList
+        ? Array.from(el.reqList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
+        : [],
+      technologies: el.techList
+        ? Array.from(el.techList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean)
+        : [],
+      devs: parseInt(el.devSlider?.value || DEFAULT_DEVS, 10),
+      investment_per_dev: parseInt(el.investmentPerDevSlider?.value || DEFAULT_PER_DEV, 10),
+      min_requirements: parseInt(el.minReqSlider?.value || DEFAULT_MIN_REQUIREMENTS, 10),
+      essential_count: el.essentialSlider ? parseInt(el.essentialSlider.value, 10) : 0,
+    };
+  }
+
+  /**
+   * Add/remove green highlight ring on a field element.
+   */
+  function setFieldHighlight(fieldEl, on) {
+    if (!fieldEl) return;
+    if (on) {
+      fieldEl.classList.add('ring-2', 'ring-emerald-400/50', 'bg-emerald-400/5');
+    } else {
+      fieldEl.classList.remove('ring-2', 'ring-emerald-400/50', 'bg-emerald-400/5');
+    }
+  }
+
+  /**
+   * Rebuild a tag list (clear + re-add from array).
+   */
+  function rebuildTagList(listEl, items, baseClass, dotClass) {
+    if (!listEl) return;
+    listEl.querySelectorAll('.tech-tag').forEach(function(t) { t.remove(); });
+    items.forEach(function(text) {
+      listEl.appendChild(createTag(text, baseClass, dotClass));
+    });
+  }
+
+  /**
+   * Open the AI suggestions panel.
+   */
+  function openAIPanel() {
+    var panel = document.getElementById('ai-suggestions-panel');
+    var backdrop = document.getElementById('ai-panel-backdrop');
+    if (panel) { panel.classList.remove('hidden'); panel.classList.add('flex'); }
+    if (backdrop) backdrop.classList.remove('hidden');
+  }
+
+  /**
+   * Close the AI suggestions panel.
+   */
+  function closeAIPanel() {
+    var panel = document.getElementById('ai-suggestions-panel');
+    var backdrop = document.getElementById('ai-panel-backdrop');
+    if (panel) { panel.classList.add('hidden'); panel.classList.remove('flex'); }
+    if (backdrop) backdrop.classList.add('hidden');
+  }
+
+  const FIELD_LABELS = {
+    idea: 'Sprint Idea',
+    essential_deliverables: 'Essential Deliverables',
+    deliverables: 'Optional Deliverables',
+    technologies: 'Technologies',
+    devs: 'Developer Allocation',
+    investment_per_dev: 'Investment Per Dev',
+    min_requirements: 'Total Deliverables',
+    essential_count: 'Essential Count',
+  };
+
+  /**
+   * Apply AI suggestions to the DOM and build the review panel.
+   */
+  function applyAISuggestions(el, original, suggestions) {
+    var listEl = document.getElementById('ai-suggestions-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    aiState.items = [];
+
+    var changes = suggestions.changes || [];
+    if (changes.length === 0) return;
+
+    changes.forEach(function(field) {
+      var newVal = suggestions[field];
+      if (newVal === undefined) return;
+
+      var fieldEl = null;
+      var originalVal = original[field];
+
+      // Apply new value to DOM
+      if (field === 'idea') {
+        fieldEl = el.ideaInput;
+        if (el.ideaInput) el.ideaInput.value = newVal;
+      } else if (field === 'essential_deliverables') {
+        fieldEl = el.essentialList;
+        var maxE = getEssentialMax(el);
+        newVal = newVal.slice(0, Math.min(newVal.length, maxE));
+        if (el.essentialSlider) {
+          el.essentialSlider.value = String(newVal.length);
+          el.essentialSlider.dispatchEvent(new Event('input'));
+        }
+        rebuildTagList(el.essentialList, newVal, ESSENTIAL_TAG_CLASS, 'bg-amber-400');
+        syncContractTasks(el);
+        updateCapHints(el);
+      } else if (field === 'deliverables') {
+        fieldEl = el.reqList;
+        rebuildTagList(el.reqList, newVal, TAG_BASE_CLASS);
+        syncContractTasks(el);
+        updateCapHints(el);
+      } else if (field === 'technologies') {
+        fieldEl = el.techList;
+        rebuildTagList(el.techList, newVal, TAG_BASE_CLASS);
+      } else if (field === 'devs') {
+        fieldEl = el.devSlider;
+        if (el.devSlider) {
+          var clamped = Math.min(Math.max(parseInt(el.devSlider.min || 1), parseInt(newVal, 10)), parseInt(el.devSlider.max || 5));
+          el.devSlider.value = String(clamped);
+          el.devSlider.dispatchEvent(new Event('input'));
+        }
+      } else if (field === 'investment_per_dev') {
+        fieldEl = el.investmentPerDevSlider;
+        if (el.investmentPerDevSlider) {
+          var clamped = Math.min(Math.max(parseInt(el.investmentPerDevSlider.min || 50), parseInt(newVal, 10)), parseInt(el.investmentPerDevSlider.max || 300));
+          el.investmentPerDevSlider.value = String(clamped);
+          el.investmentPerDevSlider.dispatchEvent(new Event('input'));
+        }
+      } else if (field === 'min_requirements') {
+        fieldEl = el.minReqSlider;
+        if (el.minReqSlider) {
+          var clamped = Math.min(Math.max(parseInt(el.minReqSlider.min || 1), parseInt(newVal, 10)), parseInt(el.minReqSlider.max || 8));
+          el.minReqSlider.value = String(clamped);
+          el.minReqSlider.dispatchEvent(new Event('input'));
+        }
+      } else if (field === 'essential_count') {
+        fieldEl = el.essentialSlider;
+        if (el.essentialSlider) {
+          var maxE = getEssentialMax(el);
+          var clamped = Math.min(Math.max(0, parseInt(newVal, 10)), maxE);
+          el.essentialSlider.value = String(clamped);
+          el.essentialSlider.dispatchEvent(new Event('input'));
+        }
+      }
+
+      if (fieldEl) setFieldHighlight(fieldEl, true);
+
+      // Build panel item
+      var item = document.createElement('div');
+      item.className = 'rounded-xl bg-white/5 border border-white/10 p-3 space-y-2';
+
+      var label = FIELD_LABELS[field] || field;
+      var previewNew = Array.isArray(newVal) ? newVal.join(', ') : String(newVal);
+      var previewOld = Array.isArray(originalVal) ? originalVal.join(', ') : String(originalVal || '');
+
+      item.innerHTML =
+        '<p class="text-xs font-bold text-slate-300">' + escapeHtml(label) + '</p>' +
+        (previewOld ? '<p class="text-xs text-slate-500 line-through">' + escapeHtml(previewOld) + '</p>' : '') +
+        '<p class="text-xs text-emerald-400">' + escapeHtml(previewNew) + '</p>' +
+        '<div class="flex gap-2 pt-1">' +
+          '<button type="button" class="ai-item-approve flex-1 py-1.5 rounded-lg text-xs font-bold bg-emerald-400/10 border border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/20 transition-colors">Approve</button>' +
+          '<button type="button" class="ai-item-deny flex-1 py-1.5 rounded-lg text-xs font-bold bg-red-400/10 border border-red-400/30 text-red-400 hover:bg-red-400/20 transition-colors">Deny</button>' +
+        '</div>';
+
+      listEl.appendChild(item);
+
+      var approveBtn = item.querySelector('.ai-item-approve');
+      var denyBtn = item.querySelector('.ai-item-deny');
+
+      var stateEntry = {
+        onApprove: function() {
+          setFieldHighlight(fieldEl, false);
+          item.remove();
+        },
+        onDeny: function() {
+          // Revert to original
+          if (field === 'idea') {
+            if (el.ideaInput) el.ideaInput.value = originalVal || '';
+          } else if (field === 'essential_deliverables') {
+            rebuildTagList(el.essentialList, originalVal || [], ESSENTIAL_TAG_CLASS, 'bg-amber-400');
+            if (el.essentialSlider) { el.essentialSlider.value = String(original.essential_count || 0); el.essentialSlider.dispatchEvent(new Event('input')); }
+            syncContractTasks(el); updateCapHints(el);
+          } else if (field === 'deliverables') {
+            rebuildTagList(el.reqList, originalVal || [], TAG_BASE_CLASS);
+            syncContractTasks(el); updateCapHints(el);
+          } else if (field === 'technologies') {
+            rebuildTagList(el.techList, originalVal || [], TAG_BASE_CLASS);
+          } else if (field === 'devs') {
+            if (el.devSlider) { el.devSlider.value = String(originalVal); el.devSlider.dispatchEvent(new Event('input')); }
+          } else if (field === 'investment_per_dev') {
+            if (el.investmentPerDevSlider) { el.investmentPerDevSlider.value = String(originalVal); el.investmentPerDevSlider.dispatchEvent(new Event('input')); }
+          } else if (field === 'min_requirements') {
+            if (el.minReqSlider) { el.minReqSlider.value = String(originalVal); el.minReqSlider.dispatchEvent(new Event('input')); }
+          } else if (field === 'essential_count') {
+            if (el.essentialSlider) { el.essentialSlider.value = String(originalVal); el.essentialSlider.dispatchEvent(new Event('input')); }
+          }
+          setFieldHighlight(fieldEl, false);
+          item.remove();
+        },
+      };
+
+      aiState.items.push(stateEntry);
+
+      approveBtn.addEventListener('click', function() {
+        var idx = aiState.items.indexOf(stateEntry);
+        if (idx !== -1) aiState.items.splice(idx, 1);
+        stateEntry.onApprove();
+      });
+      denyBtn.addEventListener('click', function() {
+        var idx = aiState.items.indexOf(stateEntry);
+        if (idx !== -1) aiState.items.splice(idx, 1);
+        stateEntry.onDeny();
+      });
+    });
+  }
+
+  /**
+   * Bind the "Improve with AI" button and panel controls.
+   */
+  function bindAIImprove(el) {
+    var closeBtn = document.getElementById('ai-panel-close');
+    var backdrop = document.getElementById('ai-panel-backdrop');
+    var approveAllBtn = document.getElementById('ai-approve-all');
+    var denyAllBtn = document.getElementById('ai-deny-all');
+    var csrfInput = document.getElementById('csrf-token-ai');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeAIPanel);
+    if (backdrop) backdrop.addEventListener('click', closeAIPanel);
+
+    if (approveAllBtn) {
+      approveAllBtn.addEventListener('click', function() {
+        var items = aiState.items.slice();
+        aiState.items = [];
+        items.forEach(function(item) { item.onApprove(); });
+        closeAIPanel();
+      });
+    }
+
+    if (denyAllBtn) {
+      denyAllBtn.addEventListener('click', function() {
+        var items = aiState.items.slice();
+        aiState.items = [];
+        items.forEach(function(item) { item.onDeny(); });
+        closeAIPanel();
+      });
+    }
+
+    if (!el.improveBtn) return;
+
+    el.improveBtn.addEventListener('click', function() {
+      var btn = el.improveBtn;
+      var icon = btn.querySelector('.ai-btn-icon');
+      var label = btn.querySelector('.ai-btn-label');
+      var spinner = btn.querySelector('.ai-btn-spinner');
+      var csrfToken = csrfInput ? csrfInput.value : '';
+
+      // Loading state
+      if (icon) icon.classList.add('hidden');
+      if (spinner) spinner.classList.remove('hidden');
+      if (label) label.textContent = 'Improving…';
+      btn.disabled = true;
+
+      var formData = collectFormData(el);
+
+      fetch('/api/improve-sprint', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify(formData),
+      })
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(result) {
+          // Restore button
+          if (icon) icon.classList.remove('hidden');
+          if (spinner) spinner.classList.add('hidden');
+          if (label) label.textContent = 'Improve with AI';
+          btn.disabled = false;
+
+          if (result.data.error) {
+            showAIToast(result.data.error, 'error');
+            return;
+          }
+          var changes = result.data.changes || [];
+          if (changes.length === 0) {
+            showAIToast('No improvements suggested. Try adding more details to your sprint.', 'error');
+            return;
+          }
+          renderAISuggestions(el, result.data);
+          showAIToast('Suggestions ready — click the bubbles in each section to apply.', 'success');
+        })
+        .catch(function(err) {
+          if (icon) icon.classList.remove('hidden');
+          if (spinner) spinner.classList.add('hidden');
+          if (label) label.textContent = 'Improve with AI';
+          btn.disabled = false;
+          showAIToast('Could not reach the AI service. Please try again.', 'error');
+        });
+    });
   }
 
   /**
@@ -152,6 +605,24 @@
 
   function syncContractTasks(el) {
     updateContractTasksFromDeliverables(el.essentialList, el.reqList);
+  }
+
+  /**
+   * Sync post-contract form hidden fields (pay, min_tasks, essential_count) from sidebar. Call before Generate PDF submit.
+   */
+  function syncPostContractForm(el) {
+    var form = document.getElementById('post-contract-form');
+    if (!form) return;
+    syncContractTasks(el);
+    var payEl = document.getElementById('post-contract-pay');
+    var minTasksEl = document.getElementById('post-contract-min_tasks');
+    var essentialEl = document.getElementById('post-contract-essential_count');
+    if (payEl) payEl.value = el.investmentPerDevSlider?.value ?? DEFAULT_PER_DEV;
+    if (minTasksEl) minTasksEl.value = el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS;
+    if (essentialEl) {
+      var count = el.essentialList ? el.essentialList.querySelectorAll('.tech-tag').length : 0;
+      essentialEl.value = String(count);
+    }
   }
 
   /**
@@ -282,7 +753,6 @@
     const perDev = parseInt(el.investmentPerDevSlider?.value || DEFAULT_PER_DEV, 10);
     investEl.textContent = '£' + (devs * perDev);
     if (el.devCountValue) el.devCountValue.textContent = String(devs);
-    if (el.timelineDaysValue) el.timelineDaysValue.textContent = el.timelineSlider?.value ?? DEFAULT_TIMELINE_DAYS;
     if (el.investmentPerDevValue) el.investmentPerDevValue.textContent = String(perDev);
     var minVal = el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS;
     if (el.minRequirementsValue) el.minRequirementsValue.textContent = String(minVal);
@@ -298,8 +768,6 @@
     const {
       devSlider,
       devCount,
-      timelineSlider,
-      timelineDays,
       investmentPerDevSlider,
       investmentPerDevDisplay,
       minReqSlider,
@@ -325,9 +793,6 @@
 
     if (devSlider) {
       devSlider.addEventListener('input', () => updateInvestmentDisplay(el));
-    }
-    if (timelineSlider) {
-      timelineSlider.addEventListener('input', () => updateInvestmentDisplay(el));
     }
     if (investmentPerDevSlider) {
       investmentPerDevSlider.addEventListener('input', () => {
@@ -358,6 +823,49 @@
   }
 
   /**
+   * Initialize Flatpickr date pickers (Material/Calendar-inspired).
+   */
+  function bindDatePickers() {
+    const startEl = document.getElementById('sprint-start-date');
+    const endEl = document.getElementById('sprint-end-date');
+    if (!startEl || !endEl || typeof flatpickr === 'undefined') return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const startFp = flatpickr(startEl, {
+      dateFormat: 'Y-m-d',
+      minDate: today,
+      allowInput: true,
+      theme: 'dark',
+      onChange: function(selectedDates) {
+        if (selectedDates[0]) {
+          const start = selectedDates[0];
+          const minEnd = new Date(start);
+          minEnd.setDate(minEnd.getDate() + 3);
+          const maxEnd = new Date(start);
+          maxEnd.setDate(maxEnd.getDate() + 14);
+          endFp.set('minDate', minEnd);
+          endFp.set('maxDate', maxEnd);
+          if (endFp.selectedDates[0]) {
+            const end = endFp.selectedDates[0];
+            const days = Math.round((end - start) / (24 * 60 * 60 * 1000));
+            if (days < 3 || days > 14) endFp.clear();
+          }
+        }
+      }
+    });
+
+    const endFp = flatpickr(endEl, {
+      dateFormat: 'Y-m-d',
+      minDate: today,
+      allowInput: true,
+      theme: 'dark',
+      onChange: function() {}
+    });
+  }
+
+  /**
    * Wire up all .js-help-toggle buttons to toggle their target panel.
    */
   function bindHelpToggles() {
@@ -375,6 +883,7 @@
    */
   function syncLaunchFormHiddenFields(el) {
     const company = el.postContractForm?.querySelector('input[name="company_name"]');
+    const companyAddr = el.postContractForm?.querySelector('input[name="company_address"]');
     const startDate = el.postContractForm?.querySelector('input[name="start_date"]');
     const endDate = el.postContractForm?.querySelector('input[name="end_date"]');
 
@@ -384,6 +893,7 @@
     };
 
     setLaunch('launch-company_name', company?.value ?? '');
+    setLaunch('launch-company_address', companyAddr?.value ?? '');
     setLaunch('launch-sprint_begins_at', startDate?.value ?? '');
     setLaunch('launch-sprint_ends_at', endDate?.value ?? '');
     setLaunch('launch-signup_ends_at', startDate?.value ?? '');
@@ -391,7 +901,6 @@
 
     const perDev = parseInt(el.investmentPerDevSlider?.value || DEFAULT_PER_DEV, 10);
     setLaunch('launch-pay_for_prototype', String(perDev));
-    setLaunch('launch-sprint_timeline_days', el.timelineSlider?.value ?? DEFAULT_TIMELINE_DAYS);
     setLaunch('launch-minimum_requirements_for_pay', el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS);
     setLaunch('launch-essential_deliverables_count', el.essentialSlider?.value ?? '0');
     const essentialTags = el.essentialList
@@ -411,11 +920,71 @@
   }
 
   /**
-   * Bind launch form submit to sync hidden fields then allow default submit.
+   * Before post-contract form submit: sync pay, min_tasks, essential_count from sidebar.
+   */
+  function syncPostContractForm(el) {
+    var form = el.postContractForm;
+    if (!form) return;
+    syncContractTasks(el);
+    var payEl = document.getElementById('post-contract-pay');
+    var minEl = document.getElementById('post-contract-min_tasks');
+    var essentialEl = document.getElementById('post-contract-essential_count');
+    if (payEl) payEl.value = el.investmentPerDevSlider?.value ?? DEFAULT_PER_DEV;
+    if (minEl) minEl.value = el.minReqSlider?.value ?? DEFAULT_MIN_REQUIREMENTS;
+    if (essentialEl) {
+      var count = el.essentialList ? el.essentialList.querySelectorAll('.tech-tag').length : 0;
+      essentialEl.value = String(count);
+    }
+  }
+
+  /**
+   * Bind post-contract form submit: sync hidden fields before submit.
+   */
+  function bindPostContractForm(el) {
+    if (!el.postContractForm) return;
+    el.postContractForm.addEventListener('submit', function() {
+      syncPostContractForm(el);
+    });
+  }
+
+  /**
+   * Bind launch form submit: validate technologies + card, sync hidden fields, then allow default submit.
    */
   function bindLaunchForm(el) {
     if (!el.launchForm) return;
-    el.launchForm.addEventListener('submit', () => syncLaunchFormHiddenFields(el));
+    el.launchForm.addEventListener('submit', function(ev) {
+      var hasCard = el.launchForm.getAttribute('data-has-card') === 'true';
+      var billingUrl = el.launchForm.getAttribute('data-billing-url') || '';
+      if (!hasCard && billingUrl) {
+        ev.preventDefault();
+        window.location.href = billingUrl;
+        return;
+      }
+      var techTags = el.techList ? Array.from(el.techList.querySelectorAll('.tech-tag')).map(getTagText).filter(Boolean) : [];
+      if (techTags.length === 0) {
+        ev.preventDefault();
+        showFormError(el.launchForm, 'Please add at least one technology before launching a sprint.');
+        return;
+      }
+      syncLaunchFormHiddenFields(el);
+      var startVal = el.launchForm.querySelector('#launch-sprint_begins_at')?.value;
+      var endVal = el.launchForm.querySelector('#launch-sprint_ends_at')?.value;
+      if (startVal && endVal) {
+        var start = new Date(startVal);
+        var end = new Date(endVal);
+        var days = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        if (days < 3) {
+          ev.preventDefault();
+          showFormError(el.launchForm, 'Sprint duration must be at least 3 days.');
+          return;
+        }
+        if (days > 14) {
+          ev.preventDefault();
+          showFormError(el.launchForm, 'Sprint duration cannot exceed 14 days (2 weeks).');
+          return;
+        }
+      }
+    });
   }
 
   /**
@@ -427,8 +996,11 @@
     bindDeliverables(el);
     bindEssentialDeliverables(el);
     bindTechnologies(el);
+    bindDatePickers();
     bindHelpToggles();
     bindLaunchForm(el);
+    bindPostContractForm(el);
+    bindAIImprove(el);
   }
 
   if (document.readyState === 'loading') {

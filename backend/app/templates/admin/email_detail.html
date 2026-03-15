@@ -1,0 +1,133 @@
+{% extends "admin_layout.html" %}
+{% block title %}JrDev Admin – {{ em.subject or '(no subject)' }}{% endblock %}
+{% block page_title %}Email Detail{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+
+    <!-- Back -->
+    <a href="{{ url_for('main.admin_inbox') }}" class="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors">
+        <span class="material-symbols-outlined" style="font-size:1rem">arrow_back</span>
+        Back to Inbox
+    </a>
+
+    <!-- Selected email -->
+    <div class="bg-slate-900/60 border border-white/6 rounded-xl p-6 space-y-4">
+        <div class="flex items-start justify-between gap-4">
+            <h2 class="font-display font-semibold text-white text-lg leading-snug">{{ em.subject or '(no subject)' }}</h2>
+            <span class="shrink-0 text-xs px-2 py-0.5 rounded-full border
+                {% if em.inbox == 'support' %}bg-emerald-500/10 border-emerald-500/30 text-emerald-400
+                {% elif em.inbox == 'disputes' %}bg-red-500/10 border-red-500/30 text-red-400
+                {% else %}bg-slate-500/10 border-slate-500/30 text-slate-400{% endif %}">
+                {{ em.inbox }}
+            </span>
+        </div>
+
+        <dl class="grid grid-cols-[80px_1fr] gap-x-4 gap-y-1 text-sm">
+            <dt class="text-slate-500">From</dt><dd class="text-slate-200 break-all">{{ em.from_addr }}</dd>
+            <dt class="text-slate-500">To</dt><dd class="text-slate-200 break-all">{{ parse_addrs(em.to_addrs) | join(', ') }}</dd>
+            {% set cc = parse_addrs(em.cc_addrs) %}
+            {% if cc %}
+            <dt class="text-slate-500">CC</dt><dd class="text-slate-200 break-all">{{ cc | join(', ') }}</dd>
+            {% endif %}
+            <dt class="text-slate-500">Date</dt>
+            <dd class="text-slate-400 text-xs">{{ (em.sent_at or em.created_at).strftime('%A, %d %B %Y at %H:%M GMT') if (em.sent_at or em.created_at) else '—' }}</dd>
+        </dl>
+
+        <div class="border-t border-white/5 pt-4">
+            {% if em.body_html %}
+            <div class="prose prose-invert prose-sm max-w-none text-slate-300">
+                {{ em.body_html | safe }}
+            </div>
+            {% elif em.body_text %}
+            <pre class="text-slate-300 text-sm whitespace-pre-wrap font-body">{{ em.body_text }}</pre>
+            {% else %}
+            <p class="text-slate-500 italic text-sm">No body content.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Reply form -->
+    <div class="bg-slate-900/60 border border-indigo-500/20 rounded-xl p-6 space-y-4">
+        <h3 class="font-display font-semibold text-white text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined text-indigo-400" style="font-size:1rem">reply</span>
+            Reply
+        </h3>
+        <form method="POST" action="{{ url_for('main.admin_inbox_reply', email_id=em.id) }}" class="space-y-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">From inbox</label>
+                    <select name="from_inbox" class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        {% for name in inboxes %}
+                        <option value="{{ name }}" {% if name == em.inbox %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">To</label>
+                    <input type="text" name="to" value="{{ em.from_addr }}"
+                           class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"/>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">CC</label>
+                    <input type="text" name="cc" placeholder="comma-separated"
+                           class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"/>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-500 mb-1">BCC</label>
+                    <input type="text" name="bcc" placeholder="comma-separated"
+                           class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"/>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">Subject</label>
+                <input type="text" name="subject" value="Re: {{ em.subject or '' }}"
+                       class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"/>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">Body (HTML or plain text)</label>
+                <textarea name="body" rows="6"
+                          class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono"></textarea>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined" style="font-size:1rem">send</span>
+                    Send Reply
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Thread -->
+    {% if thread | length > 1 %}
+    <div class="space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Thread ({{ thread | length }} messages)</h3>
+        {% for t in thread %}
+        {% if t.id != em.id %}
+        <div class="bg-slate-900/40 border border-white/5 rounded-xl p-4 space-y-2 {% if not t.is_read %}border-indigo-500/20{% endif %}">
+            <div class="flex items-center justify-between text-xs text-slate-500">
+                <span>
+                    {% if t.direction == 'outbound' %}<span class="text-blue-400 font-medium">Sent</span>{% else %}<span class="text-emerald-400 font-medium">Received</span>{% endif %}
+                    · {{ t.from_addr }}
+                    <span class="mx-1">→</span>{{ t.to_addrs | replace('["', '') | replace('"]', '') | replace('", "', ', ') }}
+                </span>
+                <span>{{ (t.sent_at or t.created_at).strftime('%d %b %Y %H:%M') if (t.sent_at or t.created_at) else '—' }}</span>
+            </div>
+            <p class="text-sm text-slate-400 font-medium">{{ t.subject or '(no subject)' }}</p>
+            {% if t.body_html %}
+            <div class="prose prose-invert prose-xs max-w-none text-slate-400 line-clamp-3">{{ t.body_html | safe }}</div>
+            {% elif t.body_text %}
+            <p class="text-xs text-slate-500 line-clamp-3 whitespace-pre-wrap">{{ t.body_text }}</p>
+            {% endif %}
+            <a href="{{ url_for('main.admin_inbox_detail', email_id=t.id) }}" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">View full →</a>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

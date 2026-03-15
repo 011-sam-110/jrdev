@@ -4,11 +4,11 @@
 
 {% block content %}
 <div class="mb-10 liquid-glass-in">
-    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Joined Listings</h1>
-    <p class="text-slate-400">Sprints you have joined. View and sign the contract, then see full deliverables once both parties have signed.</p>
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2">Joined Listings & Prize Pools</h1>
+    <p class="text-slate-400">Sprints and prize pools you have joined. View and sign contracts, submit work, vote, and see results.</p>
 </div>
 
-{% if not signups %}
+{% if not signups and not prize_pool_entries %}
 <div class="liquid-glass-panel rounded-2xl p-12 text-center liquid-glass-in liquid-glass-in-delay-1">
     <span class="material-symbols-outlined text-5xl text-slate-500 mb-4">inbox</span>
     <p class="text-slate-400 mb-4">You haven't joined any sprints yet.</p>
@@ -55,16 +55,24 @@
                 </div>
             </div>
 
+            <p class="text-xs text-slate-500 mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">lock</span> Contract details (including addresses) are kept confidential until both parties have e-signed.</p>
             <div class="flex flex-wrap gap-3 items-center">
                 <a href="{{ contract_view_url(signup.id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
                     <span class="material-symbols-outlined text-lg">description</span>
                     View contract
                 </a>
                 {% if signup.status == 'accepted' and not signup.developer_signed_at %}
+                {% if signup.signing_deadline_at %}
+                {% set hours_left = ((signup.signing_deadline_at - now_utc).total_seconds() / 3600)|int %}
+                <span class="px-3 py-1 rounded-full text-xs font-semibold {% if hours_left <= 4 %}bg-red-500/20 text-red-400 border border-red-500/40{% else %}bg-amber-500/20 text-amber-400 border border-amber-500/40{% endif %}">
+                    {{ hours_left }}h to sign
+                </span>
+                {% endif %}
                 <form id="sign-form-{{ signup.id }}" method="POST" action="{{ url_for('main.signup_sign_developer', id=signup.id) }}" class="inline">
                     {{ form.hidden_tag() }}
                     <input type="hidden" name="signature_data" value=""/>
-                    <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}">
+                    <input type="hidden" name="contractor_address" value=""/>
+                    <button type="button" class="js-sign-open liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" data-form-id="sign-form-{{ signup.id }}" data-signer="developer">
                         <span class="material-symbols-outlined text-lg">edit_document</span>
                         E-sign contract
                     </button>
@@ -88,6 +96,15 @@
                     </button>
                 </form>
                 {% endif %}
+                {% set signup_unread = signup.messages | selectattr('sender_id', 'ne', current_user.id) | selectattr('is_read', 'equalto', false) | list | length %}
+                <a href="{{ url_for('main.sprint_messages', id=signup.id) }}"
+                   class="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
+                    <span class="material-symbols-outlined text-lg">chat</span>
+                    Messages
+                    {% if signup_unread > 0 %}
+                    <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center">{{ signup_unread }}</span>
+                    {% endif %}
+                </a>
                 <button type="button" class="js-contact-toggle inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium" data-signup-id="{{ signup.id }}">
                     <span class="material-symbols-outlined text-lg">mail</span>
                     Contact
@@ -101,7 +118,7 @@
             {% if signup.reviewed_at %}
             <div class="mt-4 p-4 rounded-xl bg-mint/10 border border-mint/20">
                 <p class="text-mint font-medium mb-2">Project complete and reviewed successfully</p>
-                <p class="text-slate-400 text-sm mb-3">Your payment of £{{ listing.pay_for_prototype }} will be processed for this sprint.</p>
+                <p class="text-slate-400 text-sm mb-3">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }} was held in escrow when you were accepted. It has now been released to you.</p>
                 {% if signup.developer_rating_of_business is none %}
                 <form method="POST" action="{{ url_for('main.signup_rate_business', id=signup.id) }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
@@ -122,7 +139,7 @@
                     <span class="material-symbols-outlined">warning</span>
                     Not enough completed – flagged for review
                 </p>
-                <p class="text-slate-400 text-sm mt-1">The business flagged this submission. Our team may contact you to resolve. Payment is not guaranteed until the sprint is marked complete.</p>
+                <p class="text-slate-400 text-sm mt-1">The business flagged this submission. The escrowed payment is on hold pending dispute resolution. Our team may contact you.</p>
             </div>
             {% elif signup.developer_withdrew %}
             <div class="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
@@ -145,20 +162,29 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-mint text-lg">payments</span>
-                        <span class="text-slate-400">Your payment (per developer):</span>
-                        <span class="text-white font-medium">£{{ listing.pay_for_prototype }}</span>
+                        <span class="text-slate-400">Escrowed payout on approval:</span>
+                        <span class="text-white font-medium">£{{ "%.2f"|format(listing.pay_for_prototype / 100) }}</span>
                     </div>
                 </div>
-                {% if listing.deliverables_only_list %}
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Deliverables (from contract)</p>
-                <ol class="list-none space-y-3 ml-1">
-                    {% for item in listing.deliverables_only_list %}
-                    <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
-                        <span class="text-mint font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
-                        <span class="min-w-0">{{ item }}</span>
-                    </li>
+                {% if listing.essential_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Essential deliverables (required)</p>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    {% for item in listing.essential_deliverables_list %}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"></span>{{ item }}
+                    </span>
                     {% endfor %}
-                </ol>
+                </div>
+                {% endif %}
+                {% if listing.optional_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Optional deliverables</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for item in listing.optional_deliverables_list %}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-navy-700/60 border border-white/10 text-slate-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 flex-shrink-0"></span>{{ item }}
+                    </span>
+                    {% endfor %}
+                </div>
                 {% endif %}
                 {% if listing.technologies_required %}
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mt-3 mb-2">Technologies required</p>
@@ -175,7 +201,7 @@
                 {% if signup.prototype_submitted_at %}
                 <p class="text-slate-400 text-sm mb-3">Your prototype has been uploaded and delivered to the client. It is now under review.</p>
                 {% if signup_review_deadlines.get(signup.id) %}
-                <p class="text-slate-500 text-xs mb-3">Business has until <strong>{{ signup_review_deadlines[signup.id].strftime('%d %b %Y, %H:%M') }} UTC</strong> to review; then payment auto-releases to you.</p>
+                <p class="text-slate-500 text-xs mb-3">Business has until <strong>{{ signup_review_deadlines[signup.id].strftime('%d %b %Y, %H:%M') }} GMT</strong> to review; then payment auto-releases to you.</p>
                 {% endif %}
                 {% if signup.requirements_met %}
                 <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Requirements you marked as met</p>
@@ -192,7 +218,7 @@
                 </div>
                 {% endif %}
                 {% else %}
-                <form method="POST" action="{{ url_for('main.signup_submit_deliverables', id=signup.id) }}" class="space-y-4">
+                <form id="submit-form-{{ signup.id }}" method="POST" action="{{ url_for('main.signup_submit_deliverables', id=signup.id) }}" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
                     {% if listing.deliverables_only_list %}
                     <div>
@@ -216,17 +242,167 @@
                     {% endif %}
                     <div>
                         <label for="github-{{ signup.id }}" class="block text-xs font-medium text-slate-400 mb-1">GitHub repository link (source code)</label>
-                        <input type="url" id="github-{{ signup.id }}" name="github_submission_url" value="{{ signup.github_submission_url or '' }}" placeholder="https://github.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                        <input type="url" id="github-{{ signup.id }}" name="github_submission_url" value="{{ signup.github_submission_url or '' }}" placeholder="https://github.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm js-github-input"/>
                     </div>
                     <div>
                         <label for="demo-{{ signup.id }}" class="block text-xs font-medium text-slate-400 mb-1">Demonstration video (YouTube link)</label>
-                        <input type="url" id="demo-{{ signup.id }}" name="demo_video_url" value="{{ signup.demo_video_url or '' }}" placeholder="https://www.youtube.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                        <input type="url" id="demo-{{ signup.id }}" name="demo_video_url" value="{{ signup.demo_video_url or '' }}" placeholder="https://www.youtube.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm js-demo-input"/>
                     </div>
-                    <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
+                    <button type="button" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm js-submit-prototype-btn" data-form-id="submit-form-{{ signup.id }}">
                         <span class="material-symbols-outlined text-lg">upload</span>
                         Upload prototype
                     </button>
                 </form>
+
+                <!-- Submission confirmation modal -->
+                <div id="submit-confirm-modal-{{ signup.id }}" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div class="liquid-glass-panel rounded-2xl p-8 max-w-md w-full mx-4 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-amber-400 text-2xl">warning</span>
+                            <h3 class="font-display text-lg font-bold text-white">Confirm submission</h3>
+                        </div>
+                        <p class="text-slate-300 text-sm">Once submitted you <strong class="text-white">cannot re-submit</strong>. Make sure your work is complete before continuing.</p>
+                        <div id="submit-warnings-{{ signup.id }}" class="space-y-2 text-sm text-amber-300"></div>
+                        <div class="flex gap-3 pt-2">
+                            <button type="button" class="px-5 py-2 rounded-xl bg-white/10 border border-white/20 text-slate-300 hover:text-white text-sm font-medium transition-colors js-submit-cancel" data-modal-id="submit-confirm-modal-{{ signup.id }}">Cancel</button>
+                            <button type="button" class="liquid-glass-cta px-5 py-2 rounded-xl font-bold text-sm js-submit-confirm" data-form-id="submit-form-{{ signup.id }}">Submit anyway</button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </article>
+    {% endfor %}
+
+    {% for entry in prize_pool_entries %}
+    {% set pool = entry.prize_pool %}
+    <article class="liquid-glass-panel rounded-2xl p-8 sm:p-10 border border-white/5 liquid-glass-in">
+        <div class="flex flex-col gap-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="font-display text-xl font-bold text-white mb-1">{{ pool.title }}</h2>
+                    <p class="text-slate-500 text-sm">Joined {{ entry.joined_at.strftime('%d %b %Y') }}{% if pool.entry_fee_pence %} · £{{ "%.2f"|format(pool.entry_fee_pence / 100) }} entry fee{% endif %}{% if pool.status in ('open', 'voting') %}{% if pool.submission_ends_at %} · Voting begins {{ pool.submission_ends_at.strftime('%d %b %Y') }}{% endif %}{% if pool.voting_ends_at %} · Voting ends {{ pool.voting_ends_at.strftime('%d %b %Y') }}{% endif %}{% endif %}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    {% if entry.is_winner %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Winner</span>
+                    {% elif pool.status == 'closed' %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-600/50 text-slate-300">Closed</span>
+                    {% elif pool.status == 'voting' %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-400 border border-purple-500/40">Voting</span>
+                    {% elif entry.submitted_at %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-mint/20 text-mint border border-mint/40">Submitted</span>
+                    {% elif not entry.payment_completed_at %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40">Payment pending</span>
+                    {% else %}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40">Awaiting submission</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if pool.description %}
+            <div class="text-slate-400 text-sm markdown-body">{{ pool.description|markdown }}</div>
+            {% endif %}
+
+            {% if entry.payment_completed_at or pool.pool_type == 'free' %}
+            <div class="pt-4 border-t border-white/10 space-y-4">
+                <h3 class="font-display text-sm font-bold text-white uppercase tracking-wider mb-3">Deliverables</h3>
+                {% if pool.essential_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Essential (required)</p>
+                <ol class="list-none space-y-2 ml-1 mb-4">
+                    {% for item in pool.essential_deliverables_list %}
+                    <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
+                        <span class="text-mint font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
+                        <span class="min-w-0">{{ item }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% endif %}
+                {% if pool.optional_deliverables_list %}
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Optional</p>
+                <ol class="list-none space-y-2 ml-1 mb-4">
+                    {% for item in pool.optional_deliverables_list %}
+                    <li class="flex items-baseline gap-2 text-sm text-slate-300 leading-relaxed">
+                        <span class="text-slate-500 font-mono font-bold text-xs flex-shrink-0">{{ loop.index }}.</span>
+                        <span class="min-w-0">{{ item }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% endif %}
+                {% if not pool.essential_deliverables_list and not pool.optional_deliverables_list %}
+                <p class="text-slate-500 text-sm">No deliverables set for this pool. Submit your links below.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="flex flex-wrap gap-3 items-center">
+                {% if pool.status == 'voting' and entry.submitted_at %}
+                <a href="{{ url_for('main.prize_pool_vote_page', pool_id=pool.id) }}" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
+                    <span class="material-symbols-outlined text-lg">how_to_vote</span>
+                    Vote on submissions
+                </a>
+                {% endif %}
+                {% if pool.status == 'closed' %}
+                <a href="{{ url_for('main.prize_pool_results', pool_id=pool.id) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 text-slate-300 hover:bg-white/10 hover:text-white transition-colors text-sm font-medium">
+                    <span class="material-symbols-outlined text-lg">emoji_events</span>
+                    View results
+                </a>
+                {% endif %}
+            </div>
+
+            {% if (entry.payment_completed_at or pool.pool_type == 'free') and not entry.submitted_at and pool.status in ('open', 'voting') %}
+            <div class="pt-4 border-t border-white/10">
+                <h4 class="font-display text-sm font-bold text-white uppercase tracking-wider mt-6 mb-2">Submit your work</h4>
+                <form method="POST" action="{{ url_for('main.prize_pool_submit', pool_id=pool.id) }}" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+                    {% if pool.deliverables_only_list %}
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-2">Requirements met (tick each deliverable you have completed)</label>
+                        <div class="space-y-2">
+                            {% set ns = namespace(met=[]) %}
+                            {% for r in (entry.requirements_met or '').split(',') %}
+                            {% if r.strip() %}{% set _ = ns.met.append(r.strip()) %}{% endif %}
+                            {% endfor %}
+                            {% for item in pool.deliverables_only_list %}
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                <input type="checkbox" name="requirements_met" value="{{ item }}" {% if item in ns.met %}checked{% endif %} class="rounded border-white/30 bg-white/5 text-mint focus:ring-mint flex-shrink-0"/>
+                                <span class="text-mint font-mono text-xs font-bold flex-shrink-0">{{ loop.index }}.</span>
+                                <span class="text-slate-300 text-sm">{{ item }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <label for="github-pool-{{ entry.id }}" class="block text-xs font-medium text-slate-400 mb-1">GitHub repository link (source code)</label>
+                        <input type="url" id="github-pool-{{ entry.id }}" name="github_submission_url" value="{{ entry.github_submission_url or '' }}" placeholder="https://github.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                    </div>
+                    <div>
+                        <label for="demo-pool-{{ entry.id }}" class="block text-xs font-medium text-slate-400 mb-1">Demonstration video (YouTube link)</label>
+                        <input type="url" id="demo-pool-{{ entry.id }}" name="demo_video_url" value="{{ entry.demo_video_url or '' }}" placeholder="https://www.youtube.com/..." class="liquid-glass-input w-full rounded-xl px-4 py-2.5 text-slate-200 text-sm"/>
+                    </div>
+                    <button type="submit" class="liquid-glass-cta inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm">
+                        <span class="material-symbols-outlined text-lg">upload</span>
+                        Submit work
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if entry.submitted_at %}
+            <div class="pt-4 border-t border-white/10 text-sm">
+                <p class="text-slate-400 mb-1">Submitted {{ entry.submitted_at.strftime('%d %b %Y') }}</p>
+                {% if entry.requirements_met %}
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Requirements you marked as met</p>
+                <p class="text-slate-400 text-sm mb-2">{{ entry.requirements_met }}</p>
+                {% endif %}
+                {% if entry.demo_video_url %}
+                <p class="text-slate-300">Demo: <a href="{{ entry.demo_video_url }}" target="_blank" rel="noopener" class="text-mint hover:underline">Watch</a></p>
+                {% endif %}
+                {% if entry.github_submission_url %}
+                <p class="text-slate-300">GitHub: <a href="{{ entry.github_submission_url }}" target="_blank" rel="noopener" class="text-mint hover:underline">View</a></p>
                 {% endif %}
             </div>
             {% endif %}
@@ -235,6 +411,7 @@
     {% endfor %}
 </div>
 {% endif %}
+<div id="dev-saved-signature-data" data-signature="{{ saved_signature or '' }}" data-address="{{ saved_contractor_address or '' }}" class="hidden"></div>
 {% include 'partials/signature_modal.html' %}
 <script>
 (function() {
@@ -243,6 +420,47 @@
             var id = this.getAttribute('data-signup-id');
             var el = document.getElementById('contact-info-' + id);
             if (el) el.classList.toggle('hidden');
+        });
+    });
+
+    // Submission confirmation modal
+    document.querySelectorAll('.js-submit-prototype-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var formId = this.getAttribute('data-form-id');
+            var form = document.getElementById(formId);
+            if (!form) return;
+            var signupId = formId.replace('submit-form-', '');
+            var modal = document.getElementById('submit-confirm-modal-' + signupId);
+            var warningsEl = document.getElementById('submit-warnings-' + signupId);
+
+            var warnings = [];
+            var github = form.querySelector('.js-github-input');
+            var demo = form.querySelector('.js-demo-input');
+            if (!github || !github.value.trim()) warnings.push('No GitHub repository link provided.');
+            if (!demo || !demo.value.trim()) warnings.push('No demo video link provided.');
+
+            if (warningsEl) {
+                warningsEl.innerHTML = warnings.map(function(w) {
+                    return '<p class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">info</span>' + w + '</p>';
+                }).join('');
+            }
+            if (modal) modal.classList.remove('hidden');
+        });
+    });
+
+    document.querySelectorAll('.js-submit-cancel').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var modalId = this.getAttribute('data-modal-id');
+            var modal = document.getElementById(modalId);
+            if (modal) modal.classList.add('hidden');
+        });
+    });
+
+    document.querySelectorAll('.js-submit-confirm').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var formId = this.getAttribute('data-form-id');
+            var form = document.getElementById(formId);
+            if (form) form.submit();
         });
     });
 })();

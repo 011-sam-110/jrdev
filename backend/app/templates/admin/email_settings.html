@@ -1,0 +1,103 @@
+{% extends "admin_layout.html" %}
+{% block title %}JrDev Admin – Email Settings{% endblock %}
+{% block page_title %}Email Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-6">
+
+    <div class="flex gap-2 items-center">
+        <a href="{{ url_for('main.admin_email_templates') }}" class="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors">
+            <span class="material-symbols-outlined" style="font-size:1rem">arrow_back</span>
+            Templates
+        </a>
+    </div>
+
+    <div class="bg-slate-900/60 border border-white/6 rounded-xl p-6 space-y-5">
+        <h2 class="font-display font-semibold text-white text-base">Global Email Settings</h2>
+        <p class="text-sm text-slate-400">These settings apply to every outbound email sent from the admin panel.</p>
+
+        <form method="POST" class="space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div>
+                <label class="block text-xs text-slate-500 mb-1">Default from inbox</label>
+                <select name="default_inbox" class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    {% for name in inboxes %}
+                    <option value="{{ name }}" {% if config.default_inbox == name %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-slate-600 mt-1">Pre-selects the From inbox on compose and reply forms.</p>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="text-xs text-slate-500">Sign-off / Signature HTML</label>
+                    <button type="button" id="sig-preview-btn" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined" style="font-size:0.875rem">visibility</span>
+                        Preview
+                    </button>
+                </div>
+                <textarea id="sig-editor" name="signature_html" rows="8"
+                          class="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono">{{ config.signature_html or '' }}</textarea>
+                <p class="text-xs text-slate-600 mt-1">Appended after every outbound email body. Supports HTML. Example: <code class="text-slate-400">&lt;p&gt;Best regards,&lt;br&gt;&lt;strong&gt;The JrDev Team&lt;/strong&gt;&lt;/p&gt;</code></p>
+            </div>
+
+            <!-- Live preview -->
+            <div id="sig-preview-panel" class="hidden">
+                <p class="text-xs text-slate-500 mb-2">Signature preview:</p>
+                <div class="bg-white rounded-lg p-4 text-sm text-slate-700" id="sig-preview-body"></div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined" style="font-size:1rem">save</span>
+                    Save Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- What the full email looks like -->
+    <div class="bg-slate-900/40 border border-white/5 rounded-xl p-5 space-y-3">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500">What recipients see</h3>
+        <p class="text-sm text-slate-400">Every email sent from the admin panel is automatically wrapped in this layout:</p>
+        <div class="bg-white rounded-xl overflow-hidden shadow-md text-xs">
+            <div style="background:#0f172a;padding:16px 24px;">
+                <span style="font-size:16px;font-weight:800;color:#fff;">&lt;&gt; Jr<span style="color:#818cf8;">Dev</span></span>
+            </div>
+            <div style="padding:20px 24px;color:#1e293b;line-height:1.6;">
+                <p style="color:#64748b;font-style:italic;">← your email body goes here</p>
+                <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0;"/>
+                <div style="color:#64748b;" id="sig-preview-inline">{{ config.signature_html | safe if config.signature_html }}</div>
+            </div>
+            <div style="background:#f8fafc;padding:12px 24px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;">
+                JrDev · jr-dev.uk
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    var btn = document.getElementById('sig-preview-btn');
+    var panel = document.getElementById('sig-preview-panel');
+    var editor = document.getElementById('sig-editor');
+    var previewBody = document.getElementById('sig-preview-body');
+    var inlinePreview = document.getElementById('sig-preview-inline');
+
+    function updateInline() {
+        if (inlinePreview) inlinePreview.innerHTML = editor.value;
+    }
+
+    btn.addEventListener('click', function() {
+        previewBody.innerHTML = editor.value;
+        panel.classList.toggle('hidden');
+    });
+
+    editor.addEventListener('input', updateInline);
+})();
+</script>
+{% endblock %}

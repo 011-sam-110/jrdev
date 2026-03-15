@@ -22,7 +22,7 @@
                     {{ form.remember(class="rounded border-slate-600 bg-black/20 text-primary focus:ring-primary flex-shrink-0") }}
                     <span class="text-sm text-slate-400">Remember Me</span>
                 </label>
-                <a href="#" class="text-sm text-primary hover:text-white transition-colors inline-flex items-center">Forgot Password?</a>
+                <a href="{{ url_for('main.forgot_password') }}" class="text-sm text-primary hover:text-white transition-colors inline-flex items-center">Forgot Password?</a>
             </div>
 
             {{ form.submit(class="w-full mt-8 btn-gradient py-4 rounded-xl text-slate-900 font-bold text-lg cursor-pointer hover:scale-[1.02] transform transition-all shadow-lg hover:shadow-primary/25") }}

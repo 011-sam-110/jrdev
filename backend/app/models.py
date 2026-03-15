@@ -22,6 +22,8 @@ class User(db.Model, UserMixin):
     """Platform user: developer or business; auth, 2FA, optional Stripe customer."""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
+    first_name = db.Column(db.String(50), nullable=True)
+    last_name = db.Column(db.String(50), nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     image_file = db.Column(db.String(64), nullable=False, default='default.jpg')
     password = db.Column(db.String(60), nullable=False)
@@ -35,8 +37,8 @@ class User(db.Model, UserMixin):
     stripe_customer_id = db.Column(db.String(120), nullable=True)
     
     # Relationships
-    developer_profile = db.relationship('DeveloperProfile', backref='user', uselist=False, lazy=True)
-    projects = db.relationship('Project', backref='author', lazy=True)
+    developer_profile = db.relationship('DeveloperProfile', backref='user', uselist=False, lazy=True, cascade='all, delete-orphan')
+    projects = db.relationship('Project', backref='author', lazy=True, cascade='all, delete-orphan')
 
     def get_verification_token(self, expires_sec=1800):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -51,6 +53,31 @@ class User(db.Model, UserMixin):
         except Exception:
             return None
         return User.query.get(user_id)
+
+    def get_reset_token(self, salt, extra=None, expires_sec=900):
+        """Generate a signed password-reset token (15 min default). Pass extra={} for OTP payload."""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        payload = {'user_id': self.id}
+        if extra:
+            payload.update(extra)
+        return s.dumps(payload, salt=salt)
+
+    @staticmethod
+    def load_reset_token(token, salt, expires_sec=900):
+        """Load reset token payload dict; returns None if invalid or expired."""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            return s.loads(token, salt=salt, max_age=expires_sec)
+        except Exception:
+            return None
+
+    @staticmethod
+    def verify_reset_token(token, salt, expires_sec=900):
+        """Verify reset token and return User; returns None if invalid or expired."""
+        data = User.load_reset_token(token, salt, expires_sec)
+        if data is None:
+            return None
+        return User.query.get(data['user_id'])
 
     def get_totp_uri(self):
         return pyotp.totp.TOTP(self.two_factor_secret).provisioning_uri(
@@ -67,8 +94,8 @@ class User(db.Model, UserMixin):
 class DeveloperProfile(db.Model):
     """Developer-specific profile: headline, tech stack, links, markdown, theme options, stats."""
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+
     # Identity
     headline = db.Column(db.String(100), default='Aspiring Developer')
     bio = db.Column(db.Text, nullable=True) # Short bio
@@ -76,7 +103,8 @@ class DeveloperProfile(db.Model):
     availability = db.Column(db.String(20), default='Open to Work')
     
     # Skills & Links
-    technologies = db.Column(db.String(255), default='Python,JavaScript') # Comma separated
+    technologies = db.Column(db.String(255), default='Python,JavaScript') # Comma separated (names only; no +N)
+    technologies_verified = db.Column(db.Text, nullable=True)  # JSON: {"python": 2, "react": 1} from completed sprints only
     github_link = db.Column(db.String(120))
     linkedin_link = db.Column(db.String(120))
     portfolio_link = db.Column(db.String(120))
@@ -94,6 +122,10 @@ class DeveloperProfile(db.Model):
     contracts_attempted = db.Column(db.Integer, default=0)
     contracts_won = db.Column(db.Integer, default=0)
     prototypes_completed = db.Column(db.Integer, default=0)
+
+    # Settings: saved signature & address for contracts (avoid re-entering each sprint)
+    saved_signature = db.Column(db.Text, nullable=True)  # base64 PNG data URL
+    saved_contractor_address = db.Column(db.String(255), nullable=True)
 
     # Relationships
     pinned_projects = db.relationship('PinnedProject', backref='profile', lazy=True)
@@ -122,10 +154,11 @@ class Project(db.Model):
 class SprintListing(db.Model):
     """A prototype/sprint posting created by a business."""
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    business_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     company_name = db.Column(db.String(120), nullable=False)
+    company_address = db.Column(db.String(255), nullable=True)
     max_talent_pool = db.Column(db.Integer, nullable=False, default=3)
-    pay_for_prototype = db.Column(db.Float, nullable=False, default=20.0)
+    pay_for_prototype = db.Column(db.Integer, nullable=False, default=2000)  # stored in pence
     business_rating = db.Column(db.Float, nullable=True)
     technologies_required = db.Column(db.String(500), nullable=True)
     deliverables = db.Column(db.Text, nullable=True)  # Newline-separated optional contract deliverables
@@ -137,7 +170,7 @@ class SprintListing(db.Model):
     sprint_ends_at = db.Column(db.DateTime, nullable=False)
     minimum_requirements_for_pay = db.Column(db.Integer, nullable=False, default=1)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    status = db.Column(db.String(20), nullable=False, default='open')
+    status = db.Column(db.String(20), nullable=False, default='open', index=True)
 
     business = db.relationship('User', backref='sprint_listings')
     signups = db.relationship('ListingSignup', backref='listing', cascade='all, delete-orphan')
@@ -190,20 +223,22 @@ class SprintListing(db.Model):
 class ListingSignup(db.Model):
     """Developer joining a sprint listing. Business can accept/deny; both parties e-sign contract."""
     id = db.Column(db.Integer, primary_key=True)
-    listing_id = db.Column(db.Integer, db.ForeignKey('sprint_listing.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('sprint_listing.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     joined_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    status = db.Column(db.String(20), nullable=False, default='pending')
+    status = db.Column(db.String(20), nullable=False, default='pending', index=True)
     developer_signed_at = db.Column(db.DateTime, nullable=True)
     business_signed_at = db.Column(db.DateTime, nullable=True)
     developer_signature_image = db.Column(db.Text, nullable=True)  # base64 PNG data URL
     business_signature_image = db.Column(db.Text, nullable=True)  # base64 PNG data URL
+    developer_registered_address = db.Column(db.String(255), nullable=True)  # provided when developer e-signs
     github_submission_url = db.Column(db.String(500), nullable=True)
     demo_video_url = db.Column(db.String(500), nullable=True)
     prototype_submitted_at = db.Column(db.DateTime, nullable=True)
     requirements_met = db.Column(db.String(500), nullable=True)
     reviewed_at = db.Column(db.DateTime, nullable=True)
     flagged_for_review = db.Column(db.Boolean, default=False)
+    signing_deadline_at = db.Column(db.DateTime, nullable=True)  # 2 days after accepted
     business_rating_of_developer = db.Column(db.Integer, nullable=True)  # 1-5
     developer_rating_of_business = db.Column(db.Integer, nullable=True)  # 1-5
     developer_withdrew = db.Column(db.Boolean, default=False)
@@ -213,3 +248,203 @@ class ListingSignup(db.Model):
     @property
     def is_fully_signed(self):
         return self.developer_signed_at is not None and self.business_signed_at is not None
+
+
+class PrizePool(db.Model):
+    """Prize pool challenge: paid (entry fee, user voting) or free (AI review placeholder)."""
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    status = db.Column(db.String(20), nullable=False, default='open', index=True)  # open, voting, closed
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    technologies_required = db.Column(db.String(500), nullable=True)
+    pool_type = db.Column(db.String(20), nullable=False, default='paid')  # paid | free
+    entry_fee_pence = db.Column(db.Integer, nullable=True)  # null = free pool, stored in pence
+    signup_ends_at = db.Column(db.DateTime, nullable=False)
+    submission_ends_at = db.Column(db.DateTime, nullable=False)
+    voting_ends_at = db.Column(db.DateTime, nullable=True)  # for paid
+    review_ends_at = db.Column(db.DateTime, nullable=True)  # for free, placeholder
+    max_participants = db.Column(db.Integer, nullable=True)  # null = unlimited
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    essential_deliverables = db.Column(db.Text, nullable=True)  # Newline-separated required deliverables
+    optional_deliverables = db.Column(db.Text, nullable=True)  # Newline-separated optional deliverables
+
+    created_by = db.relationship('User', backref='created_prize_pools', foreign_keys=[created_by_id])
+    entries = db.relationship('PrizePoolEntry', backref='prize_pool', cascade='all, delete-orphan')
+    votes = db.relationship('PrizePoolVote', backref='prize_pool', cascade='all, delete-orphan')
+    pairwise_votes = db.relationship('PrizePoolPairwiseVote', backref='prize_pool', cascade='all, delete-orphan')
+
+    @property
+    def entry_count(self):
+        """Number of paid/joined entries (with payment_completed_at for paid pools)."""
+        return len([e for e in self.entries if e.payment_completed_at is not None or self.pool_type == 'free'])
+
+    @property
+    def joined_count(self):
+        return len([e for e in self.entries if e.payment_completed_at is not None or self.entry_fee_pence is None])
+
+    @property
+    def is_free(self):
+        return self.pool_type == 'free' or self.entry_fee_pence is None
+
+    @property
+    def essential_deliverables_list(self):
+        """List of essential (required) deliverable strings."""
+        if self.essential_deliverables:
+            return [t.strip() for t in self.essential_deliverables.split('\n') if t.strip()]
+        return []
+
+    @property
+    def optional_deliverables_list(self):
+        """List of optional deliverable strings."""
+        if self.optional_deliverables:
+            return [t.strip() for t in self.optional_deliverables.split('\n') if t.strip()]
+        return []
+
+    @property
+    def deliverables_only_list(self):
+        """Full deliverables list for checkboxes (essential + optional)."""
+        return self.essential_deliverables_list + self.optional_deliverables_list
+
+
+class PrizePoolEntry(db.Model):
+    """Developer's entry in a prize pool. Payment required for paid pools."""
+    __table_args__ = (
+        db.UniqueConstraint('prize_pool_id', 'user_id', name='uq_prize_pool_entry_pool_user'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    joined_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    payment_intent_id = db.Column(db.String(255), nullable=True)  # Stripe
+    payment_completed_at = db.Column(db.DateTime, nullable=True)
+    demo_video_url = db.Column(db.String(500), nullable=True)
+    github_submission_url = db.Column(db.String(500), nullable=True)
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    requirements_met = db.Column(db.String(500), nullable=True)  # Comma-separated deliverables completed
+    is_winner = db.Column(db.Boolean, default=False)
+    ai_review_result = db.Column(db.String(20), nullable=True)  # pass/fail for free, placeholder
+
+    user = db.relationship('User', backref='prize_pool_entries')
+
+    @property
+    def has_paid(self):
+        return self.payment_completed_at is not None
+
+    @property
+    def has_submitted(self):
+        return self.submitted_at is not None
+
+
+class PrizePoolVote(db.Model):
+    """Participant vote: ranks 3 entries (1st=best, 3rd=worst). Points: 1st=3, 2nd=2, 3rd=1."""
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
+    voter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    entry_1_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    entry_2_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    entry_3_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    rank_1_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)  # best
+    rank_2_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    rank_3_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)  # worst
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    voter = db.relationship('User', backref='prize_pool_votes', foreign_keys=[voter_id])
+
+
+class PrizePoolPairwiseVote(db.Model):
+    """Pairwise comparison: voter chose winner_entry_id as best between entry_a and entry_b."""
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False, index=True)
+    voter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    entry_a_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    entry_b_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    winner_entry_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    voter = db.relationship('User', backref='prize_pool_pairwise_votes', foreign_keys=[voter_id])
+
+
+class PrizePoolPayout(db.Model):
+    """Log of prize payouts when a pool closes. One row per winning entry (who won, how much)."""
+    id = db.Column(db.Integer, primary_key=True)
+    prize_pool_id = db.Column(db.Integer, db.ForeignKey('prize_pool.id'), nullable=False)
+    prize_pool_entry_id = db.Column(db.Integer, db.ForeignKey('prize_pool_entry.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount_pence = db.Column(db.Integer, nullable=False, default=0)  # stored in pence
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)  # when actually paid out (manual/admin)
+    notes = db.Column(db.String(500), nullable=True)
+
+    prize_pool = db.relationship('PrizePool', backref=db.backref('payouts', lazy=True))
+    prize_pool_entry = db.relationship('PrizePoolEntry', backref=db.backref('payout', uselist=False, lazy=True))
+    user = db.relationship('User', backref='prize_pool_payouts', foreign_keys=[user_id])
+
+
+class SprintMessage(db.Model):
+    """In-app message tied to a ListingSignup sprint thread.
+    msg_type: 'message' | 'extension_request' | 'system'"""
+    id = db.Column(db.Integer, primary_key=True)
+    signup_id = db.Column(db.Integer, db.ForeignKey('listing_signup.id'), nullable=False, index=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    body = db.Column(db.Text, nullable=False)
+    msg_type = db.Column(db.String(30), nullable=False, default='message')
+    extension_days = db.Column(db.Integer, nullable=True)       # extension_request only
+    extension_status = db.Column(db.String(20), nullable=True)  # null | 'accepted' | 'declined'
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    signup = db.relationship('ListingSignup', backref=db.backref('messages', lazy=True, order_by='SprintMessage.created_at'))
+    sender = db.relationship('User', backref='sprint_messages_sent', foreign_keys=[sender_id])
+
+
+class AdminEmail(db.Model):
+    """Stores inbound and outbound emails for the three admin inboxes."""
+    __tablename__ = 'admin_emails'
+    id          = db.Column(db.Integer, primary_key=True)
+    inbox       = db.Column(db.String(20), nullable=False, index=True)   # 'noreply' | 'support' | 'disputes'
+    direction   = db.Column(db.String(8), nullable=False)                # 'inbound' | 'outbound'
+    message_id  = db.Column(db.String(500), unique=True, nullable=True)  # email Message-ID header
+    in_reply_to = db.Column(db.String(500), nullable=True)               # In-Reply-To header
+    thread_id   = db.Column(db.String(500), nullable=True, index=True)   # = oldest message_id in thread
+    from_addr   = db.Column(db.String(255), nullable=False)
+    to_addrs    = db.Column(db.Text, nullable=False)                     # JSON list
+    cc_addrs    = db.Column(db.Text, nullable=True)                      # JSON list
+    bcc_addrs   = db.Column(db.Text, nullable=True)                      # JSON list (outbound only)
+    subject     = db.Column(db.String(500))
+    body_text   = db.Column(db.Text)
+    body_html   = db.Column(db.Text)
+    is_read     = db.Column(db.Boolean, default=False, nullable=False)
+    sent_at     = db.Column(db.DateTime, nullable=True, index=True)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class AdminEmailTemplate(db.Model):
+    """Reusable email templates with pre-filled subject and body content."""
+    __tablename__ = 'admin_email_templates'
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(100), nullable=False)
+    category    = db.Column(db.String(50), nullable=True)   # 'general' | 'support' | 'disputes' | 'billing'
+    subject     = db.Column(db.String(500), nullable=True)
+    body_html   = db.Column(db.Text, nullable=False)        # content area only; wrapped in branded layout on send
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at  = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class AdminEmailConfig(db.Model):
+    """Singleton config row for global email settings (signature, default inbox)."""
+    __tablename__ = 'admin_email_config'
+    id              = db.Column(db.Integer, primary_key=True)  # always 1
+    signature_html  = db.Column(db.Text, nullable=True)        # appended to every outbound email
+    default_inbox   = db.Column(db.String(20), default='noreply', nullable=False)
+    updated_at      = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    @classmethod
+    def get(cls):
+        """Return the singleton config row, creating it if it doesn't exist."""
+        row = cls.query.get(1)
+        if not row:
+            row = cls(id=1, signature_html='<p>Best regards,<br><strong>The JrDev Team</strong></p>', default_inbox='noreply')
+            db.session.add(row)
+            db.session.commit()
+        return row

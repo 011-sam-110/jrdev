@@ -1,0 +1,68 @@
+{% extends "admin_layout.html" %}
+
+{% block title %}JrDev Admin – DB: {{ model_name }}{% endblock %}
+{% block page_title %}Database: {{ model_name.replace('_', ' ').title() }}{% endblock %}
+
+{% block content %}
+<div class="max-w-full space-y-4">
+
+    <!-- Model selector -->
+    <div class="flex flex-wrap gap-2">
+        {% for m in ['users', 'sprint_listings', 'listing_signups', 'prize_pools', 'prize_pool_entries', 'prize_pool_payouts'] %}
+        <a href="{{ url_for('main.admin_database', model=m) }}"
+           class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+               {% if m == model_name %}bg-indigo-600 text-white{% else %}bg-white/6 text-slate-400 hover:text-white hover:bg-white/10{% endif %}">
+            {{ m.replace('_', ' ').title() }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination info -->
+    <div class="flex items-center justify-between text-xs text-slate-500">
+        <span>Showing {{ rows|length }} of {{ total }} rows (page {{ page }} of {{ total_pages }})</span>
+        <div class="flex gap-2">
+            {% if page > 1 %}
+            <a href="{{ url_for('main.admin_database', model=model_name, page=page-1) }}" class="px-3 py-1 rounded bg-white/6 hover:bg-white/10 text-slate-300 transition-colors">← Prev</a>
+            {% endif %}
+            {% if page < total_pages %}
+            <a href="{{ url_for('main.admin_database', model=model_name, page=page+1) }}" class="px-3 py-1 rounded bg-white/6 hover:bg-white/10 text-slate-300 transition-colors">Next →</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Table -->
+    {% if rows %}
+    <div class="rounded-xl border border-white/6 overflow-x-auto">
+        <table class="w-full text-xs font-mono">
+            <thead>
+                <tr class="border-b border-white/5 bg-white/3">
+                    {% for col in columns %}
+                    <th class="text-left px-3 py-2.5 font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/3">
+                {% for row in rows %}
+                <tr class="hover:bg-white/3 transition-colors">
+                    {% for val in row %}
+                    <td class="px-3 py-2 text-slate-300 max-w-xs truncate whitespace-nowrap">
+                        {% if val is none %}
+                        <span class="text-slate-600">NULL</span>
+                        {% elif val|string|length > 60 %}
+                        <span title="{{ val }}">{{ val|string|truncate(60, true) }}</span>
+                        {% else %}
+                        {{ val }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">No rows found.</p>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -2,6 +2,7 @@
 <html class="scroll-smooth h-full" lang="en">
 <head>
     <meta charset="utf-8"/>
+    <script>(function(){var s=localStorage.getItem('theme');if(s==='dark'||(!s&&window.matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');})();</script>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}"/>
     <title>{% block title %}JrDev{% endblock %}</title>
@@ -12,8 +13,10 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}"/>
     <script>
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
                     colors: {
@@ -44,56 +47,18 @@
         }
     </style>
 </head>
-<body class="bg-navy-900 text-slate-100 font-body h-full min-h-screen flex flex-col relative">
-    <div class="liquid-glass-bg" aria-hidden="true"></div>
-
-    <nav class="fixed top-0 w-full z-50 border-b border-white/5 bg-navy-900/80 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
-                <a href="{{ url_for('main.home') }}" class="flex-shrink-0 flex items-center gap-2">
-                    <span class="material-icons-round text-primary text-3xl">code</span>
-                    <span class="font-display font-bold text-xl tracking-tight text-white">Jr<span class="text-primary text-glow">Dev</span></span>
-                </a>
-                <div class="hidden md:flex items-center gap-4">
-                {% if current_user.is_authenticated %}
-                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.account') }}">My Account</a>
-                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
-                {% else %}
-                    <a class="text-sm font-medium text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.login') }}">Login</a>
-                    <a class="btn-gradient text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all" href="{{ url_for('main.register') }}">Get Started</a>
-                {% endif %}
-                </div>
-                <div class="flex md:hidden items-center">
-                    <button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
-                        <span class="material-icons-round nav-menu-icon-open">menu</span>
-                        <span class="material-icons-round nav-menu-icon-close hidden">close</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div id="nav-mobile-menu" class="nav-mobile-menu md:hidden" aria-hidden="true">
-            <div class="px-4 pb-4 pt-2 space-y-1 border-t border-white/10">
-                {% if current_user.is_authenticated %}
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.dashboard') }}">Dashboard</a>
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.account') }}">My Account</a>
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.logout') }}">Logout</a>
-                {% else %}
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium" href="{{ url_for('main.login') }}">Login</a>
-                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium mt-2 bg-primary text-white text-center" href="{{ url_for('main.register') }}">Get Started</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
+<body class="bg-slate-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 font-body h-full min-h-screen flex flex-col relative transition-colors duration-300">
+    {% set nav_variant = 'content' %}
+    {% include 'partials/public_nav.html' with context %}
 
     <main class="flex-grow pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full relative z-10">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-white/5 py-10 mt-auto relative z-10">
+    <footer class="border-t border-neutral-200 dark:border-white/5 py-10 mt-auto relative z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="text-slate-500 text-sm">&copy; 2026 JrDev Platform. All rights reserved.</div>
-            <div class="flex gap-6 text-sm text-slate-400">
+            <div class="text-slate-500 dark:text-slate-400 text-sm">&copy; 2026 JrDev Platform. All rights reserved.</div>
+            <div class="flex gap-6 text-sm text-slate-600 dark:text-slate-400">
                 <a class="hover:text-primary transition-colors" href="{{ url_for('main.privacy') }}">Privacy Policy</a>
                 <a class="hover:text-primary transition-colors" href="{{ url_for('main.terms') }}">Terms &amp; Conditions</a>
                 <a class="hover:text-primary transition-colors" href="{{ url_for('main.support') }}">Support</a>
@@ -111,6 +76,23 @@
         </defs>
     </svg>
     <script>
+    (function() {
+        var html = document.documentElement;
+        function updateDarkIcons() {
+            var isDark = html.classList.contains('dark');
+            document.querySelectorAll('.dark-mode-icon-light').forEach(function(el) { el.classList.toggle('hidden', isDark); });
+            document.querySelectorAll('.dark-mode-icon-dark').forEach(function(el) { el.classList.toggle('hidden', !isDark); });
+            document.querySelectorAll('.dark-mode-label').forEach(function(el) { if (el) el.textContent = isDark ? 'Light Mode' : 'Dark Mode'; });
+        }
+        function toggleDark() {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            updateDarkIcons();
+        }
+        updateDarkIcons();
+        document.getElementById('dark-mode-toggle')?.addEventListener('click', toggleDark);
+        document.getElementById('dark-mode-toggle-mobile')?.addEventListener('click', toggleDark);
+    })();
     (function() {
         var btn = document.getElementById('nav-menu-btn');
         var menu = document.getElementById('nav-mobile-menu');
@@ -144,6 +126,36 @@
             if (e.key === 'Escape' && menu && menu.classList.contains('open')) closeMenu();
         });
     })();
+    function toggleFaq(btn) {
+        var answer = btn.querySelector('.faq-answer');
+        var plus = btn.querySelector('.faq-plus');
+        var ping = btn.querySelector('.faq-icon-ping');
+        var isOpen = btn.getAttribute('aria-expanded') === 'true';
+        document.querySelectorAll('.faq-trigger[aria-expanded="true"]').forEach(function(other) {
+            if (other !== btn) {
+                other.setAttribute('aria-expanded', 'false');
+                var oa = other.querySelector('.faq-answer');
+                if (oa) oa.style.maxHeight = '0';
+                var op = other.querySelector('.faq-plus');
+                if (op) op.classList.remove('rotate-45');
+                var oping = other.querySelector('.faq-icon-ping');
+                if (oping) oping.classList.remove('animate-ping');
+                var glow = other.closest('.faq-card');
+                if (glow) { var g = glow.querySelector('.faq-glow'); if (g) { g.classList.remove('opacity-100'); g.classList.add('opacity-0'); } }
+            }
+        });
+        if (isOpen) {
+            btn.setAttribute('aria-expanded', 'false');
+            if (answer) answer.style.maxHeight = '0';
+            if (plus) plus.classList.remove('rotate-45');
+            if (ping) ping.classList.remove('animate-ping');
+        } else {
+            btn.setAttribute('aria-expanded', 'true');
+            if (answer) answer.style.maxHeight = answer.scrollHeight + 'px';
+            if (plus) plus.classList.add('rotate-45');
+            if (ping) ping.classList.add('animate-ping');
+        }
+    }
     </script>
 </body>
 </html>

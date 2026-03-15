@@ -4,9 +4,25 @@ Shared route and profile utilities.
 Provides redirect helpers, URL/text parsing, developer profile helpers,
 review deadline helpers, and a single source of truth for profile theme defaults.
 """
+import json
 import re
 from datetime import timedelta
 from flask import redirect, url_for, request
+import markdown as md_lib
+import bleach
+
+
+_MD_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li',
+                    'h1', 'h2', 'h3', 'h4', 'code', 'pre', 'blockquote']
+_MD_ALLOWED_ATTRS = {'a': ['href', 'title']}
+
+
+def sanitize_markdown(text):
+    """Convert markdown to HTML and sanitize to prevent XSS."""
+    if not text or not str(text).strip():
+        return ''
+    html = md_lib.markdown(str(text), extensions=['md_in_html'])
+    return bleach.clean(html, tags=_MD_ALLOWED_TAGS, attributes=_MD_ALLOWED_ATTRS)
 
 REVIEW_DEADLINE_HOURS = 48
 
@@ -23,15 +39,24 @@ def review_deadline_from(submitted_at):
 # -----------------------------------------------------------------------------
 
 
+def is_safe_url(target):
+    """Check that target URL is same-origin to prevent open redirects."""
+    from urllib.parse import urlparse
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(target)
+    return (test_url.scheme in ('', 'http', 'https') and
+            ref_url.netloc == test_url.netloc)
+
+
 def redirect_after_action(default_endpoint='main.home', allow_next=False):
     """
     Redirect after a successful action or denial.
-    If allow_next and request.args has 'next', redirect there;
+    If allow_next and request.args has 'next', redirect there (if same-origin);
     otherwise redirect to default_endpoint.
     """
     if allow_next:
         next_page = request.args.get('next')
-        if next_page:
+        if next_page and is_safe_url(next_page):
             return redirect(next_page)
     return redirect(url_for(default_endpoint))
 
@@ -54,15 +79,26 @@ def normalize_url(val):
     return val
 
 
-def youtube_embed_url(url):
+def youtube_embed_url(url, autoplay=False, mute=False):
     """
     Convert a YouTube watch or youtu.be URL to the embed URL.
     Returns None if url is falsy or no video ID is found.
+    Optional: autoplay, mute for review embeds (e.g. autoplay=1&mute=1).
     """
     if not url:
         return None
     match = re.search(r'(?:v=|youtu\.be/)([\w-]+)', url)
-    return f'https://www.youtube.com/embed/{match.group(1)}' if match else None
+    if not match:
+        return None
+    base = f'https://www.youtube.com/embed/{match.group(1)}'
+    params = []
+    if autoplay:
+        params.append('autoplay=1')
+    if mute:
+        params.append('mute=1')
+    if params:
+        return base + '?' + '&'.join(params)
+    return base
 
 
 def parse_comma_separated(s):
@@ -80,14 +116,76 @@ def parse_comma_separated(s):
 # -----------------------------------------------------------------------------
 
 
+def _strip_tech_count(entry):
+    """Strip +N suffix from tech entry. 'Python+2' -> 'Python', 'React' -> 'React'."""
+    s = (entry or '').strip()
+    if '+' in s:
+        parts = s.rsplit('+', 1)
+        try:
+            int(parts[1])
+            return parts[0].strip()
+        except (ValueError, IndexError):
+            pass
+    return s
+
+
+def _technologies_verified_dict(profile):
+    """Return technologies_verified as a dict {tech_lower: count}. Empty dict if missing/invalid."""
+    raw = getattr(profile, 'technologies_verified', None)
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+
+
 def developer_stack_list(profile):
     """
-    Return the developer's technology stack as a list of strings.
-    Uses comma-separated parsing. Returns [] if profile or technologies missing.
+    Return the developer's technology stack as a list of display strings.
+    Merges technologies (user's chosen names) with technologies_verified (counts from completed sprints).
+    Developers cannot fake counts; only verified counts from sprints are shown.
+    """
+    if not profile:
+        return []
+    tech_names = parse_comma_separated(profile.technologies or '')
+    verified = _technologies_verified_dict(profile)
+    result = []
+    for name in tech_names:
+        base = _strip_tech_count(name)
+        if not base:
+            continue
+        key = base.lower()
+        count = verified.get(key, 0)
+        if count > 1:
+            result.append(f"{base}+{count}")
+        else:
+            result.append(base)
+    return result
+
+
+def technologies_for_edit(profile):
+    """
+    Return tech names only (no counts) for the edit form.
+    Strips any +N from legacy data so developers cannot see or edit counts.
     """
     if not profile or not getattr(profile, 'technologies', None):
-        return []
-    return parse_comma_separated(profile.technologies)
+        return ''
+    parts = parse_comma_separated(profile.technologies)
+    names = [_strip_tech_count(p) for p in parts if _strip_tech_count(p)]
+    return ', '.join(names)
+
+
+def normalize_technologies_input(raw):
+    """
+    Normalize user input: strip +N from each tech, return comma-separated names only.
+    Prevents developers from adding fake counters.
+    """
+    if not raw or not str(raw).strip():
+        return ''
+    parts = parse_comma_separated(raw)
+    names = [_strip_tech_count(p) for p in parts if _strip_tech_count(p)]
+    return ', '.join(names)
 
 
 def developer_avg_rating(user_id):

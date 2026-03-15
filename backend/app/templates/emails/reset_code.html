@@ -1,0 +1,30 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Your JrDev reset code{% endblock %}
+
+{% block preheader %}Your 6-digit password reset code is inside — expires in 15 minutes.{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 16px 0;color:#e2e8f0;">Hi {{ username }},</p>
+<p style="margin:0 0 20px 0;color:#e2e8f0;">
+    Use the code below to reset your JrDev password.
+    Enter it on the verification page — it expires in 15 minutes.
+</p>
+
+<!-- Code block -->
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px auto;">
+  <tr>
+    <td style="background-color:#0F172A;border:1px solid #334155;border-radius:12px;padding:20px 40px;text-align:center;">
+      <span style="font-family:'Courier New',Courier,monospace;font-size:36px;font-weight:700;letter-spacing:0.3em;color:#818cf8;">{{ code }}</span>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0 0 8px 0;color:#94a3b8;font-size:14px;">
+    If you didn't request this, you can safely ignore this email — your account is unchanged.
+</p>
+{% endblock %}
+
+{# No CTA button — the code is the action #}
+{% block cta_url %}{% endblock %}
+{% block cta_text %}{% endblock %}

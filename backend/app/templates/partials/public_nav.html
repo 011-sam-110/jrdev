@@ -1,0 +1,74 @@
+{# Public nav: use with {% include 'partials/public_nav.html' %}
+   nav_variant: 'home' | 'content' - home = transparent over hero, content = solid bar
+   home_url: url_for('main.home') for section link base #}
+{% set _home = url_for('main.home') %}
+{% set _section_base = _home if nav_variant == 'content' else '' %}
+<nav id="navbar" class="{% if nav_variant == 'home' %}home-nav home-nav-in-hero {% endif %}fixed top-0 w-full z-50 transition-all duration-300 border-b {% if nav_variant == 'content' %}border-neutral-200 dark:border-white/5 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md{% else %}border-transparent{% endif %}">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-20">
+            <a href="{{ url_for('main.home') }}" class="flex-shrink-0 flex items-center gap-2">
+                <span class="material-icons-round text-primary text-3xl {% if nav_variant == 'home' %}nav-logo-icon{% endif %}">code</span>
+                <span class="font-display font-bold text-xl tracking-tight text-neutral-900 dark:text-white {% if nav_variant == 'home' %}nav-logo-text{% endif %}">Jr<span class="text-primary text-glow">Dev</span></span>
+            </a>
+            <div class="hidden md:flex items-center gap-4">
+                <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#how-it-works">How it works</a>
+                <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#students">For Students</a>
+                <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#business">For Businesses</a>
+                <a class="nav-link-animated text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ _section_base }}#pricing">Pricing</a>
+            </div>
+            <div class="hidden md:flex items-center gap-4">
+                <button id="dark-mode-toggle" type="button" class="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 transition-colors" aria-label="Toggle dark mode">
+                    <span class="material-icons-round text-xl dark-mode-icon-light">light_mode</span>
+                    <span class="material-icons-round text-xl dark-mode-icon-dark hidden">dark_mode</span>
+                </button>
+                {% if current_user.is_authenticated %}
+                    <a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                    <a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.account') }}">My Account</a>
+                    <a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
+                {% else %}
+                    <a class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary transition-colors" href="{{ url_for('main.login') }}">Login</a>
+                    {% if nav_variant == 'home' %}
+                        <a class="home-cta-primary btn-colorful inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-xl" href="{{ url_for('main.register', role='BUSINESS') }}">Hire Talent <span class="btn-colorful-arrow material-icons-round text-lg">arrow_forward</span></a>
+                    {% else %}
+                        <a class="btn-gradient text-slate-900 px-5 py-2.5 rounded-full text-sm font-bold shadow-[0_0_15px_rgba(20,241,149,0.3)] transition-all" href="{{ url_for('main.register') }}">Get Started</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="flex md:hidden items-center">
+                <button id="nav-menu-btn" type="button" class="inline-flex items-center justify-center p-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50" aria-expanded="false" aria-label="Open menu">
+                    <span class="material-icons-round nav-menu-icon-open">menu</span>
+                    <span class="material-icons-round nav-menu-icon-close hidden">close</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="nav-mobile-menu" class="nav-mobile-menu md:hidden" aria-hidden="true">
+        <div class="px-4 pb-4 pt-2 space-y-1 border-t {% if nav_variant == 'home' %}border-white/10{% else %}border-neutral-200 dark:border-white/10 bg-white dark:bg-neutral-950/95{% endif %} public-nav-mobile-inner">
+            <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ url_for('main.home') }}">Home</a>
+            <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#how-it-works">How it works</a>
+            <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#students">For Students</a>
+            <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#business">For Businesses</a>
+            <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ _section_base }}#pricing">Pricing</a>
+            <div class="pt-2 mt-2 border-t border-neutral-200 dark:border-white/10">
+                <button id="dark-mode-toggle-mobile" type="button" class="nav-mobile-link flex items-center gap-3 w-full px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors">
+                    <span class="material-icons-round text-xl dark-mode-icon-light">light_mode</span>
+                    <span class="material-icons-round text-xl dark-mode-icon-dark hidden">dark_mode</span>
+                    <span class="dark-mode-label">Toggle Dark Mode</span>
+                </button>
+                {% if current_user.is_authenticated %}
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ url_for('main.account') }}">My Account</a>
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ url_for('main.logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ url_for('main.login') }}">Login</a>
+                    {% if nav_variant == 'home' %}
+                        <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors" href="{{ url_for('main.register', role='DEVELOPER') }}">Join as Developer</a>
+                        <a class="nav-mobile-link btn-colorful inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-base font-bold mt-2" href="{{ url_for('main.register', role='BUSINESS') }}">Hire Talent <span class="btn-colorful-arrow material-icons-round text-lg">arrow_forward</span></a>
+                    {% else %}
+                        <a class="nav-mobile-link block px-4 py-3 rounded-lg text-base font-medium mt-2 bg-primary text-white text-center" href="{{ url_for('main.register') }}">Get Started</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>

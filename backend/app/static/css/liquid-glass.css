@@ -536,6 +536,27 @@ select {
 	color: #e2e8f0;
 }
 
+/* ── Profile popover (nav avatar dropdown) ── */
+.profile-popover {
+	animation: profilePopoverIn 0.2s ease-out;
+}
+@keyframes profilePopoverIn {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+.profile-popover-title {
+	letter-spacing: -0.01em;
+}
+.profile-popover-desc {
+	letter-spacing: 0.01em;
+}
+
 /* ── Reduced motion preference ── */
 @media (prefers-reduced-motion: reduce) {
 	.reveal,
@@ -545,7 +566,8 @@ select {
 	.glass-panel,
 	.home-reveal,
 	.home-glass-card,
-	.nav-mobile-menu {
+	.nav-mobile-menu,
+	.profile-popover {
 		animation: none !important;
 		transition-duration: 0.01ms !important;
 	}
